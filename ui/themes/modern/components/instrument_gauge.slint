@@ -1,0 +1,12 @@
+export component InstrumentGauge {
+    in-out property <float> value;
+    in-out property <float> max_value;
+    in-out property <float> min_value;
+
+    height: self.width;
+
+    Rectangle {
+        border-radius: parent.width / 2;
+        background: Colors.rgba(255, 0, 0, 1);
+    }
+}

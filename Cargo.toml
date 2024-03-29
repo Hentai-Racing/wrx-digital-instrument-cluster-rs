@@ -1,0 +1,19 @@
+[package]
+name = "wrx-digital-instrument-cluster-rs"
+version = "0.0.1"
+authors = ["Bryce Happel Walton <brycewaltonmail@gmail.com>"]
+edition = "2021"
+build = "build.rs"
+license = "GPL-3.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+slint = "1.4"
+bitvec = "1.0.1"
+socketcan = "3.3.0"
+anyhow = "1.0.81"
+
+[build-dependencies]
+slint-build = "1.4"
+dbc-codegen = "0.3.0"
