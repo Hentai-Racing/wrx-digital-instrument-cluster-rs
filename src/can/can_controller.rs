@@ -1,23 +1,28 @@
-use socketcan::Socket;
-use anyhow::Result;
+extern crate socketcan;
 
-pub struct CanController {
-	socket_name: String,
+use socketcan::{CanSocket, Socket};
+use std::time::Duration;
+
+pub struct CanReader {
+    socket: CanSocket,
 }
 
-impl CanController {
-	pub fn new(socket_name: String) -> CanController {
-		CanController {
-			socket_name,
-		}
-	}
+impl CanReader {
+    pub fn new(iface: &str) -> Result<CanReader, Box<dyn std::error::Error>> {
+        let socket = CanSocket::open(iface)?;
+        Ok(CanReader { socket })
+    }
 
-	pub fn init(&self) -> Result<()> {
-		let socket = socketcan::CanSocket::open(&self.socket_name.as_str())?;
-		socket.set_nonblocking(true)?;
+    pub fn read_frame(&mut self) -> Result<socketcan::CanFrame, Box<dyn std::error::Error>> {
+        let frame = self.socket.read_frame()?;
+        Ok(frame)
+    }
 
-		println!("CAN Controller initialized");
-
-		Ok(())
-	}
+    pub fn set_read_timeout(
+        &mut self,
+        duration: Duration,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.socket.set_read_timeout(duration)?;
+        Ok(())
+    }
 }
