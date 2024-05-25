@@ -1,6 +1,6 @@
 extern crate socketcan;
 
-use socketcan::{CanSocket, Socket};
+use socketcan::{CanFdFrame, CanFrame, CanSocket, Socket};
 use std::time::Duration;
 
 pub struct CanReader {

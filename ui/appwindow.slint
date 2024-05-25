@@ -2,10 +2,17 @@ import { Button, VerticalBox } from "std-widgets.slint";
 import { ModernTheme } from "themes/modern/modern.slint";
 
 export component AppWindow inherits Window {
+    in property <int> engine_rpm: 0;
+
     height: 720px;
     width: 1920px;
 
     title: "WRX Digital Instrument Cluster";
 
-    ModernTheme { }
+    Text {
+        text: "RPM: \{root.engine_rpm}";
+        color: Colors.red;
+    }
+
+    // ModernTheme { }
 }

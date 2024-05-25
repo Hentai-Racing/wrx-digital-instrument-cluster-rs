@@ -1,4 +1,5 @@
 slint::include_modules!();
+
 mod can;
 
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -9,9 +10,12 @@ use std::time::Duration;
 use can::can_controller::CanReader;
 use can::messages::wrx_2018;
 use socketcan::CanFrame;
+use std::process::Command;
 
 fn main() -> Result<(), slint::PlatformError> {
     let ui = AppWindow::new()?;
+
+    setup_can();
 
     let mut controller = CanReader::new("can0").unwrap();
     controller.set_read_timeout(Duration::new(0, 5)).unwrap();
@@ -59,4 +63,27 @@ fn main() -> Result<(), slint::PlatformError> {
     handle.join().unwrap();
 
     Ok(())
+}
+
+fn setup_can() {
+    let vcan0_exists = Command::new("ip")
+        .arg("link")
+        .arg("show")
+        .arg("vcan0")
+        .status()
+        .expect("Failed to execute command")
+        .success();
+
+    let can0_exists = Command::new("ip")
+        .arg("link")
+        .arg("show")
+        .arg("can0")
+        .status()
+        .expect("Failed to execute command")
+        .success();
+
+    if vcan0_exists {
+    } else if can0_exists {
+    } else {
+    }
 }
