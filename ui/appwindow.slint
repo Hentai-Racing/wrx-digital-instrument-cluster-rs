@@ -1,18 +1,20 @@
 import { Button, VerticalBox } from "std-widgets.slint";
-import { ModernTheme } from "themes/modern/modern.slint";
+import { GaugeCircle } from "components/instrument_gauge.slint";
+import { DataParameter } from "car_data.slint";
 
 export component AppWindow inherits Window {
-    in property <int> engine_rpm: 0;
+    in property <DataParameter> engine_rpm;
 
     height: 720px;
     width: 1920px;
 
     title: "WRX Digital Instrument Cluster";
 
-    Text {
-        text: "RPM: \{root.engine_rpm}";
-        color: Colors.red;
+    GaugeCircle {
+        width: 200px;
+        height: 200px;
+        inner-radius: 25%;
+        brush: #7b4e4e;
+        progress: engine_rpm.value / (engine_rpm.max_value - engine_rpm.min_value);
     }
-
-    // ModernTheme { }
 }

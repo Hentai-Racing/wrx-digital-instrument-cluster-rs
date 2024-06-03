@@ -7,7 +7,7 @@
 
 //! Message definitions from file `"WRX_2018.dbc"`
 //!
-//! - Version: `Version("0.9.0")`
+//! - Version: `Version("0.9.2")`
 
 use core::ops::BitOr;
 use bitvec::prelude::*;
@@ -60,6 +60,8 @@ pub enum Messages {
     XxxMsg885(XxxMsg885),
     /// XXXMsg886
     XxxMsg886(XxxMsg886),
+    /// ignition
+    Ignition(Ignition),
 }
 
 impl Messages {
@@ -89,6 +91,7 @@ impl Messages {
             884 => Messages::XxxMsg884(XxxMsg884::try_from(payload)?),
             885 => Messages::XxxMsg885(XxxMsg885::try_from(payload)?),
             886 => Messages::XxxMsg886(XxxMsg886::try_from(payload)?),
+            644 => Messages::Ignition(Ignition::try_from(payload)?),
             n => return Err(CanError::UnknownMessageId(n)),
         };
         Ok(res)
@@ -99,7 +102,6 @@ impl Messages {
 ///
 /// - ID: 321 (0x141)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct EngineStatus {
     raw: [u8; 8],
@@ -138,7 +140,7 @@ impl EngineStatus {
     /// - Min: 0
     /// - Max: 255
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn engine_torque(&self) -> u16 {
         self.engine_torque_raw()
@@ -175,7 +177,7 @@ impl EngineStatus {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn engine_stop(&self) -> bool {
         self.engine_stop_raw()
@@ -209,7 +211,7 @@ impl EngineStatus {
     /// - Min: 0
     /// - Max: 4095
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn wheel_torque(&self) -> u16 {
         self.wheel_torque_raw()
@@ -246,7 +248,7 @@ impl EngineStatus {
     /// - Min: 0
     /// - Max: 8191
     /// - Unit: "RPM"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn engine_rpm(&self) -> u16 {
         self.engine_rpm_raw()
@@ -283,7 +285,7 @@ impl EngineStatus {
     /// - Min: 0
     /// - Max: 7
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn mt_gear(&self) -> EngineStatusMtGear {
         let signal = self.raw.view_bits::<Lsb0>()[48..52].load_le::<u8>();
@@ -405,7 +407,6 @@ impl From<EngineStatusMtGear> for u8 {
 ///
 /// - ID: 208 (0xd0)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct GSensor {
     raw: [u8; 8],
@@ -437,7 +438,7 @@ impl GSensor {
     /// - Min: -255
     /// - Max: 255
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn g_sensor_lateral(&self) -> f32 {
         self.g_sensor_lateral_raw()
@@ -482,7 +483,7 @@ impl GSensor {
     /// - Min: -255
     /// - Max: 255
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn g_sensor_longitudinal(&self) -> f32 {
         self.g_sensor_longitudinal_raw()
@@ -563,7 +564,6 @@ impl<'a> Arbitrary<'a> for GSensor {
 ///
 /// - ID: 209 (0xd1)
 /// - Size: 4 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct XxxMsg209 {
     raw: [u8; 4],
@@ -595,7 +595,7 @@ impl XxxMsg209 {
     /// - Min: 0
     /// - Max: 180
     /// - Unit: "KPH"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn vehicle_speed(&self) -> f32 {
         self.vehicle_speed_raw()
@@ -638,7 +638,7 @@ impl XxxMsg209 {
     /// - Min: 0
     /// - Max: 100
     /// - Unit: "%"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn brake_pedal_pressure(&self) -> f32 {
         self.brake_pedal_pressure_raw()
@@ -717,7 +717,6 @@ impl<'a> Arbitrary<'a> for XxxMsg209 {
 ///
 /// - ID: 328 (0x148)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct Transmission {
     raw: [u8; 8],
@@ -746,7 +745,7 @@ impl Transmission {
     /// - Min: 0
     /// - Max: 7
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn mt_gear_verify(&self) -> u8 {
         self.mt_gear_verify_raw()
@@ -817,7 +816,6 @@ impl<'a> Arbitrary<'a> for Transmission {
 ///
 /// - ID: 320 (0x140)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct MotorControl {
     raw: [u8; 8],
@@ -854,7 +852,7 @@ impl MotorControl {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: "%"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn accelerator_pedal_position(&self) -> f32 {
         self.accelerator_pedal_position_raw()
@@ -899,7 +897,7 @@ impl MotorControl {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn n_accelerator_pedal_max_sw(&self) -> bool {
         self.n_accelerator_pedal_max_sw_raw()
@@ -933,7 +931,7 @@ impl MotorControl {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn clutch_sw(&self) -> bool {
         self.clutch_sw_raw()
@@ -967,7 +965,7 @@ impl MotorControl {
     /// - Min: 0
     /// - Max: 100
     /// - Unit: "%"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn combined_accelerator(&self) -> f32 {
         self.combined_accelerator_raw()
@@ -1010,7 +1008,7 @@ impl MotorControl {
     /// - Min: 0
     /// - Max: 100
     /// - Unit: "%"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn throttle_plate_position(&self) -> f32 {
         self.throttle_plate_position_raw()
@@ -1095,7 +1093,6 @@ impl<'a> Arbitrary<'a> for MotorControl {
 ///
 /// - ID: 282 (0x11a)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct Steering {
     raw: [u8; 8],
@@ -1124,7 +1121,7 @@ impl Steering {
     /// - Min: -500
     /// - Max: 500
     /// - Unit: "degree"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn steering_angle(&self) -> f32 {
         self.steering_angle_raw()
@@ -1203,7 +1200,6 @@ impl<'a> Arbitrary<'a> for Steering {
 ///
 /// - ID: 211 (0xd3)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct DriverRoadAssists {
     raw: [u8; 8],
@@ -1232,7 +1228,7 @@ impl DriverRoadAssists {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn traction_control_enabled(&self) -> bool {
         self.traction_control_enabled_raw()
@@ -1266,7 +1262,7 @@ impl DriverRoadAssists {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn tq_vectoring_enabled(&self) -> bool {
         self.tq_vectoring_enabled_raw()
@@ -1300,7 +1296,7 @@ impl DriverRoadAssists {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn hill_assist_enabled(&self) -> bool {
         self.hill_assist_enabled_raw()
@@ -1372,7 +1368,6 @@ impl<'a> Arbitrary<'a> for DriverRoadAssists {
 ///
 /// - ID: 338 (0x152)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct StatusSwitches {
     raw: [u8; 8],
@@ -1406,7 +1401,7 @@ impl StatusSwitches {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn reverse_sw(&self) -> bool {
         self.reverse_sw_raw()
@@ -1440,7 +1435,7 @@ impl StatusSwitches {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn handbrake_sw(&self) -> bool {
         self.handbrake_sw_raw()
@@ -1474,7 +1469,7 @@ impl StatusSwitches {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn brake_sw(&self) -> bool {
         self.brake_sw_raw()
@@ -1508,7 +1503,7 @@ impl StatusSwitches {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn running_lights_enabled(&self) -> bool {
         self.running_lights_enabled_raw()
@@ -1542,7 +1537,7 @@ impl StatusSwitches {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn parking_lights_enabled(&self) -> bool {
         self.parking_lights_enabled_raw()
@@ -1576,7 +1571,7 @@ impl StatusSwitches {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn lowbeams_enabled(&self) -> bool {
         self.lowbeams_enabled_raw()
@@ -1610,7 +1605,7 @@ impl StatusSwitches {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn highbeams_enabled(&self) -> bool {
         self.highbeams_enabled_raw()
@@ -1644,7 +1639,7 @@ impl StatusSwitches {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn wiper_moving_sw(&self) -> bool {
         self.wiper_moving_sw_raw()
@@ -1726,7 +1721,6 @@ impl<'a> Arbitrary<'a> for StatusSwitches {
 ///
 /// - ID: 340 (0x154)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct XxxMsg340 {
     raw: [u8; 8],
@@ -1753,7 +1747,7 @@ impl XxxMsg340 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn any_door_open(&self) -> bool {
         self.any_door_open_raw()
@@ -1821,7 +1815,6 @@ impl<'a> Arbitrary<'a> for XxxMsg340 {
 ///
 /// - ID: 642 (0x282)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct XxxMsg640 {
     raw: [u8; 8],
@@ -1858,7 +1851,7 @@ impl XxxMsg640 {
     /// - Min: 0
     /// - Max: 100
     /// - Unit: "%"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn fuel_level(&self) -> f32 {
         self.fuel_level_raw()
@@ -1901,7 +1894,7 @@ impl XxxMsg640 {
     /// - Min: 0
     /// - Max: 4096
     /// - Unit: "%"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn raw_fuel(&self) -> u16 {
         self.raw_fuel_raw()
@@ -1938,7 +1931,7 @@ impl XxxMsg640 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn left_turn_signal_enabled(&self) -> bool {
         self.left_turn_signal_enabled_raw()
@@ -1972,7 +1965,7 @@ impl XxxMsg640 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn right_turn_signal_enabled(&self) -> bool {
         self.right_turn_signal_enabled_raw()
@@ -2006,7 +1999,7 @@ impl XxxMsg640 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn driver_seatbelt_warning_enabled(&self) -> bool {
         self.driver_seatbelt_warning_enabled_raw()
@@ -2082,7 +2075,6 @@ impl<'a> Arbitrary<'a> for XxxMsg640 {
 ///
 /// - ID: 864 (0x360)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct XxxMsg864 {
     raw: [u8; 8],
@@ -2127,7 +2119,7 @@ impl XxxMsg864 {
     /// - Min: 0
     /// - Max: 255
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn engine_fuel_flow(&self) -> u8 {
         self.engine_fuel_flow_raw()
@@ -2164,7 +2156,7 @@ impl XxxMsg864 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: "degC"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn engine_oil_temp(&self) -> f32 {
         self.engine_oil_temp_raw()
@@ -2207,7 +2199,7 @@ impl XxxMsg864 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: "degC"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn engine_coolant_temp(&self) -> f32 {
         self.engine_coolant_temp_raw()
@@ -2252,7 +2244,7 @@ impl XxxMsg864 {
     /// - Min: 0
     /// - Max: 255
     /// - Unit: "psi"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn engine_boost_pressure(&self) -> f32 {
         self.engine_boost_pressure_raw()
@@ -2297,7 +2289,7 @@ impl XxxMsg864 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn cruise_control_enabled(&self) -> bool {
         self.cruise_control_enabled_raw()
@@ -2331,7 +2323,7 @@ impl XxxMsg864 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn cruise_control_set_enabled(&self) -> bool {
         self.cruise_control_set_enabled_raw()
@@ -2367,7 +2359,7 @@ impl XxxMsg864 {
     /// - Min: 0
     /// - Max: 255
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn cruise_control_speed(&self) -> u8 {
         self.cruise_control_speed_raw()
@@ -2450,7 +2442,6 @@ impl<'a> Arbitrary<'a> for XxxMsg864 {
 ///
 /// - ID: 604 (0x25c)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct BsdRcta {
     raw: [u8; 8],
@@ -2483,7 +2474,7 @@ impl BsdRcta {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn rcta_enabled(&self) -> bool {
         self.rcta_enabled_raw()
@@ -2517,7 +2508,7 @@ impl BsdRcta {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn rtca_right_adjacent(&self) -> bool {
         self.rtca_right_adjacent_raw()
@@ -2551,7 +2542,7 @@ impl BsdRcta {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn rtca_left_adjacent(&self) -> bool {
         self.rtca_left_adjacent_raw()
@@ -2585,7 +2576,7 @@ impl BsdRcta {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn rtca_right_approaching(&self) -> bool {
         self.rtca_right_approaching_raw()
@@ -2619,7 +2610,7 @@ impl BsdRcta {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn rtca_left_approaching(&self) -> bool {
         self.rtca_left_approaching_raw()
@@ -2653,7 +2644,7 @@ impl BsdRcta {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn rcta_right(&self) -> bool {
         self.rcta_right_raw()
@@ -2687,7 +2678,7 @@ impl BsdRcta {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn rcta_left(&self) -> bool {
         self.rcta_left_raw()
@@ -2767,7 +2758,6 @@ impl<'a> Arbitrary<'a> for BsdRcta {
 ///
 /// - ID: 1883 (0x75b)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 ///
 /// no successful communication with bcm yet
 #[derive(Clone, Copy)]
@@ -2809,7 +2799,7 @@ impl Tpms {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn left_front_tire_pressure(&self) -> u8 {
         self.left_front_tire_pressure_raw()
@@ -2848,7 +2838,7 @@ impl Tpms {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn right_front_tire_pressure(&self) -> u8 {
         self.right_front_tire_pressure_raw()
@@ -2887,7 +2877,7 @@ impl Tpms {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn right_rear_tire_pressure(&self) -> u8 {
         self.right_rear_tire_pressure_raw()
@@ -2926,7 +2916,7 @@ impl Tpms {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn left_rear_tire_pressure(&self) -> u8 {
         self.left_rear_tire_pressure_raw()
@@ -3003,7 +2993,6 @@ impl<'a> Arbitrary<'a> for Tpms {
 ///
 /// - ID: 1745 (0x6d1)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct Odometer {
     raw: [u8; 8],
@@ -3034,7 +3023,7 @@ impl Odometer {
     /// - Min: 0
     /// - Max: 429497000
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn odometer(&self) -> f32 {
         self.odometer_raw()
@@ -3111,7 +3100,6 @@ impl<'a> Arbitrary<'a> for Odometer {
 ///
 /// - ID: 977 (0x3d1)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct DashState2Verify {
     raw: [u8; 8],
@@ -3135,12 +3123,12 @@ impl DashState2Verify {
     
     /// UNITS
     ///
-    /// 0 = Metric, 1 = Imperial  NOT VERIFIED
+    /// 0 = Metric, 1 = Imperial NOT VERIFIED
     ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn units(&self) -> bool {
         self.units_raw()
@@ -3208,7 +3196,6 @@ impl<'a> Arbitrary<'a> for DashState2Verify {
 ///
 /// - ID: 212 (0xd4)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct WheelSpeeds {
     raw: [u8; 8],
@@ -3246,7 +3233,7 @@ impl WheelSpeeds {
     /// - Min: 0
     /// - Max: 255
     /// - Unit: "KPH"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn left_front_wheel_speed(&self) -> f32 {
         self.left_front_wheel_speed_raw()
@@ -3289,7 +3276,7 @@ impl WheelSpeeds {
     /// - Min: 0
     /// - Max: 255
     /// - Unit: "KPH"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn right_front_wheel_speed(&self) -> f32 {
         self.right_front_wheel_speed_raw()
@@ -3332,7 +3319,7 @@ impl WheelSpeeds {
     /// - Min: 0
     /// - Max: 255
     /// - Unit: "KPH"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn left_rear_wheel_speed(&self) -> f32 {
         self.left_rear_wheel_speed_raw()
@@ -3375,7 +3362,7 @@ impl WheelSpeeds {
     /// - Min: 0
     /// - Max: 255
     /// - Unit: "KPH"
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn right_rear_wheel_speed(&self) -> f32 {
         self.right_rear_wheel_speed_raw()
@@ -3458,7 +3445,6 @@ impl<'a> Arbitrary<'a> for WheelSpeeds {
 ///
 /// - ID: 865 (0x361)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct EngineWarningLights {
     raw: [u8; 8],
@@ -3486,7 +3472,7 @@ impl EngineWarningLights {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn oil_pressure_warning_light_enabled(&self) -> bool {
         self.oil_pressure_warning_light_enabled_raw()
@@ -3520,7 +3506,7 @@ impl EngineWarningLights {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn check_engine_light_enabled(&self) -> bool {
         self.check_engine_light_enabled_raw()
@@ -3590,7 +3576,6 @@ impl<'a> Arbitrary<'a> for EngineWarningLights {
 ///
 /// - ID: 882 (0x372)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct SrsStatus {
     raw: [u8; 8],
@@ -3617,7 +3602,7 @@ impl SrsStatus {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn srs_system_warning_light_enabled(&self) -> bool {
         self.srs_system_warning_light_enabled_raw()
@@ -3685,7 +3670,6 @@ impl<'a> Arbitrary<'a> for SrsStatus {
 ///
 /// - ID: 884 (0x374)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct XxxMsg884 {
     raw: [u8; 8],
@@ -3713,7 +3697,7 @@ impl XxxMsg884 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn fog_lights_enabled(&self) -> bool {
         self.fog_lights_enabled_raw()
@@ -3747,7 +3731,7 @@ impl XxxMsg884 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn tpms_warning_light_enabled(&self) -> bool {
         self.tpms_warning_light_enabled_raw()
@@ -3817,7 +3801,6 @@ impl<'a> Arbitrary<'a> for XxxMsg884 {
 ///
 /// - ID: 885 (0x375)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct XxxMsg885 {
     raw: [u8; 8],
@@ -3850,7 +3833,7 @@ impl XxxMsg885 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn left_front_door_open(&self) -> bool {
         self.left_front_door_open_raw()
@@ -3884,7 +3867,7 @@ impl XxxMsg885 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn right_front_door_open(&self) -> bool {
         self.right_front_door_open_raw()
@@ -3918,7 +3901,7 @@ impl XxxMsg885 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn right_rear_door_open(&self) -> bool {
         self.right_rear_door_open_raw()
@@ -3952,7 +3935,7 @@ impl XxxMsg885 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn left_rear_door_open(&self) -> bool {
         self.left_rear_door_open_raw()
@@ -3986,7 +3969,7 @@ impl XxxMsg885 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn trunk_open(&self) -> bool {
         self.trunk_open_raw()
@@ -4020,7 +4003,7 @@ impl XxxMsg885 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn headlight_dimmer_enabled(&self) -> bool {
         self.headlight_dimmer_enabled_raw()
@@ -4054,7 +4037,7 @@ impl XxxMsg885 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn dimmer_max_brightness_enable(&self) -> bool {
         self.dimmer_max_brightness_enable_raw()
@@ -4134,7 +4117,6 @@ impl<'a> Arbitrary<'a> for XxxMsg885 {
 ///
 /// - ID: 886 (0x376)
 /// - Size: 8 bytes
-/// - Transmitter: XXX
 #[derive(Clone, Copy)]
 pub struct XxxMsg886 {
     raw: [u8; 8],
@@ -4164,7 +4146,7 @@ impl XxxMsg886 {
     /// - Min: 0
     /// - Max: 250
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn dimmer_dial_value(&self) -> XxxMsg886DimmerDialValue {
         let signal = self.raw.view_bits::<Lsb0>()[0..8].load_le::<u8>();
@@ -4211,7 +4193,7 @@ impl XxxMsg886 {
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
-    /// - Receivers: XXX
+    /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn hood_closed(&self) -> bool {
         self.hood_closed_raw()
@@ -4303,6 +4285,176 @@ impl From<XxxMsg886DimmerDialValue> for u8 {
     }
 }
 
+
+/// ignition
+///
+/// - ID: 644 (0x284)
+/// - Size: 8 bytes
+#[derive(Clone, Copy)]
+pub struct Ignition {
+    raw: [u8; 8],
+}
+
+impl Ignition {
+    pub const MESSAGE_ID: u32 = 644;
+    
+    
+    /// Construct new ignition from values
+    pub fn new(access_key_detected: bool, ignition_on: bool, ignition_acc: bool) -> Result<Self, CanError> {
+        let mut res = Self { raw: [0u8; 8] };
+        res.set_access_key_detected(access_key_detected)?;
+        res.set_ignition_on(ignition_on)?;
+        res.set_ignition_acc(ignition_acc)?;
+        Ok(res)
+    }
+    
+    /// Access message payload raw value
+    pub fn raw(&self) -> &[u8; 8] {
+        &self.raw
+    }
+    
+    /// access_key_detected
+    ///
+    /// 4:6_bits_are_set_but_only_check_6
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: ""
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn access_key_detected(&self) -> bool {
+        self.access_key_detected_raw()
+    }
+    
+    /// Get raw value of access_key_detected
+    ///
+    /// - Start bit: 46
+    /// - Signal size: 1 bits
+    /// - Factor: -1
+    /// - Offset: 0
+    /// - Byte order: BigEndian
+    /// - Value type: Unsigned
+    #[inline(always)]
+    pub fn access_key_detected_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[41..42].load_be::<u8>();
+        
+        signal == 1
+    }
+    
+    /// Set value of access_key_detected
+    #[inline(always)]
+    pub fn set_access_key_detected(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Msb0>()[41..42].store_be(value);
+        Ok(())
+    }
+    
+    /// ignition_on
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: ""
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn ignition_on(&self) -> bool {
+        self.ignition_on_raw()
+    }
+    
+    /// Get raw value of ignition_on
+    ///
+    /// - Start bit: 6
+    /// - Signal size: 1 bits
+    /// - Factor: 1
+    /// - Offset: 0
+    /// - Byte order: BigEndian
+    /// - Value type: Unsigned
+    #[inline(always)]
+    pub fn ignition_on_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[1..2].load_be::<u8>();
+        
+        signal == 1
+    }
+    
+    /// Set value of ignition_on
+    #[inline(always)]
+    pub fn set_ignition_on(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Msb0>()[1..2].store_be(value);
+        Ok(())
+    }
+    
+    /// ignition_acc
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: ""
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn ignition_acc(&self) -> bool {
+        self.ignition_acc_raw()
+    }
+    
+    /// Get raw value of ignition_acc
+    ///
+    /// - Start bit: 25
+    /// - Signal size: 1 bits
+    /// - Factor: 1
+    /// - Offset: 0
+    /// - Byte order: BigEndian
+    /// - Value type: Unsigned
+    #[inline(always)]
+    pub fn ignition_acc_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[30..31].load_be::<u8>();
+        
+        signal == 1
+    }
+    
+    /// Set value of ignition_acc
+    #[inline(always)]
+    pub fn set_ignition_acc(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Msb0>()[30..31].store_be(value);
+        Ok(())
+    }
+    
+}
+
+impl core::convert::TryFrom<&[u8]> for Ignition {
+    type Error = CanError;
+    
+    #[inline(always)]
+    fn try_from(payload: &[u8]) -> Result<Self, Self::Error> {
+        if payload.len() != 8 { return Err(CanError::InvalidPayloadSize); }
+        let mut raw = [0u8; 8];
+        raw.copy_from_slice(&payload[..8]);
+        Ok(Self { raw })
+    }
+}
+
+#[cfg(feature = "debug")]
+impl core::fmt::Debug for Ignition {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("Ignition")
+                .field("access_key_detected", &self.access_key_detected())
+                .field("ignition_on", &self.ignition_on())
+                .field("ignition_acc", &self.ignition_acc())
+            .finish()
+        } else {
+            f.debug_tuple("Ignition").field(&self.raw).finish()
+        }
+    }
+}
+
+#[cfg(feature = "arb")]
+impl<'a> Arbitrary<'a> for Ignition {
+    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
+        let access_key_detected = u.int_in_range(0..=1)? == 1;
+        let ignition_on = u.int_in_range(0..=1)? == 1;
+        let ignition_acc = u.int_in_range(0..=1)? == 1;
+        Ignition::new(access_key_detected,ignition_on,ignition_acc).map_err(|_| arbitrary::Error::IncorrectFormat)
+    }
+}
 
 
 /// This is just to make testing easier

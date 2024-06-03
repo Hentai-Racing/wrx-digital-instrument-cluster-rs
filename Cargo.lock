@@ -4667,6 +4667,7 @@ dependencies = [
  "anyhow",
  "bitvec",
  "dbc-codegen",
+ "rand",
  "slint",
  "slint-build",
  "socketcan",

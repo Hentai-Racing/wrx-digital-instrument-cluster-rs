@@ -8,8 +8,10 @@ use std::thread;
 
 use can::can_controller::CanController;
 use can::messages::wrx_2018;
-use slint::{ComponentHandle, JoinHandle};
-use socketcan::{CanFrame, CanInterface, CanSocket, Socket};
+
+use rand::Rng;
+use slint::{ComponentHandle, Weak};
+use socketcan::{CanDataFrame, CanFrame, CanInterface, CanSocket, Frame, Socket};
 
 fn main() -> Result<(), slint::PlatformError> {
     let ui = AppWindow::new()?;
@@ -18,17 +20,20 @@ fn main() -> Result<(), slint::PlatformError> {
     let vcan_if_name = "vcan0";
     let can_if_name = "can0";
 
+    let mut virtual_cluster = false;
     let mut created_vcan = false;
-    let mut can_if_in_use = false;
     let mut in_use_can_if_name: Option<&str> = None;
 
     let running = Arc::new(AtomicBool::new(true));
 
     match std::env::var("HR_CLUSTER_VIRTUAL") {
-        Ok(_) => match CanInterface::open(vcan_if_name) {
+        Ok(val) => virtual_cluster = val == "1",
+        _ => {}
+    }
+
+    if virtual_cluster {
+        match CanInterface::open(vcan_if_name) {
             Ok(_) => {
-                created_vcan = true;
-                can_if_in_use = true;
                 in_use_can_if_name = Some(vcan_if_name);
                 println!("Using existing virtual CAN interface");
             }
@@ -36,90 +41,94 @@ fn main() -> Result<(), slint::PlatformError> {
                 Ok(_) => {
                     println!("Created virtual CAN interface {vcan_if_name}");
                     created_vcan = true;
-                    can_if_in_use = true;
                     in_use_can_if_name = Some(vcan_if_name);
                 }
                 _ => println!(
-                    "Failed to create virtual CAN interface {vcan_if_name}. Check root privilages"
+                    "Failed to create virtual CAN interface {vcan_if_name}. Check privilages"
                 ),
             },
-        },
-        _ => match CanInterface::open(can_if_name) {
+        }
+    } else {
+        match CanInterface::open(can_if_name) {
             Ok(_) => {
                 println!("Using CAN interface {can_if_name}");
-                can_if_in_use = true;
                 in_use_can_if_name = Some(can_if_name);
             }
             _ => println!("No CAN interface in use"),
-        },
+        }
     }
 
-    if can_if_in_use {
-        if let Some(in_use_can_if_name) = in_use_can_if_name {
-            let mut socket_up = false;
+    if let Some(in_use_can_if_name) = in_use_can_if_name {
+        let mut socket_up = false;
 
-            match CanInterface::open(in_use_can_if_name) {
-                Ok(can_interface) => match can_interface.bring_up() {
-                    Ok(_) => {
+        match CanInterface::open(in_use_can_if_name) {
+            Ok(can_interface) => match can_interface.details() {
+                Ok(details) => {
+                    if details.is_up {
                         socket_up = true;
-                        println!("Brought up CAN interface {in_use_can_if_name}")
-                    }
-                    _ => eprintln!("Failed to bring up CAN interface {in_use_can_if_name}"),
-                },
-                _ => eprintln!("Failed to open CAN interface {in_use_can_if_name}"),
-            }
-
-            if socket_up {
-                let mut controller = CanController::new(in_use_can_if_name).unwrap();
-
-                let running_clone = running.clone();
-
-                let can_controller_thread = thread::spawn(move || {
-                    let ui_clone = ui_weak.clone();
-                    while running_clone.load(Ordering::SeqCst) {
-                        match controller.read_frame() {
-                            Ok(frame) => match frame {
-                                CanFrame::Data(data) => {
-                                    let data_ref = data.as_ref();
-
-                                    let id = data_ref.can_id;
-                                    let payload = data_ref.data;
-                                    let _dlc = data_ref.can_dlc;
-
-                                    match wrx_2018::Messages::from_can_message(id, &payload) {
-                                        Ok(decoded_message) => match decoded_message {
-                                            wrx_2018::Messages::EngineStatus(signal) => {
-                                                println!("{:?}", signal.engine_rpm());
-                                                ui_clone
-                                                    .unwrap()
-                                                    .set_engine_rpm(signal.engine_rpm() as i32)
-                                            }
-                                            _ => {}
-                                        },
-                                        _ => {}
-                                    }
-                                }
-                                _ => todo!(),
-                            },
-                            Err(e) => eprintln!("Error reading frame: {}", e),
+                        println!("CAN interface {in_use_can_if_name} is already up. Continuing...")
+                    } else {
+                        match can_interface.bring_up() {
+                            Ok(_) => {
+                                socket_up = true;
+                                println!("Brought up CAN interface {in_use_can_if_name}")
+                            }
+                            _ => eprintln!("Failed to bring up CAN interface {in_use_can_if_name}"),
                         }
                     }
-                });
+                }
+                _ => {}
+            },
+            _ => eprintln!("Failed to open CAN interface {in_use_can_if_name}"),
+        }
 
-                ui.run()?;
+        if socket_up {
+            let mut controller = CanController::new(in_use_can_if_name).unwrap();
 
-                running.store(false, Ordering::SeqCst);
-                can_controller_thread.join().unwrap();
+            let running_clone = running.clone();
+
+            let can_controller_thread = thread::spawn(move || {
+                while running_clone.load(Ordering::SeqCst) {
+                    match controller.read_frame() {
+                        Ok(frame) => match frame {
+                            CanFrame::Data(data_frame) => {
+                                parse_can_frame(ui_weak.clone(), data_frame)
+                            }
+                            _ => todo!(),
+                        },
+                        Err(e) => eprintln!("Error reading frame: {e:?}"),
+                    }
+                }
+            });
+
+            let mut virtual_handler_handle: Option<std::thread::JoinHandle<()>> = None;
+
+            if virtual_cluster {
+                match handle_virtual_can(vcan_if_name, running.clone()) {
+                    Ok(handle) => {
+                        virtual_handler_handle = Some(handle);
+                    }
+                    Err(e) => eprintln!("{e:?}"),
+                }
             }
 
-            if created_vcan {
-                match CanInterface::open("vcan0") {
-                    Ok(vcan_interface) => match vcan_interface.delete() {
-                        Ok(_) => println!("Deleted virtual CAN interface {vcan_if_name}"),
-                        _ => println!("Failed to delete virtual CAN interface {vcan_if_name}"),
-                    },
+            ui.run()?;
+
+            running.store(false, Ordering::SeqCst);
+            can_controller_thread.join().unwrap();
+
+            if let Some(virtual_handler_handle) = virtual_handler_handle {
+                virtual_handler_handle.join().unwrap();
+            }
+        }
+
+        if created_vcan {
+            match CanInterface::open(vcan_if_name) {
+                Ok(vcan_interface) => match vcan_interface.delete() {
+                    Ok(_) => println!("Deleted virtual CAN interface {vcan_if_name}"),
                     _ => println!("Failed to delete virtual CAN interface {vcan_if_name}"),
-                }
+                },
+                _ => println!("Failed to delete virtual CAN interface {vcan_if_name}"),
             }
         }
     } else {
@@ -127,4 +136,59 @@ fn main() -> Result<(), slint::PlatformError> {
     }
 
     Ok(())
+}
+
+fn parse_can_frame(ui: Weak<AppWindow>, frame: CanDataFrame) {
+    let frame_ref = frame.as_ref();
+
+    let id = frame_ref.can_id;
+    let payload = frame_ref.data;
+    let _dlc = frame_ref.can_dlc;
+
+    match wrx_2018::Messages::from_can_message(id, &payload) {
+        Ok(decoded_message) => {
+            // let ui_clone = ui_weak.clone();
+            match decoded_message {
+                wrx_2018::Messages::EngineStatus(signal) => {
+                    slint::invoke_from_event_loop(move || {
+                        ui.unwrap().set_engine_rpm(DataParameter {
+                            min_value: wrx_2018::EngineStatus::ENGINE_RPM_MIN as i32,
+                            max_value: wrx_2018::EngineStatus::ENGINE_RPM_MAX as i32,
+                            value: signal.engine_rpm() as i32,
+                        })
+                    })
+                    .unwrap();
+                }
+                _ => {}
+            }
+        }
+        _ => {}
+    }
+}
+
+fn handle_virtual_can(
+    vcan_if_name: &str,
+    running: Arc<AtomicBool>,
+) -> Result<std::thread::JoinHandle<()>, ()> {
+    let socket = CanSocket::open(vcan_if_name);
+    match socket {
+        Ok(socket) => Ok(thread::spawn(move || {
+            while running.load(Ordering::SeqCst) {
+                let rpm = rand::thread_rng().gen_range(
+                    wrx_2018::EngineStatus::ENGINE_RPM_MIN..wrx_2018::EngineStatus::ENGINE_RPM_MAX,
+                );
+                match wrx_2018::EngineStatus::new(0, true, 0, rpm, 0) {
+                    Ok(dbc_frame) => {
+                        let message_id = wrx_2018::EngineStatus::MESSAGE_ID;
+                        let frame = CanDataFrame::from_raw_id(message_id, dbc_frame.raw());
+                        if let Some(frame) = frame {
+                            socket.write_frame::<CanDataFrame>(&frame).unwrap();
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        })),
+        _ => Err(eprintln!("Failed to run virtual interface {vcan_if_name}")),
+    }
 }
