@@ -8,13 +8,27 @@ export component AppWindow inherits Window {
     height: 720px;
     width: 1920px;
 
+    background: black;
+
     title: "WRX Digital Instrument Cluster";
 
-    GaugeCircle {
-        width: 200px;
-        height: 200px;
-        inner-radius: 25%;
-        brush: #7b4e4e;
-        progress: engine_rpm.value / (engine_rpm.max_value - engine_rpm.min_value);
+    EngineRPMGauge := GaugeCircle {
+        width: 625px;
+        height: self.width;
+        x: 50px;
+        y: root.height / 2 - self.height / 2;
+        // inner-radius: 25%;
+        // brush: #7b4e4e;
+        // progress: engine_rpm.value / (engine_rpm.max_value - engine_rpm.min_value);
+    }
+
+    VehicleSpeedGauge := GaugeCircle {
+        width: 625px;
+        height: self.width;
+        x: root.width - self.width - EngineRPMGauge.x;
+        y: root.height / 2 - self.height / 2;
+        // inner-radius: 25%;
+        // brush: #7b4e4e;
+        // progress: engine_rpm.value / (engine_rpm.max_value - engine_rpm.min_value);
     }
 }

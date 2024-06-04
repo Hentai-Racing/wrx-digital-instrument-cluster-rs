@@ -135,8 +135,6 @@ fn main() -> Result<(), slint::PlatformError> {
         println!("Showing stale UI");
 
         ui.run()?;
-
-        running.store(false, Ordering::SeqCst);
     }
 
     Ok(())
