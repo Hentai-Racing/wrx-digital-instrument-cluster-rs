@@ -101,12 +101,12 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
             });
 
-            let mut virtual_handler_handle: Option<std::thread::JoinHandle<()>> = None;
+            let mut virtual_handler_thread: Option<std::thread::JoinHandle<()>> = None;
 
             if virtual_cluster {
                 match handle_virtual_can(vcan_if_name, running.clone()) {
                     Ok(handle) => {
-                        virtual_handler_handle = Some(handle);
+                        virtual_handler_thread = Some(handle);
                     }
                     Err(e) => eprintln!("{e:?}"),
                 }
@@ -117,7 +117,7 @@ fn main() -> Result<(), slint::PlatformError> {
             running.store(false, Ordering::SeqCst);
             can_controller_thread.join().unwrap();
 
-            if let Some(virtual_handler_handle) = virtual_handler_handle {
+            if let Some(virtual_handler_handle) = virtual_handler_thread {
                 virtual_handler_handle.join().unwrap();
             }
         }
@@ -132,7 +132,11 @@ fn main() -> Result<(), slint::PlatformError> {
             }
         }
     } else {
+        println!("Showing stale UI");
+
         ui.run()?;
+
+        running.store(false, Ordering::SeqCst);
     }
 
     Ok(())
@@ -146,22 +150,19 @@ fn parse_can_frame(ui: Weak<AppWindow>, frame: CanDataFrame) {
     let _dlc = frame_ref.can_dlc;
 
     match wrx_2018::Messages::from_can_message(id, &payload) {
-        Ok(decoded_message) => {
-            // let ui_clone = ui_weak.clone();
-            match decoded_message {
-                wrx_2018::Messages::EngineStatus(signal) => {
-                    slint::invoke_from_event_loop(move || {
-                        ui.unwrap().set_engine_rpm(DataParameter {
-                            min_value: wrx_2018::EngineStatus::ENGINE_RPM_MIN as i32,
-                            max_value: wrx_2018::EngineStatus::ENGINE_RPM_MAX as i32,
-                            value: signal.engine_rpm() as i32,
-                        })
+        Ok(decoded_message) => match decoded_message {
+            wrx_2018::Messages::EngineStatus(signal) => {
+                slint::invoke_from_event_loop(move || {
+                    ui.unwrap().set_engine_rpm(DataParameter {
+                        min_value: wrx_2018::EngineStatus::ENGINE_RPM_MIN as i32,
+                        max_value: wrx_2018::EngineStatus::ENGINE_RPM_MAX as i32,
+                        value: signal.engine_rpm() as i32,
                     })
-                    .unwrap();
-                }
-                _ => {}
+                })
+                .unwrap();
             }
-        }
+            _ => {}
+        },
         _ => {}
     }
 }

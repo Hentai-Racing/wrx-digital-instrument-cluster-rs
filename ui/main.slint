@@ -1,9 +1,9 @@
 import { Button, VerticalBox } from "std-widgets.slint";
 import { GaugeCircle } from "components/instrument_gauge.slint";
-import { DataParameter } from "car_data.slint";
+import { DataParameter } from "core/car_data.slint";
 
 export component AppWindow inherits Window {
-    in property <DataParameter> engine_rpm;
+    in property <DataParameter> engine_rpm: { min_value: 0, max_value: 1, value: 0 };
 
     height: 720px;
     width: 1920px;
