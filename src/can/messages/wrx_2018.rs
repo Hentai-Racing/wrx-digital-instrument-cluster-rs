@@ -7,7 +7,7 @@
 
 //! Message definitions from file `"WRX_2018.dbc"`
 //!
-//! - Version: `Version("0.9.2")`
+//! - Version: `Version("")`
 
 use core::ops::BitOr;
 use bitvec::prelude::*;
@@ -38,8 +38,8 @@ pub enum Messages {
     XxxMsg340(XxxMsg340),
     /// XXXMsg640
     XxxMsg640(XxxMsg640),
-    /// XXXMsg864
-    XxxMsg864(XxxMsg864),
+    /// engine_status_2
+    EngineStatus2(EngineStatus2),
     /// bsd_rcta
     BsdRcta(BsdRcta),
     /// tpms
@@ -58,8 +58,8 @@ pub enum Messages {
     XxxMsg884(XxxMsg884),
     /// XXXMsg885
     XxxMsg885(XxxMsg885),
-    /// XXXMsg886
-    XxxMsg886(XxxMsg886),
+    /// DimmerAndHood
+    DimmerAndHood(DimmerAndHood),
     /// ignition
     Ignition(Ignition),
 }
@@ -80,7 +80,7 @@ impl Messages {
             338 => Messages::StatusSwitches(StatusSwitches::try_from(payload)?),
             340 => Messages::XxxMsg340(XxxMsg340::try_from(payload)?),
             642 => Messages::XxxMsg640(XxxMsg640::try_from(payload)?),
-            864 => Messages::XxxMsg864(XxxMsg864::try_from(payload)?),
+            864 => Messages::EngineStatus2(EngineStatus2::try_from(payload)?),
             604 => Messages::BsdRcta(BsdRcta::try_from(payload)?),
             1883 => Messages::Tpms(Tpms::try_from(payload)?),
             1745 => Messages::Odometer(Odometer::try_from(payload)?),
@@ -90,7 +90,7 @@ impl Messages {
             882 => Messages::SrsStatus(SrsStatus::try_from(payload)?),
             884 => Messages::XxxMsg884(XxxMsg884::try_from(payload)?),
             885 => Messages::XxxMsg885(XxxMsg885::try_from(payload)?),
-            886 => Messages::XxxMsg886(XxxMsg886::try_from(payload)?),
+            886 => Messages::DimmerAndHood(DimmerAndHood::try_from(payload)?),
             644 => Messages::Ignition(Ignition::try_from(payload)?),
             n => return Err(CanError::UnknownMessageId(n)),
         };
@@ -257,14 +257,14 @@ impl EngineStatus {
     /// Get raw value of engine_rpm
     ///
     /// - Start bit: 32
-    /// - Signal size: 12 bits
+    /// - Signal size: 14 bits
     /// - Factor: 1
     /// - Offset: 0
     /// - Byte order: LittleEndian
     /// - Value type: Unsigned
     #[inline(always)]
     pub fn engine_rpm_raw(&self) -> u16 {
-        let signal = self.raw.view_bits::<Lsb0>()[32..44].load_le::<u16>();
+        let signal = self.raw.view_bits::<Lsb0>()[32..46].load_le::<u16>();
         
         signal
     }
@@ -276,7 +276,7 @@ impl EngineStatus {
         if value < 0_u16 || 8191_u16 < value {
             return Err(CanError::ParameterOutOfRange { message_id: 321 });
         }
-        self.raw.view_bits_mut::<Lsb0>()[32..44].store_le(value);
+        self.raw.view_bits_mut::<Lsb0>()[32..46].store_le(value);
         Ok(())
     }
     
@@ -573,7 +573,7 @@ impl XxxMsg209 {
     pub const MESSAGE_ID: u32 = 209;
     
     pub const VEHICLE_SPEED_MIN: f32 = 0_f32;
-    pub const VEHICLE_SPEED_MAX: f32 = 180_f32;
+    pub const VEHICLE_SPEED_MAX: f32 = 290_f32;
     pub const BRAKE_PEDAL_PRESSURE_MIN: f32 = 0_f32;
     pub const BRAKE_PEDAL_PRESSURE_MAX: f32 = 100_f32;
     
@@ -593,7 +593,7 @@ impl XxxMsg209 {
     /// vehicle_speed
     ///
     /// - Min: 0
-    /// - Max: 180
+    /// - Max: 290
     /// - Unit: "KPH"
     /// - Receivers: Vector__XXX
     #[inline(always)]
@@ -622,7 +622,7 @@ impl XxxMsg209 {
     #[inline(always)]
     pub fn set_vehicle_speed(&mut self, value: f32) -> Result<(), CanError> {
         #[cfg(feature = "range_checked")]
-        if value < 0_f32 || 180_f32 < value {
+        if value < 0_f32 || 290_f32 < value {
             return Err(CanError::ParameterOutOfRange { message_id: 209 });
         }
         let factor = 0.05625_f32;
@@ -707,7 +707,7 @@ impl core::fmt::Debug for XxxMsg209 {
 #[cfg(feature = "arb")]
 impl<'a> Arbitrary<'a> for XxxMsg209 {
     fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let vehicle_speed = u.float_in_range(0_f32..=180_f32)?;
+        let vehicle_speed = u.float_in_range(0_f32..=290_f32)?;
         let brake_pedal_pressure = u.float_in_range(0_f32..=100_f32)?;
         XxxMsg209::new(vehicle_speed,brake_pedal_pressure).map_err(|_| arbitrary::Error::IncorrectFormat)
     }
@@ -2071,16 +2071,16 @@ impl<'a> Arbitrary<'a> for XxxMsg640 {
     }
 }
 
-/// XXXMsg864
+/// engine_status_2
 ///
 /// - ID: 864 (0x360)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
-pub struct XxxMsg864 {
+pub struct EngineStatus2 {
     raw: [u8; 8],
 }
 
-impl XxxMsg864 {
+impl EngineStatus2 {
     pub const MESSAGE_ID: u32 = 864;
     
     pub const ENGINE_FUEL_FLOW_MIN: u8 = 0_u8;
@@ -2094,7 +2094,7 @@ impl XxxMsg864 {
     pub const CRUISE_CONTROL_SPEED_MIN: u8 = 0_u8;
     pub const CRUISE_CONTROL_SPEED_MAX: u8 = 255_u8;
     
-    /// Construct new XXXMsg864 from values
+    /// Construct new engine_status_2 from values
     pub fn new(engine_fuel_flow: u8, engine_oil_temp: f32, engine_coolant_temp: f32, engine_boost_pressure: f32, cruise_control_enabled: bool, cruise_control_set_enabled: bool, cruise_control_speed: u8) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_engine_fuel_flow(engine_fuel_flow)?;
@@ -2393,7 +2393,7 @@ impl XxxMsg864 {
     
 }
 
-impl core::convert::TryFrom<&[u8]> for XxxMsg864 {
+impl core::convert::TryFrom<&[u8]> for EngineStatus2 {
     type Error = CanError;
     
     #[inline(always)]
@@ -2406,10 +2406,10 @@ impl core::convert::TryFrom<&[u8]> for XxxMsg864 {
 }
 
 #[cfg(feature = "debug")]
-impl core::fmt::Debug for XxxMsg864 {
+impl core::fmt::Debug for EngineStatus2 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         if f.alternate() {
-            f.debug_struct("XxxMsg864")
+            f.debug_struct("EngineStatus2")
                 .field("engine_fuel_flow", &self.engine_fuel_flow())
                 .field("engine_oil_temp", &self.engine_oil_temp())
                 .field("engine_coolant_temp", &self.engine_coolant_temp())
@@ -2419,13 +2419,13 @@ impl core::fmt::Debug for XxxMsg864 {
                 .field("cruise_control_speed", &self.cruise_control_speed())
             .finish()
         } else {
-            f.debug_tuple("XxxMsg864").field(&self.raw).finish()
+            f.debug_tuple("EngineStatus2").field(&self.raw).finish()
         }
     }
 }
 
 #[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for XxxMsg864 {
+impl<'a> Arbitrary<'a> for EngineStatus2 {
     fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
         let engine_fuel_flow = u.int_in_range(0..=255)?;
         let engine_oil_temp = u.float_in_range(0_f32..=1_f32)?;
@@ -2434,7 +2434,7 @@ impl<'a> Arbitrary<'a> for XxxMsg864 {
         let cruise_control_enabled = u.int_in_range(0..=1)? == 1;
         let cruise_control_set_enabled = u.int_in_range(0..=1)? == 1;
         let cruise_control_speed = u.int_in_range(0..=255)?;
-        XxxMsg864::new(engine_fuel_flow,engine_oil_temp,engine_coolant_temp,engine_boost_pressure,cruise_control_enabled,cruise_control_set_enabled,cruise_control_speed).map_err(|_| arbitrary::Error::IncorrectFormat)
+        EngineStatus2::new(engine_fuel_flow,engine_oil_temp,engine_coolant_temp,engine_boost_pressure,cruise_control_enabled,cruise_control_set_enabled,cruise_control_speed).map_err(|_| arbitrary::Error::IncorrectFormat)
     }
 }
 
@@ -4113,22 +4113,22 @@ impl<'a> Arbitrary<'a> for XxxMsg885 {
     }
 }
 
-/// XXXMsg886
+/// DimmerAndHood
 ///
 /// - ID: 886 (0x376)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
-pub struct XxxMsg886 {
+pub struct DimmerAndHood {
     raw: [u8; 8],
 }
 
-impl XxxMsg886 {
+impl DimmerAndHood {
     pub const MESSAGE_ID: u32 = 886;
     
     pub const DIMMER_DIAL_VALUE_MIN: u8 = 0_u8;
     pub const DIMMER_DIAL_VALUE_MAX: u8 = 250_u8;
     
-    /// Construct new XXXMsg886 from values
+    /// Construct new DimmerAndHood from values
     pub fn new(dimmer_dial_value: u8, hood_closed: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_dimmer_dial_value(dimmer_dial_value)?;
@@ -4148,17 +4148,17 @@ impl XxxMsg886 {
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn dimmer_dial_value(&self) -> XxxMsg886DimmerDialValue {
+    pub fn dimmer_dial_value(&self) -> DimmerAndHoodDimmerDialValue {
         let signal = self.raw.view_bits::<Lsb0>()[0..8].load_le::<u8>();
         
         match signal {
-            0 => XxxMsg886DimmerDialValue::X0,
-            33 => XxxMsg886DimmerDialValue::X1,
-            82 => XxxMsg886DimmerDialValue::X2,
-            125 => XxxMsg886DimmerDialValue::X3,
-            173 => XxxMsg886DimmerDialValue::X4,
-            250 => XxxMsg886DimmerDialValue::X5,
-            _ => XxxMsg886DimmerDialValue::_Other(self.dimmer_dial_value_raw()),
+            0 => DimmerAndHoodDimmerDialValue::X0,
+            33 => DimmerAndHoodDimmerDialValue::X1,
+            82 => DimmerAndHoodDimmerDialValue::X2,
+            125 => DimmerAndHoodDimmerDialValue::X3,
+            173 => DimmerAndHoodDimmerDialValue::X4,
+            250 => DimmerAndHoodDimmerDialValue::X5,
+            _ => DimmerAndHoodDimmerDialValue::_Other(self.dimmer_dial_value_raw()),
         }
     }
     
@@ -4224,7 +4224,7 @@ impl XxxMsg886 {
     
 }
 
-impl core::convert::TryFrom<&[u8]> for XxxMsg886 {
+impl core::convert::TryFrom<&[u8]> for DimmerAndHood {
     type Error = CanError;
     
     #[inline(always)]
@@ -4237,31 +4237,31 @@ impl core::convert::TryFrom<&[u8]> for XxxMsg886 {
 }
 
 #[cfg(feature = "debug")]
-impl core::fmt::Debug for XxxMsg886 {
+impl core::fmt::Debug for DimmerAndHood {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         if f.alternate() {
-            f.debug_struct("XxxMsg886")
+            f.debug_struct("DimmerAndHood")
                 .field("dimmer_dial_value", &self.dimmer_dial_value())
                 .field("hood_closed", &self.hood_closed())
             .finish()
         } else {
-            f.debug_tuple("XxxMsg886").field(&self.raw).finish()
+            f.debug_tuple("DimmerAndHood").field(&self.raw).finish()
         }
     }
 }
 
 #[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for XxxMsg886 {
+impl<'a> Arbitrary<'a> for DimmerAndHood {
     fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
         let dimmer_dial_value = u.int_in_range(0..=250)?;
         let hood_closed = u.int_in_range(0..=1)? == 1;
-        XxxMsg886::new(dimmer_dial_value,hood_closed).map_err(|_| arbitrary::Error::IncorrectFormat)
+        DimmerAndHood::new(dimmer_dial_value,hood_closed).map_err(|_| arbitrary::Error::IncorrectFormat)
     }
 }
 /// Defined values for dimmer_dial_value
 #[derive(Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "debug", derive(Debug))]
-pub enum XxxMsg886DimmerDialValue {
+pub enum DimmerAndHoodDimmerDialValue {
     X0,
     X1,
     X2,
@@ -4271,16 +4271,16 @@ pub enum XxxMsg886DimmerDialValue {
     _Other(u8),
 }
 
-impl From<XxxMsg886DimmerDialValue> for u8 {
-    fn from(val: XxxMsg886DimmerDialValue) -> u8 {
+impl From<DimmerAndHoodDimmerDialValue> for u8 {
+    fn from(val: DimmerAndHoodDimmerDialValue) -> u8 {
         match val {
-            XxxMsg886DimmerDialValue::X0 => 0,
-            XxxMsg886DimmerDialValue::X1 => 33,
-            XxxMsg886DimmerDialValue::X2 => 82,
-            XxxMsg886DimmerDialValue::X3 => 125,
-            XxxMsg886DimmerDialValue::X4 => 173,
-            XxxMsg886DimmerDialValue::X5 => 250,
-            XxxMsg886DimmerDialValue::_Other(x) => x,
+            DimmerAndHoodDimmerDialValue::X0 => 0,
+            DimmerAndHoodDimmerDialValue::X1 => 33,
+            DimmerAndHoodDimmerDialValue::X2 => 82,
+            DimmerAndHoodDimmerDialValue::X3 => 125,
+            DimmerAndHoodDimmerDialValue::X4 => 173,
+            DimmerAndHoodDimmerDialValue::X5 => 250,
+            DimmerAndHoodDimmerDialValue::_Other(x) => x,
         }
     }
 }

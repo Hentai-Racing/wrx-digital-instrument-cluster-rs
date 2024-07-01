@@ -34,7 +34,7 @@ fn main() {
                 .replace(".", "_")
                 .replace("-", "_")
                 .to_lowercase();
-            let out_path = out_file_dir.join(format!("{}.rs", stem));
+            let out_path = out_file_dir.join(format!("{stem}.rs"));
             let file = File::create(out_path).unwrap();
 
             let mut dbc_gen_writer = BufWriter::new(file);
@@ -46,7 +46,7 @@ fn main() {
             dbc_codegen::codegen(dbc_name, &dbc_file, &mut dbc_gen_writer, false).unwrap();
 
             mod_writter
-                .write(format!("pub mod {stem};\n",).as_bytes())
+                .write(format!("pub mod {stem};\n").as_bytes())
                 .unwrap();
         }
     }

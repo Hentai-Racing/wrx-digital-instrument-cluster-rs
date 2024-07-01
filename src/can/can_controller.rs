@@ -1,7 +1,4 @@
-extern crate socketcan;
-
-use socketcan::{CanFrame, CanSocket, Socket};
-use std::time::Duration;
+use socketcan::{CanSocket, Socket};
 
 pub struct CanController {
     socket: CanSocket,
@@ -10,6 +7,7 @@ pub struct CanController {
 impl CanController {
     pub fn new(iface: &str) -> Result<CanController, Box<dyn std::error::Error>> {
         let socket = CanSocket::open(iface)?;
+        // socket.set_nonblocking(true)?;
         Ok(CanController { socket })
     }
 
@@ -18,16 +16,12 @@ impl CanController {
         Ok(frame)
     }
 
-    pub fn write_frame(&mut self, frame: CanFrame) -> Result<(), Box<dyn std::error::Error>> {
-        self.socket.write_frame(&frame)?;
-        Ok(())
-    }
-
-    pub fn set_read_timeout(
+    pub fn set_timeout(
         &mut self,
-        duration: Duration,
+        timeout: std::time::Duration,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        self.socket.set_read_timeout(duration)?;
+        self.socket.set_read_timeout(timeout)?;
+        self.socket.set_write_timeout(timeout)?;
         Ok(())
     }
 }

@@ -1,36 +1,134 @@
-component GaugeCircleBackground inherits Path {
+import { LineEdit } from "std-widgets.slint";
+export component GaugeArc inherits Path {
+    in property <float> inner_radius: 0;
+    in property <float> progress: 0;
+    in property <float> start: 0;
+    in property <float> range: 1;
+
+    property <float> scaled_progress: root.progress * root.range;
+
+    viewbox-width: 100;
+    viewbox-height: 100;
+
     MoveTo {
-        x: 0;
-        y: 50;
+        y: root.viewbox-width / 2 - root.viewbox-width / 2 * cos(-root.start * 360deg);
+        x: root.viewbox-height / 2 - root.viewbox-height / 2 * sin(-root.start * 360deg);
+    }
+
+    LineTo {
+        y: root.viewbox-width / 2 - root.inner_radius * cos(-root.start * 360deg);
+        x: root.viewbox-height / 2 - root.inner_radius * sin(-root.start * 360deg);
     }
 
     ArcTo {
-        x: 100;
-        y: 50;
-        radius-x: 50;
-        radius-y: 50;
-        sweep: true;
+        radius-x: root.inner_radius;
+        radius-y: root.inner_radius;
+        y: root.viewbox-width / 2 - root.inner_radius * cos(-(root.start + scaled_progress) * 360deg);
+        x: root.viewbox-height / 2 - root.inner_radius * sin(-(root.start + scaled_progress) * 360deg);
+        sweep: scaled_progress > 0;
+        large-arc: scaled_progress > 0.5;
+    }
+
+    LineTo {
+        y: root.viewbox-width / 2 - root.viewbox-width / 2 * cos(-(root.start + scaled_progress) * 360deg);
+        x: root.viewbox-height / 2 - root.viewbox-height / 2 * sin(-(root.start + scaled_progress) * 360deg);
     }
 
     ArcTo {
-        x: 50;
-        y: 100;
-        radius-x: 50;
-        radius-y: 50;
-        sweep: true;
+        radius-x: root.viewbox-width / 2;
+        radius-y: root.viewbox-height / 2;
+        y: root.viewbox-width / 2 - root.viewbox-width / 2 * cos(-root.start * 360deg);
+        x: root.viewbox-height / 2 - root.viewbox-height / 2 * sin(-root.start * 360deg);
+        sweep: scaled_progress < 0;
+        large-arc: scaled_progress > 0.5;
+    }
+
+    LineTo {
+        y: root.viewbox-width / 2 - root.viewbox-width / 2 * cos(-root.start * 360deg);
+        x: root.viewbox-width / 2 - root.viewbox-width / 2 * sin(-root.start * 360deg);
     }
 }
 
-export component GaugeCircle inherits Rectangle {
-    in property <float> progress;
+component GaugeDisplay inherits Rectangle {
+    in property <brush> fill_brush;
+    in property <brush> background_brush: #aaaaaa1f;
+    in property <float> background_inner_radius: 0;
+    in property <float> inner_radius: 0;
+    in property <float> progress: 0;
+    in property <float> start: 0;
+    in property <float> range: 0;
 
-    clip: true;
-    background: transparent;
-
-    Edge := GaugeCircleBackground {
+    gauge-background := GaugeArc {
+        fill: root.background_brush;
         width: 100%;
         height: 100%;
-        stroke: red;
-        stroke-width: 2px;
+        inner_radius: background_inner_radius;
+        start: root.start;
+        range: root.range;
+        progress: 100%;
+
+        viewbox-width: parent.width / 1px;
+        viewbox-height: parent.height / 1px;
+    }
+
+    gauge-fill := GaugeArc {
+        fill: root.fill_brush;
+        width: 100%;
+        height: 100%;
+        inner_radius: root.inner_radius;
+        range: root.range;
+        progress: root.progress;
+        start: root.start;
+
+        viewbox-width: parent.width / 1px;
+        viewbox-height: parent.height / 1px;
+    }
+
+    // needle := Path {
+    //     width: 100%;
+    //     height: 100%;
+
+    //     fill: white;
+    //     stroke-width: 1px;
+    //     stroke: #929cb2;
+
+    //     viewbox-width: 100;
+    //     viewbox-height: 100;
+
+    //     MoveTo {
+    //         x: 50 + (50 + root.thickness / 4) * cos(root.angle);
+    //         y: 50 + (50 + root.thickness / 4) * sin(root.angle);
+    //     }
+
+    //     ArcTo {
+    //         radius-x: root.thickness / 4;
+    //         radius-y: root.thickness / 4;
+    //         x: 50 + (50 - root.thickness * 1.25) * cos(root.angle);
+    //         y: 50 + (50 - root.thickness * 1.25) * sin(root.angle);
+    //     }
+
+    //     ArcTo {
+    //         radius-x: root.thickness / 4;
+    //         radius-y: root.thickness / 4;
+    //         x: 50 + (50 + root.thickness * 0.25) * cos(root.angle);
+    //         y: 50 + (50 + root.thickness * 0.25) * sin(root.angle);
+    //     }
+    // }
+}
+
+export component InstrumentGauge inherits Rectangle {
+    in property <float> start <=> gauge-display.start;
+    in property <float> range <=> gauge-display.range;
+    in property <float> background_inner_radius: 100;
+    in property <float> inner_radius: 100;
+    in property <float> progress: 0;
+
+    gauge-display := GaugeDisplay {
+        background_brush: #ffffff;
+        fill_brush: #ffffff5f;
+        // fill_brush: @linear-gradient(0deg, #ffffff, #ffffff);
+        background_inner_radius: root.background_inner_radius;
+        inner_radius: root.inner_radius;
+        progress: root.progress;
     }
 }
