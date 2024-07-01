@@ -12,7 +12,6 @@ license = "GPL-3.0"
 slint = "1.6"
 bitvec = "1.0.1"
 socketcan = "3.3.0"
-anyhow = "1.0.81"
 rand = "0.8.5"
 
 [build-dependencies]
