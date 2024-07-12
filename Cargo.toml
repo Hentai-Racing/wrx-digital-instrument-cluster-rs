@@ -1,5 +1,7 @@
 [package]
 name = "wrx-digital-instrument-cluster-rs"
+description = "A digital instrument cluster for the 2018 Subaru WRX"
+repository = "https://github.com/Hentai-Racing/wrx-digital-instrument-cluster-rs"
 version = "0.0.1"
 authors = ["Bryce Happel Walton <brycewaltonmail@gmail.com>"]
 edition = "2021"
@@ -15,5 +17,5 @@ socketcan = "3.3.0"
 rand = "0.8.5"
 
 [build-dependencies]
-slint-build = "1.4"
+slint-build = "1.6"
 dbc-codegen = "0.3.0"
