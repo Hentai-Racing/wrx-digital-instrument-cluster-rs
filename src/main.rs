@@ -2,20 +2,18 @@ slint::include_modules!();
 
 mod can;
 mod unit_conversion;
-
+use crate::can::can_controller::CanController;
+use crate::can::messages::wrx_2018;
+use crate::can::virtual_can_generator::handle_virtual_can;
+use slint::{ComponentHandle, Weak};
+use socketcan::{CanFrame, CanInterface};
+use std::string::ToString;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
+use unit_conversion::Units;
 
-use can::can_controller::CanController;
-use can::messages::wrx_2018;
-use unit_conversion::{PressureUnits, UnitHandler, Units};
-
-use rand::Rng;
-use slint::{ComponentHandle, Weak};
-use socketcan::{CanDataFrame, CanFrame, CanInterface, CanSocket, Frame, Socket};
-
-use std::string::ToString;
+const IMPL_SAVE_STATE: bool = false; // todo: implement save state
 
 fn main() -> Result<(), slint::PlatformError> {
     let ui = AppWindow::new()?;
@@ -29,6 +27,8 @@ fn main() -> Result<(), slint::PlatformError> {
     let mut in_use_can_if_name: Option<&str> = None;
 
     let running = Arc::new(AtomicBool::new(true));
+
+    let loaded_save_state = IMPL_SAVE_STATE;
 
     match std::env::var("HR_CLUSTER_VIRTUAL") {
         Ok(val) => virtual_cluster = val == "1",
@@ -62,6 +62,15 @@ fn main() -> Result<(), slint::PlatformError> {
         }
     }
 
+    if loaded_save_state {
+        todo!();
+    } else {
+        ui_weak
+            .unwrap()
+            .global::<CarData>()
+            .set_units(Units::USCS.into());
+    }
+
     if let Some(in_use_can_if_name) = in_use_can_if_name {
         let mut socket_up = false;
 
@@ -70,12 +79,12 @@ fn main() -> Result<(), slint::PlatformError> {
                 Ok(details) => {
                     if details.is_up {
                         socket_up = true;
-                        println!("CAN interface {in_use_can_if_name} is already up. Continuing...")
+                        println!("CAN interface {in_use_can_if_name} is already up. Continuing...");
                     } else {
                         match can_interface.bring_up() {
                             Ok(_) => {
                                 socket_up = true;
-                                println!("Brought up CAN interface {in_use_can_if_name}")
+                                println!("Brought up CAN interface {in_use_can_if_name}");
                             }
                             _ => eprintln!("Failed to bring up CAN interface {in_use_can_if_name}"),
                         }
@@ -91,7 +100,6 @@ fn main() -> Result<(), slint::PlatformError> {
             controller
                 .set_timeout(std::time::Duration::from_millis(100))
                 .unwrap();
-            // let unit_handler = UnitHandler::new(Units::SI, Units::UCS);
 
             let running_clone = running.clone();
 
@@ -115,6 +123,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 match handle_virtual_can(vcan_if_name, running.clone()) {
                     Ok(handle) => {
                         virtual_handler_thread = Some(handle);
+                        println!("Started virtual CAN handler");
                     }
                     Err(e) => eprintln!("{e:?}"),
                 }
@@ -148,13 +157,8 @@ fn main() -> Result<(), slint::PlatformError> {
     Ok(())
 }
 
-fn parse_can_frame(ui: Weak<AppWindow>, frame: CanDataFrame) {
-    let frame_ref = frame.as_ref();
-
-    let id = frame_ref.can_id;
-    let payload = frame_ref.data;
-
-    match wrx_2018::Messages::from_can_message(id, &payload[..frame_ref.can_dlc.into()]) {
+fn parse_can_frame(ui: Weak<AppWindow>, frame: impl embedded_can::Frame) {
+    match wrx_2018::Messages::from_can_message(frame.id(), frame.data()) {
         Ok(decoded_message) => match decoded_message {
             wrx_2018::Messages::EngineStatus(signal) => {
                 slint::invoke_from_event_loop(move || {
@@ -219,85 +223,6 @@ fn parse_can_frame(ui: Weak<AppWindow>, frame: CanDataFrame) {
     }
 }
 
-fn handle_virtual_can(
-    vcan_if_name: &str,
-    running: Arc<AtomicBool>,
-) -> Result<std::thread::JoinHandle<()>, ()> {
-    let socket = CanSocket::open(vcan_if_name);
-    match socket {
-        Ok(socket) => Ok(thread::spawn(move || {
-            while running.load(Ordering::SeqCst) {
-                let rpm = rand::thread_rng().gen_range(
-                    wrx_2018::EngineStatus::ENGINE_RPM_MIN..=wrx_2018::EngineStatus::ENGINE_RPM_MAX,
-                );
-                let mt_gear = rand::thread_rng().gen_range(
-                    wrx_2018::EngineStatus::MT_GEAR_MIN..=wrx_2018::EngineStatus::MT_GEAR_MAX,
-                );
-
-                match wrx_2018::EngineStatus::new(0, true, 0, rpm, mt_gear) {
-                    Ok(dbc_frame) => {
-                        let message_id = wrx_2018::EngineStatus::MESSAGE_ID;
-                        let frame = CanDataFrame::from_raw_id(message_id, dbc_frame.raw());
-                        if let Some(frame) = frame {
-                            socket.write_frame::<CanDataFrame>(&frame).unwrap();
-                        }
-                    }
-                    _ => {}
-                };
-
-                let speed = rand::thread_rng().gen_range(
-                    wrx_2018::XxxMsg209::VEHICLE_SPEED_MIN..wrx_2018::XxxMsg209::VEHICLE_SPEED_MAX,
-                );
-                match wrx_2018::XxxMsg209::new(speed, 0.0) {
-                    Ok(dbc_frame) => {
-                        let message_id = wrx_2018::XxxMsg209::MESSAGE_ID;
-                        let frame = CanDataFrame::from_raw_id(message_id, dbc_frame.raw());
-                        if let Some(frame) = frame {
-                            socket.write_frame::<CanDataFrame>(&frame).unwrap();
-                        }
-                    }
-                    _ => {}
-                };
-
-                let odometer = rand::thread_rng()
-                    .gen_range(wrx_2018::Odometer::ODOMETER_MIN..wrx_2018::Odometer::ODOMETER_MAX);
-                match wrx_2018::Odometer::new(odometer) {
-                    Ok(dbc_frame) => {
-                        let message_id = wrx_2018::Odometer::MESSAGE_ID;
-                        let frame = CanDataFrame::from_raw_id(message_id, dbc_frame.raw());
-                        if let Some(frame) = frame {
-                            socket.write_frame::<CanDataFrame>(&frame).unwrap();
-                        }
-                    }
-                    _ => {}
-                };
-
-                let lowbeams_enabled = rand::random::<bool>();
-                match wrx_2018::StatusSwitches::new(
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    lowbeams_enabled,
-                    false,
-                    false,
-                ) {
-                    Ok(dbc_frame) => {
-                        let message_id = wrx_2018::StatusSwitches::MESSAGE_ID;
-                        let frame = CanDataFrame::from_raw_id(message_id, dbc_frame.raw());
-                        if let Some(frame) = frame {
-                            socket.write_frame::<CanDataFrame>(&frame).unwrap();
-                        }
-                    }
-                    _ => {}
-                };
-            }
-        })),
-        _ => Err(eprintln!("Failed to run virtual interface {vcan_if_name}")),
-    }
-}
-
 impl ToString for wrx_2018::EngineStatusMtGear {
     fn to_string(&self) -> String {
         match self {
@@ -310,6 +235,25 @@ impl ToString for wrx_2018::EngineStatusMtGear {
             wrx_2018::EngineStatusMtGear::X5 => "5".to_string(),
             wrx_2018::EngineStatusMtGear::X6 => "6".to_string(),
             _ => "?ERR_MT_GEAR".to_string(),
+        }
+    }
+}
+
+// implement these here because Slint is included here
+impl Into<SUnits> for Units {
+    fn into(self) -> SUnits {
+        match self {
+            Units::SI => SUnits::SI,
+            Units::USCS => SUnits::USCS,
+        }
+    }
+}
+
+impl From<SUnits> for Units {
+    fn from(units: SUnits) -> Self {
+        match units {
+            SUnits::SI => Units::SI,
+            SUnits::USCS => Units::USCS,
         }
     }
 }

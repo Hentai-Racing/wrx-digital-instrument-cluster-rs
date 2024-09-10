@@ -2,7 +2,7 @@
 name = "wrx-digital-instrument-cluster-rs"
 description = "A digital instrument cluster for the 2018 Subaru WRX"
 repository = "https://github.com/Hentai-Racing/wrx-digital-instrument-cluster-rs"
-version = "0.0.1"
+version = "0.1.0"
 authors = ["Bryce Happel Walton <brycewaltonmail@gmail.com>"]
 edition = "2021"
 build = "build.rs"
@@ -11,11 +11,12 @@ license = "GPL-3.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-slint = "1.6"
-bitvec = "1.0.1"
-socketcan = "3.3.0"
-rand = "0.8.5"
+slint = "*"
+bitvec = "*"
+socketcan = "*"
+embedded-can = "*"
+rand = "*"
 
 [build-dependencies]
-slint-build = "1.6"
-dbc-codegen = "0.3.0"
+slint-build = "*"
+dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }

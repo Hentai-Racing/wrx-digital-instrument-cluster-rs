@@ -1,8 +1,9 @@
-#![allow(dead_code, unused)]
 // Generated code!
-#![allow(unused_comparisons, unreachable_patterns)]
+#![allow(unused_comparisons, unreachable_patterns, unused_imports)]
+#![allow(dead_code)]
 #![allow(clippy::let_and_return, clippy::eq_op)]
-#![allow(clippy::excessive_precision, clippy::manual_range_contains, clippy::absurd_extreme_comparisons)]
+#![allow(clippy::useless_conversion, clippy::unnecessary_cast)]
+#![allow(clippy::excessive_precision, clippy::manual_range_contains, clippy::absurd_extreme_comparisons, clippy::too_many_arguments)]
 #![deny(clippy::arithmetic_side_effects)]
 
 //! Message definitions from file `"WRX_2018.dbc"`
@@ -11,12 +12,10 @@
 
 use core::ops::BitOr;
 use bitvec::prelude::*;
-#[cfg(feature = "arb")]
-use arbitrary::{Arbitrary, Unstructured};
+use socketcan::embedded_can::{Id, StandardId, ExtendedId};
 
 /// All messages
 #[derive(Clone)]
-#[cfg_attr(feature = "debug", derive(Debug))]
 pub enum Messages {
     /// engine_status
     EngineStatus(EngineStatus),
@@ -67,32 +66,32 @@ pub enum Messages {
 impl Messages {
     /// Read message from CAN frame
     #[inline(never)]
-    pub fn from_can_message(id: u32, payload: &[u8]) -> Result<Self, CanError> {
+    pub fn from_can_message(id: Id, payload: &[u8]) -> Result<Self, CanError> {
         
         let res = match id {
-            321 => Messages::EngineStatus(EngineStatus::try_from(payload)?),
-            208 => Messages::GSensor(GSensor::try_from(payload)?),
-            209 => Messages::XxxMsg209(XxxMsg209::try_from(payload)?),
-            328 => Messages::Transmission(Transmission::try_from(payload)?),
-            320 => Messages::MotorControl(MotorControl::try_from(payload)?),
-            282 => Messages::Steering(Steering::try_from(payload)?),
-            211 => Messages::DriverRoadAssists(DriverRoadAssists::try_from(payload)?),
-            338 => Messages::StatusSwitches(StatusSwitches::try_from(payload)?),
-            340 => Messages::XxxMsg340(XxxMsg340::try_from(payload)?),
-            642 => Messages::XxxMsg640(XxxMsg640::try_from(payload)?),
-            864 => Messages::EngineStatus2(EngineStatus2::try_from(payload)?),
-            604 => Messages::BsdRcta(BsdRcta::try_from(payload)?),
-            1883 => Messages::Tpms(Tpms::try_from(payload)?),
-            1745 => Messages::Odometer(Odometer::try_from(payload)?),
-            977 => Messages::DashState2Verify(DashState2Verify::try_from(payload)?),
-            212 => Messages::WheelSpeeds(WheelSpeeds::try_from(payload)?),
-            865 => Messages::EngineWarningLights(EngineWarningLights::try_from(payload)?),
-            882 => Messages::SrsStatus(SrsStatus::try_from(payload)?),
-            884 => Messages::XxxMsg884(XxxMsg884::try_from(payload)?),
-            885 => Messages::XxxMsg885(XxxMsg885::try_from(payload)?),
-            886 => Messages::DimmerAndHood(DimmerAndHood::try_from(payload)?),
-            644 => Messages::Ignition(Ignition::try_from(payload)?),
-            n => return Err(CanError::UnknownMessageId(n)),
+            EngineStatus::MESSAGE_ID => Messages::EngineStatus(EngineStatus::try_from(payload)?),
+            GSensor::MESSAGE_ID => Messages::GSensor(GSensor::try_from(payload)?),
+            XxxMsg209::MESSAGE_ID => Messages::XxxMsg209(XxxMsg209::try_from(payload)?),
+            Transmission::MESSAGE_ID => Messages::Transmission(Transmission::try_from(payload)?),
+            MotorControl::MESSAGE_ID => Messages::MotorControl(MotorControl::try_from(payload)?),
+            Steering::MESSAGE_ID => Messages::Steering(Steering::try_from(payload)?),
+            DriverRoadAssists::MESSAGE_ID => Messages::DriverRoadAssists(DriverRoadAssists::try_from(payload)?),
+            StatusSwitches::MESSAGE_ID => Messages::StatusSwitches(StatusSwitches::try_from(payload)?),
+            XxxMsg340::MESSAGE_ID => Messages::XxxMsg340(XxxMsg340::try_from(payload)?),
+            XxxMsg640::MESSAGE_ID => Messages::XxxMsg640(XxxMsg640::try_from(payload)?),
+            EngineStatus2::MESSAGE_ID => Messages::EngineStatus2(EngineStatus2::try_from(payload)?),
+            BsdRcta::MESSAGE_ID => Messages::BsdRcta(BsdRcta::try_from(payload)?),
+            Tpms::MESSAGE_ID => Messages::Tpms(Tpms::try_from(payload)?),
+            Odometer::MESSAGE_ID => Messages::Odometer(Odometer::try_from(payload)?),
+            DashState2Verify::MESSAGE_ID => Messages::DashState2Verify(DashState2Verify::try_from(payload)?),
+            WheelSpeeds::MESSAGE_ID => Messages::WheelSpeeds(WheelSpeeds::try_from(payload)?),
+            EngineWarningLights::MESSAGE_ID => Messages::EngineWarningLights(EngineWarningLights::try_from(payload)?),
+            SrsStatus::MESSAGE_ID => Messages::SrsStatus(SrsStatus::try_from(payload)?),
+            XxxMsg884::MESSAGE_ID => Messages::XxxMsg884(XxxMsg884::try_from(payload)?),
+            XxxMsg885::MESSAGE_ID => Messages::XxxMsg885(XxxMsg885::try_from(payload)?),
+            DimmerAndHood::MESSAGE_ID => Messages::DimmerAndHood(DimmerAndHood::try_from(payload)?),
+            Ignition::MESSAGE_ID => Messages::Ignition(Ignition::try_from(payload)?),
+            id => return Err(CanError::UnknownMessageId(id)),
         };
         Ok(res)
     }
@@ -100,7 +99,7 @@ impl Messages {
 
 /// engine_status
 ///
-/// - ID: 321 (0x141)
+/// - Standard ID: 321 (0x141)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct EngineStatus {
@@ -108,7 +107,7 @@ pub struct EngineStatus {
 }
 
 impl EngineStatus {
-    pub const MESSAGE_ID: u32 = 321;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x141)});
     
     pub const ENGINE_TORQUE_MIN: u16 = 0_u16;
     pub const ENGINE_TORQUE_MAX: u16 = 255_u16;
@@ -158,16 +157,21 @@ impl EngineStatus {
     pub fn engine_torque_raw(&self) -> u16 {
         let signal = self.raw.view_bits::<Lsb0>()[0..15].load_le::<u16>();
         
-        signal
+        let factor = 1;
+        u16::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of engine_torque
     #[inline(always)]
     pub fn set_engine_torque(&mut self, value: u16) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u16 || 255_u16 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 321 });
+            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus::MESSAGE_ID })?;
+        let value = (value / factor) as u16;
+        
         self.raw.view_bits_mut::<Lsb0>()[0..15].store_le(value);
         Ok(())
     }
@@ -229,16 +233,21 @@ impl EngineStatus {
     pub fn wheel_torque_raw(&self) -> u16 {
         let signal = self.raw.view_bits::<Lsb0>()[16..28].load_le::<u16>();
         
-        signal
+        let factor = 1;
+        u16::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of wheel_torque
     #[inline(always)]
     pub fn set_wheel_torque(&mut self, value: u16) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u16 || 4095_u16 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 321 });
+            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus::MESSAGE_ID })?;
+        let value = (value / factor) as u16;
+        
         self.raw.view_bits_mut::<Lsb0>()[16..28].store_le(value);
         Ok(())
     }
@@ -266,16 +275,21 @@ impl EngineStatus {
     pub fn engine_rpm_raw(&self) -> u16 {
         let signal = self.raw.view_bits::<Lsb0>()[32..46].load_le::<u16>();
         
-        signal
+        let factor = 1;
+        u16::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of engine_rpm
     #[inline(always)]
     pub fn set_engine_rpm(&mut self, value: u16) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u16 || 8191_u16 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 321 });
+            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus::MESSAGE_ID })?;
+        let value = (value / factor) as u16;
+        
         self.raw.view_bits_mut::<Lsb0>()[32..46].store_le(value);
         Ok(())
     }
@@ -315,16 +329,21 @@ impl EngineStatus {
     pub fn mt_gear_raw(&self) -> u8 {
         let signal = self.raw.view_bits::<Lsb0>()[48..52].load_le::<u8>();
         
-        signal
+        let factor = 1;
+        u8::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of mt_gear
     #[inline(always)]
     pub fn set_mt_gear(&mut self, value: u8) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u8 || 7_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 321 });
+            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus::MESSAGE_ID })?;
+        let value = (value / factor) as u8;
+        
         self.raw.view_bits_mut::<Lsb0>()[48..52].store_le(value);
         Ok(())
     }
@@ -343,37 +362,44 @@ impl core::convert::TryFrom<&[u8]> for EngineStatus {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for EngineStatus {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("EngineStatus")
-                .field("engine_torque", &self.engine_torque())
-                .field("engine_stop", &self.engine_stop())
-                .field("wheel_torque", &self.wheel_torque())
-                .field("engine_rpm", &self.engine_rpm())
-                .field("mt_gear", &self.mt_gear())
-            .finish()
+impl embedded_can::Frame for EngineStatus {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("EngineStatus").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for EngineStatus {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let engine_torque = u.int_in_range(0..=255)?;
-        let engine_stop = u.int_in_range(0..=1)? == 1;
-        let wheel_torque = u.int_in_range(0..=4095)?;
-        let engine_rpm = u.int_in_range(0..=8191)?;
-        let mt_gear = u.int_in_range(0..=7)?;
-        EngineStatus::new(engine_torque,engine_stop,wheel_torque,engine_rpm,mt_gear).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 /// Defined values for mt_gear
 #[derive(Clone, Copy, PartialEq)]
-#[cfg_attr(feature = "debug", derive(Debug))]
 pub enum EngineStatusMtGear {
     Floating,
     X1,
@@ -405,7 +431,7 @@ impl From<EngineStatusMtGear> for u8 {
 
 /// g_sensor
 ///
-/// - ID: 208 (0xd0)
+/// - Standard ID: 208 (0xd0)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct GSensor {
@@ -413,7 +439,7 @@ pub struct GSensor {
 }
 
 impl GSensor {
-    pub const MESSAGE_ID: u32 = 208;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0xd0)});
     
     pub const G_SENSOR_LATERAL_MIN: f32 = -255_f32;
     pub const G_SENSOR_LATERAL_MAX: f32 = 255_f32;
@@ -454,9 +480,8 @@ impl GSensor {
     /// - Value type: Signed
     #[inline(always)]
     pub fn g_sensor_lateral_raw(&self) -> f32 {
-        let signal = self.raw.view_bits::<Lsb0>()[16..32].load_le::<u16>();
+        let signal = self.raw.view_bits::<Lsb0>()[16..32].load_le::<i16>();
         
-        let signal  = i16::from_ne_bytes(signal.to_ne_bytes());
         let factor = -0.0035_f32;
         let offset = 1_f32;
         (signal as f32) * factor + offset
@@ -465,9 +490,8 @@ impl GSensor {
     /// Set value of g_sensor_lateral
     #[inline(always)]
     pub fn set_g_sensor_lateral(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < -255_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 208 });
+            return Err(CanError::ParameterOutOfRange { message_id: GSensor::MESSAGE_ID });
         }
         let factor = -0.0035_f32;
         let offset = 1_f32;
@@ -499,9 +523,8 @@ impl GSensor {
     /// - Value type: Signed
     #[inline(always)]
     pub fn g_sensor_longitudinal_raw(&self) -> f32 {
-        let signal = self.raw.view_bits::<Lsb0>()[48..64].load_le::<u16>();
+        let signal = self.raw.view_bits::<Lsb0>()[48..64].load_le::<i16>();
         
-        let signal  = i16::from_ne_bytes(signal.to_ne_bytes());
         let factor = -0.0035_f32;
         let offset = 1_f32;
         (signal as f32) * factor + offset
@@ -510,9 +533,8 @@ impl GSensor {
     /// Set value of g_sensor_longitudinal
     #[inline(always)]
     pub fn set_g_sensor_longitudinal(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < -255_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 208 });
+            return Err(CanError::ParameterOutOfRange { message_id: GSensor::MESSAGE_ID });
         }
         let factor = -0.0035_f32;
         let offset = 1_f32;
@@ -537,32 +559,46 @@ impl core::convert::TryFrom<&[u8]> for GSensor {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for GSensor {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("GSensor")
-                .field("g_sensor_lateral", &self.g_sensor_lateral())
-                .field("g_sensor_longitudinal", &self.g_sensor_longitudinal())
-            .finish()
+impl embedded_can::Frame for GSensor {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("GSensor").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for GSensor {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let g_sensor_lateral = u.float_in_range(-255_f32..=255_f32)?;
-        let g_sensor_longitudinal = u.float_in_range(-255_f32..=255_f32)?;
-        GSensor::new(g_sensor_lateral,g_sensor_longitudinal).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// XXXMsg209
 ///
-/// - ID: 209 (0xd1)
+/// - Standard ID: 209 (0xd1)
 /// - Size: 4 bytes
 #[derive(Clone, Copy)]
 pub struct XxxMsg209 {
@@ -570,7 +606,7 @@ pub struct XxxMsg209 {
 }
 
 impl XxxMsg209 {
-    pub const MESSAGE_ID: u32 = 209;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0xd1)});
     
     pub const VEHICLE_SPEED_MIN: f32 = 0_f32;
     pub const VEHICLE_SPEED_MAX: f32 = 290_f32;
@@ -621,9 +657,8 @@ impl XxxMsg209 {
     /// Set value of vehicle_speed
     #[inline(always)]
     pub fn set_vehicle_speed(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_f32 || 290_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 209 });
+            return Err(CanError::ParameterOutOfRange { message_id: XxxMsg209::MESSAGE_ID });
         }
         let factor = 0.05625_f32;
         let offset = 0_f32;
@@ -664,9 +699,8 @@ impl XxxMsg209 {
     /// Set value of brake_pedal_pressure
     #[inline(always)]
     pub fn set_brake_pedal_pressure(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_f32 || 100_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 209 });
+            return Err(CanError::ParameterOutOfRange { message_id: XxxMsg209::MESSAGE_ID });
         }
         let factor = 0.78125_f32;
         let offset = 0_f32;
@@ -690,32 +724,46 @@ impl core::convert::TryFrom<&[u8]> for XxxMsg209 {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for XxxMsg209 {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("XxxMsg209")
-                .field("vehicle_speed", &self.vehicle_speed())
-                .field("brake_pedal_pressure", &self.brake_pedal_pressure())
-            .finish()
+impl embedded_can::Frame for XxxMsg209 {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("XxxMsg209").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for XxxMsg209 {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let vehicle_speed = u.float_in_range(0_f32..=290_f32)?;
-        let brake_pedal_pressure = u.float_in_range(0_f32..=100_f32)?;
-        XxxMsg209::new(vehicle_speed,brake_pedal_pressure).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// transmission
 ///
-/// - ID: 328 (0x148)
+/// - Standard ID: 328 (0x148)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct Transmission {
@@ -723,7 +771,7 @@ pub struct Transmission {
 }
 
 impl Transmission {
-    pub const MESSAGE_ID: u32 = 328;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x148)});
     
     pub const MT_GEAR_VERIFY_MIN: u8 = 0_u8;
     pub const MT_GEAR_VERIFY_MAX: u8 = 7_u8;
@@ -763,16 +811,21 @@ impl Transmission {
     pub fn mt_gear_verify_raw(&self) -> u8 {
         let signal = self.raw.view_bits::<Lsb0>()[4..8].load_le::<u8>();
         
-        signal
+        let factor = 1;
+        u8::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of mt_gear_VERIFY
     #[inline(always)]
     pub fn set_mt_gear_verify(&mut self, value: u8) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u8 || 7_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 328 });
+            return Err(CanError::ParameterOutOfRange { message_id: Transmission::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: Transmission::MESSAGE_ID })?;
+        let value = (value / factor) as u8;
+        
         self.raw.view_bits_mut::<Lsb0>()[4..8].store_le(value);
         Ok(())
     }
@@ -791,30 +844,46 @@ impl core::convert::TryFrom<&[u8]> for Transmission {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for Transmission {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("Transmission")
-                .field("mt_gear_verify", &self.mt_gear_verify())
-            .finish()
+impl embedded_can::Frame for Transmission {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("Transmission").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for Transmission {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let mt_gear_verify = u.int_in_range(0..=7)?;
-        Transmission::new(mt_gear_verify).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// motor_control
 ///
-/// - ID: 320 (0x140)
+/// - Standard ID: 320 (0x140)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct MotorControl {
@@ -822,7 +891,7 @@ pub struct MotorControl {
 }
 
 impl MotorControl {
-    pub const MESSAGE_ID: u32 = 320;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x140)});
     
     pub const ACCELERATOR_PEDAL_POSITION_MIN: f32 = 0_f32;
     pub const ACCELERATOR_PEDAL_POSITION_MAX: f32 = 1_f32;
@@ -878,9 +947,8 @@ impl MotorControl {
     /// Set value of accelerator_pedal_position
     #[inline(always)]
     pub fn set_accelerator_pedal_position(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_f32 || 1_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 320 });
+            return Err(CanError::ParameterOutOfRange { message_id: MotorControl::MESSAGE_ID });
         }
         let factor = 0.392157_f32;
         let offset = 0_f32;
@@ -991,9 +1059,8 @@ impl MotorControl {
     /// Set value of combined_accelerator
     #[inline(always)]
     pub fn set_combined_accelerator(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_f32 || 100_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 320 });
+            return Err(CanError::ParameterOutOfRange { message_id: MotorControl::MESSAGE_ID });
         }
         let factor = 0.392157_f32;
         let offset = 0_f32;
@@ -1034,9 +1101,8 @@ impl MotorControl {
     /// Set value of throttle_plate_position
     #[inline(always)]
     pub fn set_throttle_plate_position(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_f32 || 100_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 320 });
+            return Err(CanError::ParameterOutOfRange { message_id: MotorControl::MESSAGE_ID });
         }
         let factor = 0.392157_f32;
         let offset = 0_f32;
@@ -1060,38 +1126,46 @@ impl core::convert::TryFrom<&[u8]> for MotorControl {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for MotorControl {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("MotorControl")
-                .field("accelerator_pedal_position", &self.accelerator_pedal_position())
-                .field("n_accelerator_pedal_max_sw", &self.n_accelerator_pedal_max_sw())
-                .field("clutch_sw", &self.clutch_sw())
-                .field("combined_accelerator", &self.combined_accelerator())
-                .field("throttle_plate_position", &self.throttle_plate_position())
-            .finish()
+impl embedded_can::Frame for MotorControl {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("MotorControl").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for MotorControl {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let accelerator_pedal_position = u.float_in_range(0_f32..=1_f32)?;
-        let n_accelerator_pedal_max_sw = u.int_in_range(0..=1)? == 1;
-        let clutch_sw = u.int_in_range(0..=1)? == 1;
-        let combined_accelerator = u.float_in_range(0_f32..=100_f32)?;
-        let throttle_plate_position = u.float_in_range(0_f32..=100_f32)?;
-        MotorControl::new(accelerator_pedal_position,n_accelerator_pedal_max_sw,clutch_sw,combined_accelerator,throttle_plate_position).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// steering
 ///
-/// - ID: 282 (0x11a)
+/// - Standard ID: 282 (0x11a)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct Steering {
@@ -1099,7 +1173,7 @@ pub struct Steering {
 }
 
 impl Steering {
-    pub const MESSAGE_ID: u32 = 282;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x11a)});
     
     pub const STEERING_ANGLE_MIN: f32 = -500_f32;
     pub const STEERING_ANGLE_MAX: f32 = 500_f32;
@@ -1137,9 +1211,8 @@ impl Steering {
     /// - Value type: Signed
     #[inline(always)]
     pub fn steering_angle_raw(&self) -> f32 {
-        let signal = self.raw.view_bits::<Lsb0>()[56..64].load_le::<u8>();
+        let signal = self.raw.view_bits::<Lsb0>()[56..64].load_le::<i8>();
         
-        let signal  = i8::from_ne_bytes(signal.to_ne_bytes());
         let factor = 0.1_f32;
         let offset = 0_f32;
         (signal as f32) * factor + offset
@@ -1148,9 +1221,8 @@ impl Steering {
     /// Set value of steering_angle
     #[inline(always)]
     pub fn set_steering_angle(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < -500_f32 || 500_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 282 });
+            return Err(CanError::ParameterOutOfRange { message_id: Steering::MESSAGE_ID });
         }
         let factor = 0.1_f32;
         let offset = 0_f32;
@@ -1175,30 +1247,46 @@ impl core::convert::TryFrom<&[u8]> for Steering {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for Steering {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("Steering")
-                .field("steering_angle", &self.steering_angle())
-            .finish()
+impl embedded_can::Frame for Steering {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("Steering").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for Steering {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let steering_angle = u.float_in_range(-500_f32..=500_f32)?;
-        Steering::new(steering_angle).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// driver_road_assists
 ///
-/// - ID: 211 (0xd3)
+/// - Standard ID: 211 (0xd3)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct DriverRoadAssists {
@@ -1206,7 +1294,7 @@ pub struct DriverRoadAssists {
 }
 
 impl DriverRoadAssists {
-    pub const MESSAGE_ID: u32 = 211;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0xd3)});
     
     
     /// Construct new driver_road_assists from values
@@ -1339,34 +1427,46 @@ impl core::convert::TryFrom<&[u8]> for DriverRoadAssists {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for DriverRoadAssists {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("DriverRoadAssists")
-                .field("traction_control_enabled", &self.traction_control_enabled())
-                .field("tq_vectoring_enabled", &self.tq_vectoring_enabled())
-                .field("hill_assist_enabled", &self.hill_assist_enabled())
-            .finish()
+impl embedded_can::Frame for DriverRoadAssists {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("DriverRoadAssists").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for DriverRoadAssists {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let traction_control_enabled = u.int_in_range(0..=1)? == 1;
-        let tq_vectoring_enabled = u.int_in_range(0..=1)? == 1;
-        let hill_assist_enabled = u.int_in_range(0..=1)? == 1;
-        DriverRoadAssists::new(traction_control_enabled,tq_vectoring_enabled,hill_assist_enabled).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// status_switches
 ///
-/// - ID: 338 (0x152)
+/// - Standard ID: 338 (0x152)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct StatusSwitches {
@@ -1374,7 +1474,7 @@ pub struct StatusSwitches {
 }
 
 impl StatusSwitches {
-    pub const MESSAGE_ID: u32 = 338;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x152)});
     
     
     /// Construct new status_switches from values
@@ -1682,44 +1782,46 @@ impl core::convert::TryFrom<&[u8]> for StatusSwitches {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for StatusSwitches {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("StatusSwitches")
-                .field("reverse_sw", &self.reverse_sw())
-                .field("handbrake_sw", &self.handbrake_sw())
-                .field("brake_sw", &self.brake_sw())
-                .field("running_lights_enabled", &self.running_lights_enabled())
-                .field("parking_lights_enabled", &self.parking_lights_enabled())
-                .field("lowbeams_enabled", &self.lowbeams_enabled())
-                .field("highbeams_enabled", &self.highbeams_enabled())
-                .field("wiper_moving_sw", &self.wiper_moving_sw())
-            .finish()
+impl embedded_can::Frame for StatusSwitches {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("StatusSwitches").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for StatusSwitches {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let reverse_sw = u.int_in_range(0..=1)? == 1;
-        let handbrake_sw = u.int_in_range(0..=1)? == 1;
-        let brake_sw = u.int_in_range(0..=1)? == 1;
-        let running_lights_enabled = u.int_in_range(0..=1)? == 1;
-        let parking_lights_enabled = u.int_in_range(0..=1)? == 1;
-        let lowbeams_enabled = u.int_in_range(0..=1)? == 1;
-        let highbeams_enabled = u.int_in_range(0..=1)? == 1;
-        let wiper_moving_sw = u.int_in_range(0..=1)? == 1;
-        StatusSwitches::new(reverse_sw,handbrake_sw,brake_sw,running_lights_enabled,parking_lights_enabled,lowbeams_enabled,highbeams_enabled,wiper_moving_sw).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// XXXMsg340
 ///
-/// - ID: 340 (0x154)
+/// - Standard ID: 340 (0x154)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct XxxMsg340 {
@@ -1727,7 +1829,7 @@ pub struct XxxMsg340 {
 }
 
 impl XxxMsg340 {
-    pub const MESSAGE_ID: u32 = 340;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x154)});
     
     
     /// Construct new XXXMsg340 from values
@@ -1790,30 +1892,46 @@ impl core::convert::TryFrom<&[u8]> for XxxMsg340 {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for XxxMsg340 {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("XxxMsg340")
-                .field("any_door_open", &self.any_door_open())
-            .finish()
+impl embedded_can::Frame for XxxMsg340 {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("XxxMsg340").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for XxxMsg340 {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let any_door_open = u.int_in_range(0..=1)? == 1;
-        XxxMsg340::new(any_door_open).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// XXXMsg640
 ///
-/// - ID: 642 (0x282)
+/// - Standard ID: 642 (0x282)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct XxxMsg640 {
@@ -1821,7 +1939,7 @@ pub struct XxxMsg640 {
 }
 
 impl XxxMsg640 {
-    pub const MESSAGE_ID: u32 = 642;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x282)});
     
     pub const FUEL_LEVEL_MIN: f32 = 0_f32;
     pub const FUEL_LEVEL_MAX: f32 = 100_f32;
@@ -1877,9 +1995,8 @@ impl XxxMsg640 {
     /// Set value of fuel_level
     #[inline(always)]
     pub fn set_fuel_level(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_f32 || 100_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 642 });
+            return Err(CanError::ParameterOutOfRange { message_id: XxxMsg640::MESSAGE_ID });
         }
         let factor = 0.033_f32;
         let offset = 0_f32;
@@ -1912,16 +2029,21 @@ impl XxxMsg640 {
     pub fn raw_fuel_raw(&self) -> u16 {
         let signal = self.raw.view_bits::<Lsb0>()[0..12].load_le::<u16>();
         
-        signal
+        let factor = 1;
+        u16::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of raw_fuel
     #[inline(always)]
     pub fn set_raw_fuel(&mut self, value: u16) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u16 || 4096_u16 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 642 });
+            return Err(CanError::ParameterOutOfRange { message_id: XxxMsg640::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: XxxMsg640::MESSAGE_ID })?;
+        let value = (value / factor) as u16;
+        
         self.raw.view_bits_mut::<Lsb0>()[0..12].store_le(value);
         Ok(())
     }
@@ -2042,38 +2164,46 @@ impl core::convert::TryFrom<&[u8]> for XxxMsg640 {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for XxxMsg640 {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("XxxMsg640")
-                .field("fuel_level", &self.fuel_level())
-                .field("raw_fuel", &self.raw_fuel())
-                .field("left_turn_signal_enabled", &self.left_turn_signal_enabled())
-                .field("right_turn_signal_enabled", &self.right_turn_signal_enabled())
-                .field("driver_seatbelt_warning_enabled", &self.driver_seatbelt_warning_enabled())
-            .finish()
+impl embedded_can::Frame for XxxMsg640 {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("XxxMsg640").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for XxxMsg640 {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let fuel_level = u.float_in_range(0_f32..=100_f32)?;
-        let raw_fuel = u.int_in_range(0..=4096)?;
-        let left_turn_signal_enabled = u.int_in_range(0..=1)? == 1;
-        let right_turn_signal_enabled = u.int_in_range(0..=1)? == 1;
-        let driver_seatbelt_warning_enabled = u.int_in_range(0..=1)? == 1;
-        XxxMsg640::new(fuel_level,raw_fuel,left_turn_signal_enabled,right_turn_signal_enabled,driver_seatbelt_warning_enabled).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// engine_status_2
 ///
-/// - ID: 864 (0x360)
+/// - Standard ID: 864 (0x360)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct EngineStatus2 {
@@ -2081,21 +2211,21 @@ pub struct EngineStatus2 {
 }
 
 impl EngineStatus2 {
-    pub const MESSAGE_ID: u32 = 864;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x360)});
     
     pub const ENGINE_FUEL_FLOW_MIN: u8 = 0_u8;
     pub const ENGINE_FUEL_FLOW_MAX: u8 = 255_u8;
-    pub const ENGINE_OIL_TEMP_MIN: f32 = 0_f32;
-    pub const ENGINE_OIL_TEMP_MAX: f32 = 1_f32;
-    pub const ENGINE_COOLANT_TEMP_MIN: f32 = 0_f32;
-    pub const ENGINE_COOLANT_TEMP_MAX: f32 = 1_f32;
+    pub const ENGINE_OIL_TEMP_MIN: i16 = 0_i16;
+    pub const ENGINE_OIL_TEMP_MAX: i16 = 1_i16;
+    pub const ENGINE_COOLANT_TEMP_MIN: i16 = 0_i16;
+    pub const ENGINE_COOLANT_TEMP_MAX: i16 = 1_i16;
     pub const ENGINE_BOOST_PRESSURE_MIN: f32 = 0_f32;
     pub const ENGINE_BOOST_PRESSURE_MAX: f32 = 255_f32;
     pub const CRUISE_CONTROL_SPEED_MIN: u8 = 0_u8;
     pub const CRUISE_CONTROL_SPEED_MAX: u8 = 255_u8;
     
     /// Construct new engine_status_2 from values
-    pub fn new(engine_fuel_flow: u8, engine_oil_temp: f32, engine_coolant_temp: f32, engine_boost_pressure: f32, cruise_control_enabled: bool, cruise_control_set_enabled: bool, cruise_control_speed: u8) -> Result<Self, CanError> {
+    pub fn new(engine_fuel_flow: u8, engine_oil_temp: i16, engine_coolant_temp: i16, engine_boost_pressure: f32, cruise_control_enabled: bool, cruise_control_set_enabled: bool, cruise_control_speed: u8) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_engine_fuel_flow(engine_fuel_flow)?;
         res.set_engine_oil_temp(engine_oil_temp)?;
@@ -2137,16 +2267,21 @@ impl EngineStatus2 {
     pub fn engine_fuel_flow_raw(&self) -> u8 {
         let signal = self.raw.view_bits::<Lsb0>()[8..16].load_le::<u8>();
         
-        signal
+        let factor = 1;
+        u8::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of engine_fuel_flow
     #[inline(always)]
     pub fn set_engine_fuel_flow(&mut self, value: u8) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u8 || 255_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 864 });
+            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID })?;
+        let value = (value / factor) as u8;
+        
         self.raw.view_bits_mut::<Lsb0>()[8..16].store_le(value);
         Ok(())
     }
@@ -2158,7 +2293,7 @@ impl EngineStatus2 {
     /// - Unit: "degC"
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn engine_oil_temp(&self) -> f32 {
+    pub fn engine_oil_temp(&self) -> i16 {
         self.engine_oil_temp_raw()
     }
     
@@ -2171,24 +2306,23 @@ impl EngineStatus2 {
     /// - Byte order: LittleEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn engine_oil_temp_raw(&self) -> f32 {
+    pub fn engine_oil_temp_raw(&self) -> i16 {
         let signal = self.raw.view_bits::<Lsb0>()[16..24].load_le::<u8>();
         
-        let factor = 1_f32;
-        let offset = -40_f32;
-        (signal as f32) * factor + offset
+        let factor = 1;
+        i16::from(signal).saturating_mul(factor).saturating_sub(40)
     }
     
     /// Set value of engine_oil_temp
     #[inline(always)]
-    pub fn set_engine_oil_temp(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
-        if value < 0_f32 || 1_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 864 });
+    pub fn set_engine_oil_temp(&mut self, value: i16) -> Result<(), CanError> {
+        if value < 0_i16 || 1_i16 < value {
+            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
         }
-        let factor = 1_f32;
-        let offset = -40_f32;
-        let value = ((value - offset) / factor) as u8;
+        let factor = 1;
+        let value = value.checked_add(40)
+            .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID })?;
+        let value = (value / factor) as u8;
         
         self.raw.view_bits_mut::<Lsb0>()[16..24].store_le(value);
         Ok(())
@@ -2201,7 +2335,7 @@ impl EngineStatus2 {
     /// - Unit: "degC"
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn engine_coolant_temp(&self) -> f32 {
+    pub fn engine_coolant_temp(&self) -> i16 {
         self.engine_coolant_temp_raw()
     }
     
@@ -2214,24 +2348,23 @@ impl EngineStatus2 {
     /// - Byte order: LittleEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn engine_coolant_temp_raw(&self) -> f32 {
+    pub fn engine_coolant_temp_raw(&self) -> i16 {
         let signal = self.raw.view_bits::<Lsb0>()[24..32].load_le::<u8>();
         
-        let factor = 1_f32;
-        let offset = -40_f32;
-        (signal as f32) * factor + offset
+        let factor = 1;
+        i16::from(signal).saturating_mul(factor).saturating_sub(40)
     }
     
     /// Set value of engine_coolant_temp
     #[inline(always)]
-    pub fn set_engine_coolant_temp(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
-        if value < 0_f32 || 1_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 864 });
+    pub fn set_engine_coolant_temp(&mut self, value: i16) -> Result<(), CanError> {
+        if value < 0_i16 || 1_i16 < value {
+            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
         }
-        let factor = 1_f32;
-        let offset = -40_f32;
-        let value = ((value - offset) / factor) as u8;
+        let factor = 1;
+        let value = value.checked_add(40)
+            .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID })?;
+        let value = (value / factor) as u8;
         
         self.raw.view_bits_mut::<Lsb0>()[24..32].store_le(value);
         Ok(())
@@ -2260,9 +2393,8 @@ impl EngineStatus2 {
     /// - Value type: Signed
     #[inline(always)]
     pub fn engine_boost_pressure_raw(&self) -> f32 {
-        let signal = self.raw.view_bits::<Lsb0>()[32..40].load_le::<u8>();
+        let signal = self.raw.view_bits::<Lsb0>()[32..40].load_le::<i8>();
         
-        let signal  = i8::from_ne_bytes(signal.to_ne_bytes());
         let factor = 0.3_f32;
         let offset = -15.1_f32;
         (signal as f32) * factor + offset
@@ -2271,9 +2403,8 @@ impl EngineStatus2 {
     /// Set value of engine_boost_pressure
     #[inline(always)]
     pub fn set_engine_boost_pressure(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 864 });
+            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
         }
         let factor = 0.3_f32;
         let offset = -15.1_f32;
@@ -2377,16 +2508,21 @@ impl EngineStatus2 {
     pub fn cruise_control_speed_raw(&self) -> u8 {
         let signal = self.raw.view_bits::<Lsb0>()[56..64].load_le::<u8>();
         
-        signal
+        let factor = 1;
+        u8::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of cruise_control_speed
     #[inline(always)]
     pub fn set_cruise_control_speed(&mut self, value: u8) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u8 || 255_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 864 });
+            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID })?;
+        let value = (value / factor) as u8;
+        
         self.raw.view_bits_mut::<Lsb0>()[56..64].store_le(value);
         Ok(())
     }
@@ -2405,42 +2541,46 @@ impl core::convert::TryFrom<&[u8]> for EngineStatus2 {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for EngineStatus2 {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("EngineStatus2")
-                .field("engine_fuel_flow", &self.engine_fuel_flow())
-                .field("engine_oil_temp", &self.engine_oil_temp())
-                .field("engine_coolant_temp", &self.engine_coolant_temp())
-                .field("engine_boost_pressure", &self.engine_boost_pressure())
-                .field("cruise_control_enabled", &self.cruise_control_enabled())
-                .field("cruise_control_set_enabled", &self.cruise_control_set_enabled())
-                .field("cruise_control_speed", &self.cruise_control_speed())
-            .finish()
+impl embedded_can::Frame for EngineStatus2 {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("EngineStatus2").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for EngineStatus2 {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let engine_fuel_flow = u.int_in_range(0..=255)?;
-        let engine_oil_temp = u.float_in_range(0_f32..=1_f32)?;
-        let engine_coolant_temp = u.float_in_range(0_f32..=1_f32)?;
-        let engine_boost_pressure = u.float_in_range(0_f32..=255_f32)?;
-        let cruise_control_enabled = u.int_in_range(0..=1)? == 1;
-        let cruise_control_set_enabled = u.int_in_range(0..=1)? == 1;
-        let cruise_control_speed = u.int_in_range(0..=255)?;
-        EngineStatus2::new(engine_fuel_flow,engine_oil_temp,engine_coolant_temp,engine_boost_pressure,cruise_control_enabled,cruise_control_set_enabled,cruise_control_speed).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// bsd_rcta
 ///
-/// - ID: 604 (0x25c)
+/// - Standard ID: 604 (0x25c)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct BsdRcta {
@@ -2448,7 +2588,7 @@ pub struct BsdRcta {
 }
 
 impl BsdRcta {
-    pub const MESSAGE_ID: u32 = 604;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x25c)});
     
     
     /// Construct new bsd_rcta from values
@@ -2721,42 +2861,46 @@ impl core::convert::TryFrom<&[u8]> for BsdRcta {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for BsdRcta {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("BsdRcta")
-                .field("rcta_enabled", &self.rcta_enabled())
-                .field("rtca_right_adjacent", &self.rtca_right_adjacent())
-                .field("rtca_left_adjacent", &self.rtca_left_adjacent())
-                .field("rtca_right_approaching", &self.rtca_right_approaching())
-                .field("rtca_left_approaching", &self.rtca_left_approaching())
-                .field("rcta_right", &self.rcta_right())
-                .field("rcta_left", &self.rcta_left())
-            .finish()
+impl embedded_can::Frame for BsdRcta {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("BsdRcta").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for BsdRcta {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let rcta_enabled = u.int_in_range(0..=1)? == 1;
-        let rtca_right_adjacent = u.int_in_range(0..=1)? == 1;
-        let rtca_left_adjacent = u.int_in_range(0..=1)? == 1;
-        let rtca_right_approaching = u.int_in_range(0..=1)? == 1;
-        let rtca_left_approaching = u.int_in_range(0..=1)? == 1;
-        let rcta_right = u.int_in_range(0..=1)? == 1;
-        let rcta_left = u.int_in_range(0..=1)? == 1;
-        BsdRcta::new(rcta_enabled,rtca_right_adjacent,rtca_left_adjacent,rtca_right_approaching,rtca_left_approaching,rcta_right,rcta_left).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// tpms
 ///
-/// - ID: 1883 (0x75b)
+/// - Standard ID: 1883 (0x75b)
 /// - Size: 8 bytes
 ///
 /// no successful communication with bcm yet
@@ -2766,7 +2910,7 @@ pub struct Tpms {
 }
 
 impl Tpms {
-    pub const MESSAGE_ID: u32 = 1883;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x75b)});
     
     pub const LEFT_FRONT_TIRE_PRESSURE_MIN: u8 = 0_u8;
     pub const LEFT_FRONT_TIRE_PRESSURE_MAX: u8 = 1_u8;
@@ -2817,16 +2961,21 @@ impl Tpms {
     pub fn left_front_tire_pressure_raw(&self) -> u8 {
         let signal = self.raw.view_bits::<Lsb0>()[0..8].load_le::<u8>();
         
-        signal
+        let factor = 1;
+        u8::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of left_front_tire_pressure
     #[inline(always)]
     pub fn set_left_front_tire_pressure(&mut self, value: u8) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u8 || 1_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 1883 });
+            return Err(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID })?;
+        let value = (value / factor) as u8;
+        
         self.raw.view_bits_mut::<Lsb0>()[0..8].store_le(value);
         Ok(())
     }
@@ -2856,16 +3005,21 @@ impl Tpms {
     pub fn right_front_tire_pressure_raw(&self) -> u8 {
         let signal = self.raw.view_bits::<Lsb0>()[8..16].load_le::<u8>();
         
-        signal
+        let factor = 1;
+        u8::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of right_front_tire_pressure
     #[inline(always)]
     pub fn set_right_front_tire_pressure(&mut self, value: u8) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u8 || 1_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 1883 });
+            return Err(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID })?;
+        let value = (value / factor) as u8;
+        
         self.raw.view_bits_mut::<Lsb0>()[8..16].store_le(value);
         Ok(())
     }
@@ -2895,16 +3049,21 @@ impl Tpms {
     pub fn right_rear_tire_pressure_raw(&self) -> u8 {
         let signal = self.raw.view_bits::<Lsb0>()[16..24].load_le::<u8>();
         
-        signal
+        let factor = 1;
+        u8::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of right_rear_tire_pressure
     #[inline(always)]
     pub fn set_right_rear_tire_pressure(&mut self, value: u8) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u8 || 1_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 1883 });
+            return Err(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID })?;
+        let value = (value / factor) as u8;
+        
         self.raw.view_bits_mut::<Lsb0>()[16..24].store_le(value);
         Ok(())
     }
@@ -2934,16 +3093,21 @@ impl Tpms {
     pub fn left_rear_tire_pressure_raw(&self) -> u8 {
         let signal = self.raw.view_bits::<Lsb0>()[24..32].load_le::<u8>();
         
-        signal
+        let factor = 1;
+        u8::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of left_rear_tire_pressure
     #[inline(always)]
     pub fn set_left_rear_tire_pressure(&mut self, value: u8) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u8 || 1_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 1883 });
+            return Err(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID })?;
+        let value = (value / factor) as u8;
+        
         self.raw.view_bits_mut::<Lsb0>()[24..32].store_le(value);
         Ok(())
     }
@@ -2962,36 +3126,46 @@ impl core::convert::TryFrom<&[u8]> for Tpms {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for Tpms {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("Tpms")
-                .field("left_front_tire_pressure", &self.left_front_tire_pressure())
-                .field("right_front_tire_pressure", &self.right_front_tire_pressure())
-                .field("right_rear_tire_pressure", &self.right_rear_tire_pressure())
-                .field("left_rear_tire_pressure", &self.left_rear_tire_pressure())
-            .finish()
+impl embedded_can::Frame for Tpms {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("Tpms").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for Tpms {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let left_front_tire_pressure = u.int_in_range(0..=1)?;
-        let right_front_tire_pressure = u.int_in_range(0..=1)?;
-        let right_rear_tire_pressure = u.int_in_range(0..=1)?;
-        let left_rear_tire_pressure = u.int_in_range(0..=1)?;
-        Tpms::new(left_front_tire_pressure,right_front_tire_pressure,right_rear_tire_pressure,left_rear_tire_pressure).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// odometer
 ///
-/// - ID: 1745 (0x6d1)
+/// - Standard ID: 1745 (0x6d1)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct Odometer {
@@ -2999,7 +3173,7 @@ pub struct Odometer {
 }
 
 impl Odometer {
-    pub const MESSAGE_ID: u32 = 1745;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x6d1)});
     
     pub const ODOMETER_MIN: f32 = 0_f32;
     pub const ODOMETER_MAX: f32 = 429497000_f32;
@@ -3049,9 +3223,8 @@ impl Odometer {
     /// Set value of odometer
     #[inline(always)]
     pub fn set_odometer(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_f32 || 429497000_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 1745 });
+            return Err(CanError::ParameterOutOfRange { message_id: Odometer::MESSAGE_ID });
         }
         let factor = 0.1_f32;
         let offset = 0_f32;
@@ -3075,30 +3248,46 @@ impl core::convert::TryFrom<&[u8]> for Odometer {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for Odometer {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("Odometer")
-                .field("odometer", &self.odometer())
-            .finish()
+impl embedded_can::Frame for Odometer {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("Odometer").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for Odometer {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let odometer = u.float_in_range(0_f32..=429497000_f32)?;
-        Odometer::new(odometer).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// Dash_State2_VERIFY
 ///
-/// - ID: 977 (0x3d1)
+/// - Standard ID: 977 (0x3d1)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct DashState2Verify {
@@ -3106,7 +3295,7 @@ pub struct DashState2Verify {
 }
 
 impl DashState2Verify {
-    pub const MESSAGE_ID: u32 = 977;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x3d1)});
     
     
     /// Construct new Dash_State2_VERIFY from values
@@ -3171,30 +3360,46 @@ impl core::convert::TryFrom<&[u8]> for DashState2Verify {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for DashState2Verify {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("DashState2Verify")
-                .field("units", &self.units())
-            .finish()
+impl embedded_can::Frame for DashState2Verify {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("DashState2Verify").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for DashState2Verify {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let units = u.int_in_range(0..=1)? == 1;
-        DashState2Verify::new(units).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// wheel_speeds
 ///
-/// - ID: 212 (0xd4)
+/// - Standard ID: 212 (0xd4)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct WheelSpeeds {
@@ -3202,7 +3407,7 @@ pub struct WheelSpeeds {
 }
 
 impl WheelSpeeds {
-    pub const MESSAGE_ID: u32 = 212;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0xd4)});
     
     pub const LEFT_FRONT_WHEEL_SPEED_MIN: f32 = 0_f32;
     pub const LEFT_FRONT_WHEEL_SPEED_MAX: f32 = 255_f32;
@@ -3259,9 +3464,8 @@ impl WheelSpeeds {
     /// Set value of left_front_wheel_speed
     #[inline(always)]
     pub fn set_left_front_wheel_speed(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 212 });
+            return Err(CanError::ParameterOutOfRange { message_id: WheelSpeeds::MESSAGE_ID });
         }
         let factor = 0.0592_f32;
         let offset = 0_f32;
@@ -3302,9 +3506,8 @@ impl WheelSpeeds {
     /// Set value of right_front_wheel_speed
     #[inline(always)]
     pub fn set_right_front_wheel_speed(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 212 });
+            return Err(CanError::ParameterOutOfRange { message_id: WheelSpeeds::MESSAGE_ID });
         }
         let factor = 0.0592_f32;
         let offset = 0_f32;
@@ -3345,9 +3548,8 @@ impl WheelSpeeds {
     /// Set value of left_rear_wheel_speed
     #[inline(always)]
     pub fn set_left_rear_wheel_speed(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 212 });
+            return Err(CanError::ParameterOutOfRange { message_id: WheelSpeeds::MESSAGE_ID });
         }
         let factor = 0.0592_f32;
         let offset = 0_f32;
@@ -3388,9 +3590,8 @@ impl WheelSpeeds {
     /// Set value of right_rear_wheel_speed
     #[inline(always)]
     pub fn set_right_rear_wheel_speed(&mut self, value: f32) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 212 });
+            return Err(CanError::ParameterOutOfRange { message_id: WheelSpeeds::MESSAGE_ID });
         }
         let factor = 0.0592_f32;
         let offset = 0_f32;
@@ -3414,36 +3615,46 @@ impl core::convert::TryFrom<&[u8]> for WheelSpeeds {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for WheelSpeeds {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("WheelSpeeds")
-                .field("left_front_wheel_speed", &self.left_front_wheel_speed())
-                .field("right_front_wheel_speed", &self.right_front_wheel_speed())
-                .field("left_rear_wheel_speed", &self.left_rear_wheel_speed())
-                .field("right_rear_wheel_speed", &self.right_rear_wheel_speed())
-            .finish()
+impl embedded_can::Frame for WheelSpeeds {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("WheelSpeeds").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for WheelSpeeds {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let left_front_wheel_speed = u.float_in_range(0_f32..=255_f32)?;
-        let right_front_wheel_speed = u.float_in_range(0_f32..=255_f32)?;
-        let left_rear_wheel_speed = u.float_in_range(0_f32..=255_f32)?;
-        let right_rear_wheel_speed = u.float_in_range(0_f32..=255_f32)?;
-        WheelSpeeds::new(left_front_wheel_speed,right_front_wheel_speed,left_rear_wheel_speed,right_rear_wheel_speed).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// engine_warning_lights
 ///
-/// - ID: 865 (0x361)
+/// - Standard ID: 865 (0x361)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct EngineWarningLights {
@@ -3451,7 +3662,7 @@ pub struct EngineWarningLights {
 }
 
 impl EngineWarningLights {
-    pub const MESSAGE_ID: u32 = 865;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x361)});
     
     
     /// Construct new engine_warning_lights from values
@@ -3549,32 +3760,46 @@ impl core::convert::TryFrom<&[u8]> for EngineWarningLights {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for EngineWarningLights {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("EngineWarningLights")
-                .field("oil_pressure_warning_light_enabled", &self.oil_pressure_warning_light_enabled())
-                .field("check_engine_light_enabled", &self.check_engine_light_enabled())
-            .finish()
+impl embedded_can::Frame for EngineWarningLights {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("EngineWarningLights").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for EngineWarningLights {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let oil_pressure_warning_light_enabled = u.int_in_range(0..=1)? == 1;
-        let check_engine_light_enabled = u.int_in_range(0..=1)? == 1;
-        EngineWarningLights::new(oil_pressure_warning_light_enabled,check_engine_light_enabled).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// srs_status
 ///
-/// - ID: 882 (0x372)
+/// - Standard ID: 882 (0x372)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct SrsStatus {
@@ -3582,7 +3807,7 @@ pub struct SrsStatus {
 }
 
 impl SrsStatus {
-    pub const MESSAGE_ID: u32 = 882;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x372)});
     
     
     /// Construct new srs_status from values
@@ -3645,30 +3870,46 @@ impl core::convert::TryFrom<&[u8]> for SrsStatus {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for SrsStatus {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("SrsStatus")
-                .field("srs_system_warning_light_enabled", &self.srs_system_warning_light_enabled())
-            .finish()
+impl embedded_can::Frame for SrsStatus {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("SrsStatus").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for SrsStatus {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let srs_system_warning_light_enabled = u.int_in_range(0..=1)? == 1;
-        SrsStatus::new(srs_system_warning_light_enabled).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// XXXMsg884
 ///
-/// - ID: 884 (0x374)
+/// - Standard ID: 884 (0x374)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct XxxMsg884 {
@@ -3676,7 +3917,7 @@ pub struct XxxMsg884 {
 }
 
 impl XxxMsg884 {
-    pub const MESSAGE_ID: u32 = 884;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x374)});
     
     
     /// Construct new XXXMsg884 from values
@@ -3774,32 +4015,46 @@ impl core::convert::TryFrom<&[u8]> for XxxMsg884 {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for XxxMsg884 {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("XxxMsg884")
-                .field("fog_lights_enabled", &self.fog_lights_enabled())
-                .field("tpms_warning_light_enabled", &self.tpms_warning_light_enabled())
-            .finish()
+impl embedded_can::Frame for XxxMsg884 {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("XxxMsg884").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for XxxMsg884 {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let fog_lights_enabled = u.int_in_range(0..=1)? == 1;
-        let tpms_warning_light_enabled = u.int_in_range(0..=1)? == 1;
-        XxxMsg884::new(fog_lights_enabled,tpms_warning_light_enabled).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// XXXMsg885
 ///
-/// - ID: 885 (0x375)
+/// - Standard ID: 885 (0x375)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct XxxMsg885 {
@@ -3807,7 +4062,7 @@ pub struct XxxMsg885 {
 }
 
 impl XxxMsg885 {
-    pub const MESSAGE_ID: u32 = 885;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x375)});
     
     
     /// Construct new XXXMsg885 from values
@@ -4080,42 +4335,46 @@ impl core::convert::TryFrom<&[u8]> for XxxMsg885 {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for XxxMsg885 {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("XxxMsg885")
-                .field("left_front_door_open", &self.left_front_door_open())
-                .field("right_front_door_open", &self.right_front_door_open())
-                .field("right_rear_door_open", &self.right_rear_door_open())
-                .field("left_rear_door_open", &self.left_rear_door_open())
-                .field("trunk_open", &self.trunk_open())
-                .field("headlight_dimmer_enabled", &self.headlight_dimmer_enabled())
-                .field("dimmer_max_brightness_enable", &self.dimmer_max_brightness_enable())
-            .finish()
+impl embedded_can::Frame for XxxMsg885 {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("XxxMsg885").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for XxxMsg885 {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let left_front_door_open = u.int_in_range(0..=1)? == 1;
-        let right_front_door_open = u.int_in_range(0..=1)? == 1;
-        let right_rear_door_open = u.int_in_range(0..=1)? == 1;
-        let left_rear_door_open = u.int_in_range(0..=1)? == 1;
-        let trunk_open = u.int_in_range(0..=1)? == 1;
-        let headlight_dimmer_enabled = u.int_in_range(0..=1)? == 1;
-        let dimmer_max_brightness_enable = u.int_in_range(0..=1)? == 1;
-        XxxMsg885::new(left_front_door_open,right_front_door_open,right_rear_door_open,left_rear_door_open,trunk_open,headlight_dimmer_enabled,dimmer_max_brightness_enable).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
 /// DimmerAndHood
 ///
-/// - ID: 886 (0x376)
+/// - Standard ID: 886 (0x376)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct DimmerAndHood {
@@ -4123,7 +4382,7 @@ pub struct DimmerAndHood {
 }
 
 impl DimmerAndHood {
-    pub const MESSAGE_ID: u32 = 886;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x376)});
     
     pub const DIMMER_DIAL_VALUE_MIN: u8 = 0_u8;
     pub const DIMMER_DIAL_VALUE_MAX: u8 = 250_u8;
@@ -4174,16 +4433,21 @@ impl DimmerAndHood {
     pub fn dimmer_dial_value_raw(&self) -> u8 {
         let signal = self.raw.view_bits::<Lsb0>()[0..8].load_le::<u8>();
         
-        signal
+        let factor = 1;
+        u8::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of dimmer_dial_value
     #[inline(always)]
     pub fn set_dimmer_dial_value(&mut self, value: u8) -> Result<(), CanError> {
-        #[cfg(feature = "range_checked")]
         if value < 0_u8 || 250_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: 886 });
+            return Err(CanError::ParameterOutOfRange { message_id: DimmerAndHood::MESSAGE_ID });
         }
+        let factor = 1;
+        let value = value.checked_sub(0)
+            .ok_or(CanError::ParameterOutOfRange { message_id: DimmerAndHood::MESSAGE_ID })?;
+        let value = (value / factor) as u8;
+        
         self.raw.view_bits_mut::<Lsb0>()[0..8].store_le(value);
         Ok(())
     }
@@ -4236,31 +4500,44 @@ impl core::convert::TryFrom<&[u8]> for DimmerAndHood {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for DimmerAndHood {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("DimmerAndHood")
-                .field("dimmer_dial_value", &self.dimmer_dial_value())
-                .field("hood_closed", &self.hood_closed())
-            .finish()
+impl embedded_can::Frame for DimmerAndHood {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("DimmerAndHood").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for DimmerAndHood {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let dimmer_dial_value = u.int_in_range(0..=250)?;
-        let hood_closed = u.int_in_range(0..=1)? == 1;
-        DimmerAndHood::new(dimmer_dial_value,hood_closed).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 /// Defined values for dimmer_dial_value
 #[derive(Clone, Copy, PartialEq)]
-#[cfg_attr(feature = "debug", derive(Debug))]
 pub enum DimmerAndHoodDimmerDialValue {
     X0,
     X1,
@@ -4288,7 +4565,7 @@ impl From<DimmerAndHoodDimmerDialValue> for u8 {
 
 /// ignition
 ///
-/// - ID: 644 (0x284)
+/// - Standard ID: 644 (0x284)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
 pub struct Ignition {
@@ -4296,7 +4573,7 @@ pub struct Ignition {
 }
 
 impl Ignition {
-    pub const MESSAGE_ID: u32 = 644;
+    pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x284)});
     
     
     /// Construct new ignition from values
@@ -4431,28 +4708,40 @@ impl core::convert::TryFrom<&[u8]> for Ignition {
     }
 }
 
-#[cfg(feature = "debug")]
-impl core::fmt::Debug for Ignition {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if f.alternate() {
-            f.debug_struct("Ignition")
-                .field("access_key_detected", &self.access_key_detected())
-                .field("ignition_on", &self.ignition_on())
-                .field("ignition_acc", &self.ignition_acc())
-            .finish()
+impl embedded_can::Frame for Ignition {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        if id.into() != Self::MESSAGE_ID {
+            None
         } else {
-            f.debug_tuple("Ignition").field(&self.raw).finish()
+            data.try_into().ok()
         }
     }
-}
 
-#[cfg(feature = "arb")]
-impl<'a> Arbitrary<'a> for Ignition {
-    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self, arbitrary::Error> {
-        let access_key_detected = u.int_in_range(0..=1)? == 1;
-        let ignition_on = u.int_in_range(0..=1)? == 1;
-        let ignition_acc = u.int_in_range(0..=1)? == 1;
-        Ignition::new(access_key_detected,ignition_on,ignition_acc).map_err(|_| arbitrary::Error::IncorrectFormat)
+    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
+        unimplemented!()
+    }
+
+    fn is_extended(&self) -> bool {
+        match self.id() {
+            Id::Standard(_) => false,
+            Id::Extended(_) => true,
+        }
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        false
+    }
+
+    fn id(&self) -> Id {
+        Self::MESSAGE_ID
+    }
+
+    fn dlc(&self) -> usize {
+        self.raw.len()
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.raw
     }
 }
 
@@ -4461,55 +4750,28 @@ impl<'a> Arbitrary<'a> for Ignition {
 #[allow(dead_code)]
 fn main() {}
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(any(feature = "debug", feature = "std"), derive(Debug))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CanError {
-    UnknownMessageId(u32),
+    UnknownMessageId(embedded_can::Id),
     /// Signal parameter is not within the range
     /// defined in the dbc
     ParameterOutOfRange {
         /// dbc message id
-        message_id: u32,
+        message_id: embedded_can::Id,
     },
     InvalidPayloadSize,
     /// Multiplexor value not defined in the dbc
     InvalidMultiplexor {
         /// dbc message id
-        message_id: u32,
+        message_id: embedded_can::Id,
         /// Multiplexor value not defined in the dbc
         multiplexor: u16,
     },
 }
 
-#[cfg(feature = "std")]
-use std::error::Error;
-#[cfg(feature = "std")]
-use std::fmt;
-
-#[cfg(feature = "std")]
-impl fmt::Display for CanError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl core::fmt::Display for CanError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{:?}", self)
-    }
-}
-
-#[cfg(feature = "std")]
-impl Error for CanError {}
-#[cfg(feature = "arb")]
-trait UnstructuredFloatExt {
-    fn float_in_range(&mut self, range: core::ops::RangeInclusive<f32>) -> arbitrary::Result<f32>;
-}
-
-#[cfg(feature = "arb")]
-impl UnstructuredFloatExt for arbitrary::Unstructured<'_> {
-    fn float_in_range(&mut self, range: core::ops::RangeInclusive<f32>) -> arbitrary::Result<f32> {
-        let min = range.start();
-        let max = range.end();
-        let steps = u32::MAX;
-        let factor = (max - min) / (steps as f32);
-        let random_int: u32 = self.int_in_range(0..=steps)?;
-        let random = min + factor * (random_int as f32);
-        Ok(random)
     }
 }
 

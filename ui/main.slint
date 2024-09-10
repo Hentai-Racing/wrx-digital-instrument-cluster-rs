@@ -1,35 +1,50 @@
 import { Button, VerticalBox } from "std-widgets.slint";
-import { IDataParameter, FDataParameter, MTGearParameter } from "core/car_data.slint";
+import { IDataParameter, FDataParameter, MTGearParameter, SUnits } from "core/car_data.slint";
 import { InstrumentGauge, GaugeArc } from "components/instrument_gauge.slint";
 
 export global CarData {
     in property <IDataParameter> engine_rpm: { min_value: 0, max_value: 1, value: 0 };
-    in property <MTGearParameter> mt_gear: { value: 0, display: " " };
+
+    in property <MTGearParameter> mt_gear: { value: 0, display: "GEAR" };
 
     in property <FDataParameter> odometer: { min_value: 0, max_value: 1, value: 0 };
-
     in property <FDataParameter> vehicle_speed: { min_value: 0, max_value: 1, value: 0 };
 
     in property <bool> lowbeams_enabled: true;
+    in property <bool> right_turn_signal_enabled: true;
+    in property <bool> left_turn_signal_enabled: true;
+
+    in-out property <SUnits> units: SUnits.USCS;
+}
+
+export global SymbolColors {
+    out property <color> symbol_color_blue: #0000ff;
+    out property <color> symbol_color_dark_grey: #4b4b4b;
+    out property <color> symbol_color_green: #00e600;
+    out property <color> symbol_color_grey: #7d7d7d;
+    out property <color> symbol_color_red: #ff0000;
+    out property <color> symbol_color_white: #ffffff;
+    out property <color> symbol_color_yellow: #ffb300;
 }
 
 export component AppWindow inherits Window {
-    property <color> symbol_color_blue: #0000ff;
-    property <color> symbol_color_dark_grey: #4b4b4b;
-    property <color> symbol_color_green: #00e600;
-    property <color> symbol_color_grey: #7d7d7d;
-    property <color> symbol_color_red: #ff0000;
-    property <color> symbol_color_white: #ffffff;
-    property <color> symbol_color_yellow: #ffb300;
 
-    property <length> icon_size: 75px;
+    title: "WRX Digital Instrument Cluster";
 
-    height: 720px;
-    width: 1920px;
+    preferred-height: 720px;
+    preferred-width: 1920px;
 
     background: black;
 
-    title: "WRX Digital Instrument Cluster";
+    property <length> icon_size: 75px;
+
+    Text {
+        x: 0;
+        y: 0;
+
+        text: CarData.units == SUnits.USCS ? "USCS" : "SI";
+        color: white;
+    }
 
     EngineRPMGauge := InstrumentGauge {
         width: self.height;
@@ -107,13 +122,10 @@ export component AppWindow inherits Window {
             range: 75%;
         }
 
-        Text {
+        MTGearLabel := Text {
             text: CarData.mt_gear.display;
             color: white;
             font-size: 50px;
-
-            vertical-alignment: TextVerticalAlignment.center;
-            horizontal-alignment: TextHorizontalAlignment.center;
         }
     }
 
@@ -193,7 +205,7 @@ export component AppWindow inherits Window {
             range: 75%;
         }
 
-        Text {
+        VehicleSpeedLabel := Text {
             text: round(CarData.vehicle_speed.value);
             color: white;
             font-size: 45px;
@@ -201,23 +213,63 @@ export component AppWindow inherits Window {
             vertical-alignment: TextVerticalAlignment.center;
             horizontal-alignment: TextHorizontalAlignment.center;
         }
+
+        ParkingBrakeWarning := Image {
+            height: icon_size * 1.3;
+            width <=> self.height;
+
+            y: parent.height - self.height - 125px;
+
+            source: @image-url("../resources/images/brake-warning-indicator-light-letters-only.png");
+            colorize: SymbolColors.symbol_color_red;
+
+            visible: CarData.right_turn_signal_enabled;
+        }
     }
 
-    Image {
+    HeadlightIndicatorLight := Image {
         height: icon_size;
         width <=> self.height;
 
         source: @image-url("../resources/images/headlight-indicator-light.png");
-        colorize: root.symbol_color_green;
+        colorize: SymbolColors.symbol_color_green;
 
         visible: CarData.lowbeams_enabled;
     }
 
-    Text {
+    RightTurnSignal := Image {
+        height: icon_size * 0.9;
+        width <=> self.height;
+
+        x: VehicleSpeedGauge.x - self.width + 50px;
+        y: VehicleSpeedGauge.y;
+
+        source: @image-url("../resources/images/turn-signal-arrow.png");
+        colorize: SymbolColors.symbol_color_green;
+
+        visible: CarData.right_turn_signal_enabled;
+    }
+
+    LeftTurnSignal := Image {
+        height <=> RightTurnSignal.height;
+        width <=> RightTurnSignal.width;
+
+        x: EngineRPMGauge.x + EngineRPMGauge.width - 50px;
+        y: EngineRPMGauge.y;
+
+        image-fit: ImageFit.contain;
+        source: @image-url("../resources/images/turn-signal-arrow.png");
+        colorize: SymbolColors.symbol_color_green;
+
+        visible: CarData.left_turn_signal_enabled;
+        rotation-angle: 180deg;
+    }
+
+    OdometerText := Text {
         color: white;
         text: CarData.odometer.value;
         font-size: 35px;
         x: root.width / 2 - self.width / 2;
-        y: root.height - self.height;
+        y: root.height - self.height - 20px;
     }
 }

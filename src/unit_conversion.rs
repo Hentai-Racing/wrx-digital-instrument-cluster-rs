@@ -1,7 +1,12 @@
+#![allow(dead_code, unused)]
+
+#[derive(Debug)]
 pub enum Units {
-    UCS, // US Customary System
-    SI,  // International System of Units
+    USCS, // US Customary System
+    SI,   // International System of Units
 }
+
+#[derive(Debug)]
 
 pub enum PressureUnits {
     PSI,
@@ -79,12 +84,12 @@ impl UnitHandler {
 
     pub fn distance(&self, input: f32) -> f32 {
         match self.input_units {
-            Units::UCS => match self.output_units {
-                Units::UCS => input,
+            Units::USCS => match self.output_units {
+                Units::USCS => input,
                 Units::SI => mi_to_km(input),
             },
             Units::SI => match self.output_units {
-                Units::UCS => km_to_mi(input),
+                Units::USCS => km_to_mi(input),
                 Units::SI => input,
             },
         }
@@ -92,12 +97,12 @@ impl UnitHandler {
 
     pub fn distance_special(&self, input: f32, input_units: Units) -> f32 {
         match input_units {
-            Units::UCS => match self.output_units {
-                Units::UCS => input,
+            Units::USCS => match self.output_units {
+                Units::USCS => input,
                 Units::SI => mi_to_km(input),
             },
             Units::SI => match self.output_units {
-                Units::UCS => km_to_mi(input),
+                Units::USCS => km_to_mi(input),
                 Units::SI => input,
             },
         }
@@ -105,12 +110,12 @@ impl UnitHandler {
 
     pub fn speed(&self, input: f32) -> f32 {
         match self.input_units {
-            Units::UCS => match self.output_units {
-                Units::UCS => input,
+            Units::USCS => match self.output_units {
+                Units::USCS => input,
                 Units::SI => mph_to_kph(input),
             },
             Units::SI => match self.output_units {
-                Units::UCS => kph_to_mph(input),
+                Units::USCS => kph_to_mph(input),
                 Units::SI => input,
             },
         }
@@ -118,12 +123,12 @@ impl UnitHandler {
 
     pub fn speed_special(&self, input: f32, input_units: Units) -> f32 {
         match input_units {
-            Units::UCS => match self.output_units {
-                Units::UCS => input,
+            Units::USCS => match self.output_units {
+                Units::USCS => input,
                 Units::SI => mph_to_kph(input),
             },
             Units::SI => match self.output_units {
-                Units::UCS => kph_to_mph(input),
+                Units::USCS => kph_to_mph(input),
                 Units::SI => input,
             },
         }
@@ -131,12 +136,12 @@ impl UnitHandler {
 
     pub fn temperature(&self, input: f32) -> f32 {
         match self.input_units {
-            Units::UCS => match self.output_units {
-                Units::UCS => input,
+            Units::USCS => match self.output_units {
+                Units::USCS => input,
                 Units::SI => degf_to_degc(input),
             },
             Units::SI => match self.output_units {
-                Units::UCS => degc_to_degf(input),
+                Units::USCS => degc_to_degf(input),
                 Units::SI => input,
             },
         }
@@ -144,12 +149,12 @@ impl UnitHandler {
 
     pub fn temperature_special(&self, input: f32, input_units: Units) -> f32 {
         match input_units {
-            Units::UCS => match self.output_units {
-                Units::UCS => input,
+            Units::USCS => match self.output_units {
+                Units::USCS => input,
                 Units::SI => degf_to_degc(input),
             },
             Units::SI => match self.output_units {
-                Units::UCS => degc_to_degf(input),
+                Units::USCS => degc_to_degf(input),
                 Units::SI => input,
             },
         }
@@ -157,12 +162,12 @@ impl UnitHandler {
 
     pub fn mass(&self, input: f32) -> f32 {
         match self.input_units {
-            Units::UCS => match self.output_units {
-                Units::UCS => input,
+            Units::USCS => match self.output_units {
+                Units::USCS => input,
                 Units::SI => lb_to_kg(input),
             },
             Units::SI => match self.output_units {
-                Units::UCS => kg_to_lb(input),
+                Units::USCS => kg_to_lb(input),
                 Units::SI => input,
             },
         }
@@ -170,12 +175,12 @@ impl UnitHandler {
 
     pub fn mass_special(&self, input: f32, input_units: Units) -> f32 {
         match input_units {
-            Units::UCS => match self.output_units {
-                Units::UCS => input,
+            Units::USCS => match self.output_units {
+                Units::USCS => input,
                 Units::SI => lb_to_kg(input),
             },
             Units::SI => match self.output_units {
-                Units::UCS => kg_to_lb(input),
+                Units::USCS => kg_to_lb(input),
                 Units::SI => input,
             },
         }
@@ -183,12 +188,12 @@ impl UnitHandler {
 
     pub fn volume(&self, input: f32) -> f32 {
         match self.input_units {
-            Units::UCS => match self.output_units {
-                Units::UCS => input,
+            Units::USCS => match self.output_units {
+                Units::USCS => input,
                 Units::SI => gal_to_l(input),
             },
             Units::SI => match self.output_units {
-                Units::UCS => l_to_gal(input),
+                Units::USCS => l_to_gal(input),
                 Units::SI => input,
             },
         }
@@ -196,12 +201,12 @@ impl UnitHandler {
 
     pub fn volume_special(&self, input: f32, input_units: Units) -> f32 {
         match input_units {
-            Units::UCS => match self.output_units {
-                Units::UCS => input,
+            Units::USCS => match self.output_units {
+                Units::USCS => input,
                 Units::SI => gal_to_l(input),
             },
             Units::SI => match self.output_units {
-                Units::UCS => l_to_gal(input),
+                Units::USCS => l_to_gal(input),
                 Units::SI => input,
             },
         }
@@ -210,15 +215,15 @@ impl UnitHandler {
     pub fn pressure(&self, input: f32, input_units: PressureUnits) -> f32 {
         match input_units {
             PressureUnits::PSI => match self.output_units {
-                Units::UCS => psi_to_kpa(input),
+                Units::USCS => psi_to_kpa(input),
                 Units::SI => psi_to_bar(input),
             },
             PressureUnits::KPA => match self.output_units {
-                Units::UCS => kpa_to_psi(input),
+                Units::USCS => kpa_to_psi(input),
                 Units::SI => kpa_to_bar(input),
             },
             PressureUnits::BAR => match self.output_units {
-                Units::UCS => bar_to_psi(input),
+                Units::USCS => bar_to_psi(input),
                 Units::SI => bar_to_kpa(input),
             },
         }
@@ -226,12 +231,12 @@ impl UnitHandler {
 
     pub fn mass_flow(&self, input: f32) -> f32 {
         match self.input_units {
-            Units::UCS => match self.output_units {
-                Units::UCS => input,
+            Units::USCS => match self.output_units {
+                Units::USCS => input,
                 Units::SI => lbmin_to_galmin(input),
             },
             Units::SI => match self.output_units {
-                Units::UCS => galmin_to_lbmin(input),
+                Units::USCS => galmin_to_lbmin(input),
                 Units::SI => input,
             },
         }
@@ -239,12 +244,12 @@ impl UnitHandler {
 
     pub fn mass_flow_special(&self, input: f32, input_units: Units) -> f32 {
         match input_units {
-            Units::UCS => match self.output_units {
-                Units::UCS => input,
+            Units::USCS => match self.output_units {
+                Units::USCS => input,
                 Units::SI => lbmin_to_galmin(input),
             },
             Units::SI => match self.output_units {
-                Units::UCS => galmin_to_lbmin(input),
+                Units::USCS => galmin_to_lbmin(input),
                 Units::SI => input,
             },
         }
@@ -252,35 +257,35 @@ impl UnitHandler {
 
     pub fn distance_unit_string(&self) -> String {
         match self.output_units {
-            Units::UCS => "mi".to_string(),
+            Units::USCS => "mi".to_string(),
             Units::SI => "km".to_string(),
         }
     }
 
     pub fn speed_unit_string(&self) -> String {
         match self.output_units {
-            Units::UCS => "mph".to_string(),
+            Units::USCS => "mph".to_string(),
             Units::SI => "kph".to_string(),
         }
     }
 
     pub fn temperature_unit_string(&self) -> String {
         match self.output_units {
-            Units::UCS => "f".to_string(),
+            Units::USCS => "f".to_string(),
             Units::SI => "c".to_string(),
         }
     }
 
     pub fn mass_unit_string(&self) -> String {
         match self.output_units {
-            Units::UCS => "lb".to_string(),
+            Units::USCS => "lb".to_string(),
             Units::SI => "kg".to_string(),
         }
     }
 
     pub fn volume_unit_string(&self) -> String {
         match self.output_units {
-            Units::UCS => "gal".to_string(),
+            Units::USCS => "gal".to_string(),
             Units::SI => "l".to_string(),
         }
     }
@@ -295,7 +300,7 @@ impl UnitHandler {
 
     pub fn mass_flow_unit_string(&self) -> String {
         match self.output_units {
-            Units::UCS => "lb/min".to_string(),
+            Units::USCS => "lb/min".to_string(),
             Units::SI => "gal/min".to_string(),
         }
     }
