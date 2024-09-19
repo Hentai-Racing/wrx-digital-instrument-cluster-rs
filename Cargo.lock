@@ -1084,7 +1084,7 @@ checksum = "5c297a1c74b71ae29df00c3e22dd9534821d60eb9af5a0192823fa2acea70c2a"
 [[package]]
 name = "dbc-codegen"
 version = "0.3.0"
-source = "git+https://github.com/technocreatives/dbc-codegen.git#af7cbf39bee2fd41229ba53f8db5b90b4782f61d"
+source = "git+https://github.com/technocreatives/dbc-codegen.git?rev=af7cbf3#af7cbf39bee2fd41229ba53f8db5b90b4782f61d"
 dependencies = [
  "anyhow",
  "can-dbc",
