@@ -8,7 +8,7 @@
 
 //! Message definitions from file `"WRX_2018.dbc"`
 //!
-//! - Version: `Version("")`
+//! - Version: `Version("0.1.0")`
 
 use core::ops::BitOr;
 use bitvec::prelude::*;
@@ -3176,7 +3176,7 @@ impl Odometer {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x6d1)});
     
     pub const ODOMETER_MIN: f32 = 0_f32;
-    pub const ODOMETER_MAX: f32 = 429497000_f32;
+    pub const ODOMETER_MAX: f32 = 4294967300_f32;
     
     /// Construct new odometer from values
     pub fn new(odometer: f32) -> Result<Self, CanError> {
@@ -3195,7 +3195,7 @@ impl Odometer {
     /// unit_determined_by_vehicle_region
     ///
     /// - Min: 0
-    /// - Max: 429497000
+    /// - Max: 4294967300
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
@@ -3223,7 +3223,7 @@ impl Odometer {
     /// Set value of odometer
     #[inline(always)]
     pub fn set_odometer(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 429497000_f32 < value {
+        if value < 0_f32 || 4294967300_f32 < value {
             return Err(CanError::ParameterOutOfRange { message_id: Odometer::MESSAGE_ID });
         }
         let factor = 0.1_f32;

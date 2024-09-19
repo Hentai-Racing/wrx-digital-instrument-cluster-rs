@@ -1,4 +1,4 @@
-VERSION ""
+VERSION "0.1.0"
 
 
 NS_ :
@@ -31,8 +31,8 @@ NS_ :
     BU_BO_REL_
     SG_MUL_VAL_
 
-BS_: 
-BU_: 
+BS_:
+BU_:
 BO_ 321 engine_status: 8 Vector__XXX
    SG_ engine_torque : 0|15@1+ (1,0) [0|255] "" Vector__XXX
    SG_ engine_stop : 15|1@1+ (1,0) [0|1] "" Vector__XXX
@@ -111,7 +111,7 @@ BO_ 1883 tpms: 8 Vector__XXX
    SG_ left_rear_tire_pressure : 24|8@1+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 1745 odometer: 8 Vector__XXX
-   SG_ odometer : 0|32@1+ (0.1,0) [0|4.29497e+08] "" Vector__XXX
+   SG_ odometer : 0|32@1+ (0.1,0) [0|4294967300] "" Vector__XXX
 
 BO_ 977 Dash_State2_VERIFY: 8 Vector__XXX
    SG_ UNITS : 15|1@1+ (1,0) [0|1] "" Vector__XXX

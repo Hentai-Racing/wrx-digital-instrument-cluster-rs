@@ -9,15 +9,15 @@ fn build_dbc() {
     use std::path::Path;
 
     let dbc_file_dir = Path::new("resources/database/dbc/");
-    let out_file_dir = Path::new("src/can/messages/");
-    let mod_file_dir = Path::new("src/can/messages/mod.rs");
+    let rs_messages_out_dir = Path::new("src/can/messages/");
+    let rs_messages_mod_dir = Path::new("src/can/messages/mod.rs");
 
-    if out_file_dir.exists() {
-        fs::remove_dir_all(out_file_dir).unwrap();
+    if rs_messages_out_dir.exists() {
+        fs::remove_dir_all(rs_messages_out_dir).unwrap();
     }
-    fs::create_dir_all(out_file_dir).unwrap();
+    fs::create_dir_all(rs_messages_out_dir).unwrap();
 
-    let mod_file = File::create(mod_file_dir).unwrap();
+    let mod_file = File::create(rs_messages_mod_dir).unwrap();
     let mut mod_writter = BufWriter::new(mod_file);
 
     for entry in fs::read_dir(dbc_file_dir).unwrap() {
@@ -39,8 +39,8 @@ fn build_dbc() {
                 .replace("-", "_")
                 .to_lowercase();
 
-            let out_path = out_file_dir.join(format!("{stem}.rs"));
-            let out_file = File::create(out_path).unwrap();
+            let out_file_path = rs_messages_out_dir.join(format!("{stem}.rs"));
+            let out_file = File::create(out_file_path.clone()).unwrap();
             let dbc_file = fs::read(entry_path).unwrap();
 
             let config = Config::builder()
@@ -59,7 +59,191 @@ fn build_dbc() {
     }
 }
 
+/// Generates Rust code for virtual CAN data generation
+pub fn generate_can_data_code() {
+    use std::fs;
+    use std::io::{self, Write};
+    use std::path;
+    use syn;
+
+    // Read the mod.rs file
+    let mod_rs_content =
+        fs::read_to_string("src/can/messages/mod.rs").expect("Unable to read mod.rs");
+    let mod_rs: syn::File = syn::parse_str(&mod_rs_content).expect("Unable to parse mod.rs");
+
+    // Extract module names
+    let module_names: Vec<String> = mod_rs
+        .items
+        .iter()
+        .filter_map(|item| {
+            if let syn::Item::Mod(syn::ItemMod { ident, .. }) = item {
+                Some(ident.to_string())
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    let mut gen_output = String::new(); // full file contents
+    let mut gen_block = String::new(); // generated code
+    let mut imports: Vec<String> = Vec::new(); // imported can message modules
+
+    // Process each module
+    for module_name in module_names {
+        let module_path = format!("src/can/messages/{}.rs", module_name);
+        imports.push(format!("use crate::can::messages::{};", module_name));
+
+        let module_content = fs::read_to_string(&module_path).expect("Unable to read module file");
+        let module_file: syn::File =
+            syn::parse_str(&module_content).expect("Unable to parse module file");
+
+        // Find the Messages enum
+        let messages_enum = module_file
+            .items
+            .iter()
+            .find_map(|item| {
+                if let syn::Item::Enum(syn::ItemEnum {
+                    ident, variants, ..
+                }) = item
+                {
+                    if ident == "Messages" {
+                        Some(variants)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .expect("Messages enum not found");
+
+        // Find all implementations for each message in messages_enum
+        let impls: Vec<&syn::ItemImpl> = module_file
+            .items
+            .iter()
+            .filter_map(|item| {
+                if let syn::Item::Impl(item_impl) = item {
+                    item_impl
+                        .items
+                        .iter()
+                        .any(|impl_item| {
+                            if let syn::ImplItem::Const(constant) = impl_item {
+                                constant.ident == "MESSAGE_ID"
+                            } else {
+                                false
+                            }
+                        })
+                        .then_some(item_impl)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        for (variant, item_impl) in messages_enum.iter().zip(impls.iter()) {
+            let signal_path = format!("{}::{}", module_name, variant.ident);
+
+            for impl_item in &item_impl.items {
+                if let syn::ImplItem::Fn(func) = impl_item {
+                    if func.sig.ident == "new" {
+                        let mut param_names: Vec<String> = Vec::new();
+                        let mut value_expressions: Vec<String> = Vec::new();
+
+                        for input in &func.sig.inputs {
+                            if let syn::FnArg::Typed(pat_type) = input {
+                                let param_name = if let syn::Pat::Ident(pat_ident) = &*pat_type.pat
+                                {
+                                    &pat_ident.ident
+                                } else {
+                                    continue;
+                                };
+
+                                let mut value_expression: String =
+                                    format!("let {} = rand::thread_rng()", param_name);
+
+                                if let syn::Type::Path(type_path) = &*pat_type.ty {
+                                    if type_path.path.segments.last().unwrap().ident == "bool" {
+                                        value_expression += ".gen_bool(0.5);";
+                                    } else {
+                                        let value_ident_path: String = format!(
+                                            "{}::{}",
+                                            signal_path,
+                                            param_name.to_string().to_uppercase()
+                                        );
+
+                                        value_expression += &format!(
+                                            ".gen_range({0}_MIN..={0}_MAX);",
+                                            value_ident_path
+                                        )
+                                    }
+                                }
+
+                                param_names.push(param_name.to_string());
+                                value_expressions.push(value_expression);
+                            }
+                        }
+
+                        let frame_ident =
+                            format!("{}_frame", variant.ident.to_string().to_lowercase());
+                        let frame_constructor_expression: String = format!(
+                            "let {} = {}::new({}).expect(\"Failed to create frame\");",
+                            frame_ident,
+                            signal_path,
+                            param_names.join(", ")
+                        );
+                        let write_frame_expression: String = format!("if let Some(frame) = CanDataFrame::new({0}.id(), {0}.data()) {{socket.write_frame::<CanDataFrame>(&frame).expect(\"Failed to write frame\");}}",
+                            frame_ident
+                        );
+
+                        gen_block += &format!(
+                            "{}\n{}\n{}\n",
+                            value_expressions.join("\n"),
+                            frame_constructor_expression,
+                            write_frame_expression
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    gen_output += "/// Generated code from build.rs::generate_can_data_code()!\n";
+    gen_output += "use embedded_can::Frame;";
+    gen_output += "use rand::Rng;";
+    gen_output += "use socketcan::{CanDataFrame, CanSocket, Socket};";
+    gen_output += "use std::sync::atomic::{AtomicBool, Ordering};";
+    gen_output += "use std::sync::Arc;";
+    gen_output += "use std::thread;";
+    gen_output += &imports.join("\n");
+
+    gen_output += "pub fn handle_virtual_can(";
+    gen_output += "    vcan_if_name: &str,";
+    gen_output += "    running: Arc<AtomicBool>,";
+    gen_output += ") -> Result<std::thread::JoinHandle<()>, ()> {";
+    gen_output += "    let socket = CanSocket::open(vcan_if_name);";
+    gen_output += "    match socket {";
+    gen_output += "        Ok(socket) => Ok(thread::spawn(move || {";
+    gen_output += "            while running.load(Ordering::SeqCst) {";
+
+    gen_output += &gen_block;
+    gen_output +=
+        "}},)),_ => Err(eprintln!(\"Failed to run virtual interface {vcan_if_name}\")),}}";
+
+    let rs_out_dir = path::Path::new("src/can/virtual_can_generator.rs");
+    let rs_out_file = fs::File::create(rs_out_dir).expect("Unable to create file");
+    let mut mod_writter = io::BufWriter::new(rs_out_file);
+
+    let syn_data = syn::parse_file(gen_output.as_str()).expect("Unable to parse generated code!");
+    let formatted_data = prettyplease::unparse(&syn_data);
+
+    mod_writter
+        .write(formatted_data.as_bytes())
+        .expect("Failed to write to file");
+}
+
 fn main() {
     build_dbc();
+    generate_can_data_code();
+
     slint_build::compile("ui/main.slint").unwrap();
 }
