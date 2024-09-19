@@ -19,6 +19,6 @@ rand = "0.8.5"
 
 [build-dependencies]
 slint-build = "1.7.2"
-dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }
+dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git" }
 syn = "2.0.77"
 prettyplease = "0.2.22"
