@@ -7,6 +7,7 @@ use crate::can::messages::wrx_2018;
 use crate::can::virtual_can_generator::handle_virtual_can;
 use slint::{ComponentHandle, Weak};
 use socketcan::{CanFrame, CanInterface};
+use std::env;
 use std::string::ToString;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -22,18 +23,13 @@ fn main() -> Result<(), slint::PlatformError> {
     let vcan_if_name = "vcan0";
     let can_if_name = "can0";
 
-    let mut virtual_cluster = false;
+    let virtual_cluster = env::var("HR_CLUSTER_VIRTUAL").is_ok_and(|val| val == "1");
     let mut created_vcan = false;
     let mut in_use_can_if_name: Option<&str> = None;
 
     let running = Arc::new(AtomicBool::new(true));
 
     let loaded_save_state = IMPL_SAVE_STATE;
-
-    match std::env::var("HR_CLUSTER_VIRTUAL") {
-        Ok(val) => virtual_cluster = val == "1",
-        _ => {}
-    }
 
     if virtual_cluster {
         match CanInterface::open(vcan_if_name) {
@@ -158,9 +154,11 @@ fn main() -> Result<(), slint::PlatformError> {
 }
 
 fn parse_can_frame(ui: Weak<AppWindow>, frame: impl embedded_can::Frame) {
-    match wrx_2018::Messages::from_can_message(frame.id(), frame.data()) {
+    use wrx_2018::Messages;
+
+    match Messages::from_can_message(frame.id(), frame.data()) {
         Ok(decoded_message) => match decoded_message {
-            wrx_2018::Messages::EngineStatus(signal) => {
+            Messages::EngineStatus(signal) => {
                 slint::invoke_from_event_loop(move || {
                     let binding = ui.unwrap();
                     let cardata = binding.global::<CarData>();
@@ -179,7 +177,7 @@ fn parse_can_frame(ui: Weak<AppWindow>, frame: impl embedded_can::Frame) {
                 })
                 .unwrap();
             }
-            wrx_2018::Messages::XxxMsg209(signal) => {
+            Messages::XxxMsg209(signal) => {
                 slint::invoke_from_event_loop(move || {
                     let binding = ui.unwrap();
                     let cardata = binding.global::<CarData>();
@@ -196,7 +194,7 @@ fn parse_can_frame(ui: Weak<AppWindow>, frame: impl embedded_can::Frame) {
                 })
                 .unwrap();
             }
-            wrx_2018::Messages::Odometer(signal) => {
+            Messages::Odometer(signal) => {
                 slint::invoke_from_event_loop(move || {
                     let binding = ui.unwrap();
                     let cardata = binding.global::<CarData>();
@@ -209,14 +207,20 @@ fn parse_can_frame(ui: Weak<AppWindow>, frame: impl embedded_can::Frame) {
                 })
                 .unwrap();
             }
-            wrx_2018::Messages::StatusSwitches(signal) => {
-                slint::invoke_from_event_loop(move || {
-                    let binding = ui.unwrap();
-                    let cardata = binding.global::<CarData>();
-                    cardata.set_lowbeams_enabled(signal.lowbeams_enabled())
-                })
-                .unwrap()
-            }
+            Messages::StatusSwitches(signal) => slint::invoke_from_event_loop(move || {
+                let binding = ui.unwrap();
+                let cardata = binding.global::<CarData>();
+                cardata.set_lowbeams_enabled(signal.lowbeams_enabled())
+            })
+            .unwrap(),
+            Messages::XxxMsg640(signal) => slint::invoke_from_event_loop(move || {
+                let binding = ui.unwrap();
+                let cardata = binding.global::<CarData>();
+
+                cardata.set_left_turn_signal_enabled(signal.left_turn_signal_enabled());
+                cardata.set_right_turn_signal_enabled(signal.right_turn_signal_enabled());
+            })
+            .unwrap(),
             _ => {}
         },
         _ => {}

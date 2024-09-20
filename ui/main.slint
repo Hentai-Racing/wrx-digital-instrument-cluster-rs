@@ -242,7 +242,7 @@ export component AppWindow inherits Window {
         width <=> self.height;
 
         x: VehicleSpeedGauge.x - self.width + 50px;
-        y: VehicleSpeedGauge.y;
+        y: VehicleSpeedGauge.y + 20px;
 
         source: @image-url("../resources/images/turn-signal-arrow.png");
         colorize: SymbolColors.symbol_color_green;
@@ -255,7 +255,7 @@ export component AppWindow inherits Window {
         width <=> RightTurnSignal.width;
 
         x: EngineRPMGauge.x + EngineRPMGauge.width - 50px;
-        y: EngineRPMGauge.y;
+        y: RightTurnSignal.y;
 
         image-fit: ImageFit.contain;
         source: @image-url("../resources/images/turn-signal-arrow.png");
