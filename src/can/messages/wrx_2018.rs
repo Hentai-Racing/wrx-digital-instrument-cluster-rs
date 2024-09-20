@@ -12,7 +12,7 @@
 
 use core::ops::BitOr;
 use bitvec::prelude::*;
-use socketcan::embedded_can::{Id, StandardId, ExtendedId};
+use embedded_can::{Id, StandardId, ExtendedId};
 
 /// All messages
 #[derive(Clone)]

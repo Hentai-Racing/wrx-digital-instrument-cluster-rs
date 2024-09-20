@@ -5,6 +5,7 @@ mod unit_conversion;
 use crate::can::can_controller::CanController;
 use crate::can::messages::wrx_2018;
 use crate::can::virtual_can_generator::handle_virtual_can;
+use embedded_can;
 use slint::{ComponentHandle, Weak};
 use socketcan::{CanFrame, CanInterface};
 use std::env;

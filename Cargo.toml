@@ -8,14 +8,23 @@ edition = "2021"
 build = "build.rs"
 license = "GPL-3.0"
 
+[features]
+default = ["slint/backend-default", "slint/renderer-femtovg"]
+kms = ["slint/backend-linuxkms-noseat"]                       # todo: add kms support
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-slint = "1.7.2"
-bitvec = "1.0.1"
+slint = { version = "1.7.2", default-features = false, features = [
+	"compat-1-2",
+	"std",
+] }
 socketcan = "3.3.0"
-embedded-can = "0.4.1"
 rand = "0.8.5"
+
+# required due to dbc-codegen
+bitvec = "1.0.1"
+embedded-can = "0.4.1"
 
 [build-dependencies]
 slint-build = "1.7.2"
