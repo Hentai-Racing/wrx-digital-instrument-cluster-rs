@@ -11,7 +11,7 @@ license = "GPL-3.0"
 [features]
 default = ["slint/backend-default", "slint/renderer-femtovg"]
 kms = [
-	"slint/backend-linuxkms-noseat",
+	"slint/backend-linuxkms",
 	"slint/renderer-femtovg",
 ] # todo: add kms support
 wayland = ["slint/backend-winit-wayland", "slint/renderer-femtovg"]
