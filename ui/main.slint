@@ -2,6 +2,15 @@ import { Button, VerticalBox } from "std-widgets.slint";
 import { IDataParameter, FDataParameter, MTGearParameter, SUnits } from "core/car_data.slint";
 import { InstrumentGauge, GaugeArc } from "components/instrument_gauge.slint";
 
+import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-Black.ttf";
+import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-Bold.ttf";
+import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-ExtraLight.ttf";
+import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-Light.ttf";
+import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-Medium.ttf";
+import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-Regular.ttf";
+import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-SemiBold.ttf";
+import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
+
 export global CarData {
     in property <IDataParameter> engine_rpm: { min_value: 0, max_value: 1, value: 0 };
 
@@ -28,6 +37,8 @@ export global SymbolColors {
 }
 
 export component AppWindow inherits Window {
+    default-font-family: "Montserrat";
+    default-font-weight: 400;
 
     title: "WRX Digital Instrument Cluster";
 
@@ -88,7 +99,7 @@ export component AppWindow inherits Window {
             rpm-tick-label := Text {
                 text: display_tick;
                 color: white;
-                font-size: 20px;
+                font-size: 25px;
                 x: parent.width / 2 + real_radius * cos(-parent.start * 360deg) - self.width / 2;
                 y: parent.height / 2 + real_radius * sin(-parent.start * 360deg) - self.height / 2;
             }
