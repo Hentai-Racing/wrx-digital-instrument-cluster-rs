@@ -2,12 +2,11 @@ slint::include_modules!();
 
 mod can;
 mod unit_conversion;
-use crate::can::can_controller::CanController;
 use crate::can::messages::wrx_2018;
 use crate::can::virtual_can_generator::handle_virtual_can;
 use embedded_can;
 use slint::{ComponentHandle, Weak};
-use socketcan::{CanFrame, CanInterface};
+use socketcan::{CanFrame, CanInterface, CanSocket, Socket};
 use std::env;
 use std::string::ToString;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -16,13 +15,12 @@ use std::thread;
 use unit_conversion::Units;
 
 const IMPL_SAVE_STATE: bool = false; // todo: implement save state
+const VCAN_IF_NAME: &str = "vcan0";
+const CAN_IF_NAME: &str = "can0";
 
 fn main() -> Result<(), slint::PlatformError> {
     let ui = AppWindow::new()?;
     let ui_weak = ui.as_weak();
-
-    let vcan_if_name = "vcan0";
-    let can_if_name = "can0";
 
     let virtual_cluster = env::var("HR_CLUSTER_VIRTUAL").is_ok_and(|val| val == "1");
     let mut created_vcan = false;
@@ -33,30 +31,24 @@ fn main() -> Result<(), slint::PlatformError> {
     let loaded_save_state = IMPL_SAVE_STATE;
 
     if virtual_cluster {
-        match CanInterface::open(vcan_if_name) {
-            Ok(_) => {
-                in_use_can_if_name = Some(vcan_if_name);
-                println!("Using existing virtual CAN interface");
-            }
-            _ => match CanInterface::create_vcan(vcan_if_name, Some(0)) {
-                Ok(_) => {
-                    println!("Created virtual CAN interface {vcan_if_name}");
-                    created_vcan = true;
-                    in_use_can_if_name = Some(vcan_if_name);
-                }
-                _ => println!(
-                    "Failed to create virtual CAN interface {vcan_if_name}. Check privilages"
-                ),
-            },
-        }
+        in_use_can_if_name = CanInterface::open(&VCAN_IF_NAME)
+            .is_ok()
+            .then_some(VCAN_IF_NAME)
+            .inspect(|vcan_if_name| println!("Using virtual CAN interface {vcan_if_name}"))
+            .or_else(|| {
+                CanInterface::create_vcan(&VCAN_IF_NAME, Some(0))
+                    .is_ok()
+                    .then(|| {
+                        created_vcan = true;
+                        VCAN_IF_NAME
+                    })
+            })
+            .inspect(|vcan_if_name| println!("Created virtual CAN interface {vcan_if_name}"));
+        in_use_can_if_name.expect("Failed to create virtual CAN interface");
     } else {
-        match CanInterface::open(can_if_name) {
-            Ok(_) => {
-                println!("Using CAN interface {can_if_name}");
-                in_use_can_if_name = Some(can_if_name);
-            }
-            _ => println!("No CAN interface in use"),
-        }
+        in_use_can_if_name = CanInterface::open(&CAN_IF_NAME)
+            .is_ok()
+            .then_some(CAN_IF_NAME);
     }
 
     if loaded_save_state {
@@ -68,46 +60,51 @@ fn main() -> Result<(), slint::PlatformError> {
             .set_units(Units::USCS.into());
     }
 
-    if let Some(in_use_can_if_name) = in_use_can_if_name {
-        let mut socket_up = false;
-
-        match CanInterface::open(in_use_can_if_name) {
-            Ok(can_interface) => match can_interface.details() {
-                Ok(details) => {
+    if let Some(can_if_name) = in_use_can_if_name {
+        let socket_up = CanInterface::open(can_if_name)
+            .and_then(|can_interface| {
+                Ok(can_interface.details().is_ok_and(|details| {
                     if details.is_up {
-                        socket_up = true;
-                        println!("CAN interface {in_use_can_if_name} is already up. Continuing...");
+                        println!("CAN interface {can_if_name} is already up. Continuing...");
+                        true
                     } else {
-                        match can_interface.bring_up() {
-                            Ok(_) => {
-                                socket_up = true;
-                                println!("Brought up CAN interface {in_use_can_if_name}");
-                            }
-                            _ => eprintln!("Failed to bring up CAN interface {in_use_can_if_name}"),
-                        }
+                        can_interface
+                            .bring_up()
+                            .and_then(|_| Ok(true))
+                            .expect("Failed to bring up CAN interface")
                     }
-                }
-                _ => {}
-            },
-            _ => eprintln!("Failed to open CAN interface {in_use_can_if_name}"),
-        }
+                }))
+            })
+            .expect("Failed to open CAN interface");
 
         if socket_up {
-            let mut controller = CanController::new(in_use_can_if_name).unwrap();
-            controller
-                .set_timeout(std::time::Duration::from_millis(100))
-                .unwrap();
+            let socket = CanSocket::open(can_if_name).expect("Failed to open CAN socket");
+
+            socket
+                .set_nonblocking(true)
+                .expect("Failed to set non-blocking mode");
+
+            socket
+                .set_read_timeout(std::time::Duration::from_millis(100))
+                .expect("Failed to set read timeout");
+
+            socket
+                .set_write_timeout(std::time::Duration::from_millis(100))
+                .expect("Failed to set write timeout");
 
             let running_clone = running.clone();
 
+            // todo: implement async reading
             let can_controller_thread = thread::spawn(move || {
                 while running_clone.load(Ordering::SeqCst) {
-                    match controller.read_frame() {
+                    match socket.read_frame() {
                         Ok(frame) => match frame {
                             CanFrame::Data(data_frame) => {
                                 parse_can_frame(ui_weak.clone(), data_frame)
                             }
-                            _ => todo!(),
+                            _ => {
+                                println!("Received non-data frame [not yet implemented]: {frame:?}")
+                            }
                         },
                         Err(e) => eprintln!("Error reading frame: {e:?}"),
                     }
@@ -117,7 +114,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let mut virtual_handler_thread: Option<std::thread::JoinHandle<()>> = None;
 
             if virtual_cluster {
-                match handle_virtual_can(vcan_if_name, running.clone()) {
+                match handle_virtual_can(VCAN_IF_NAME, running.clone()) {
                     Ok(handle) => {
                         virtual_handler_thread = Some(handle);
                         println!("Started virtual CAN handler");
@@ -132,17 +129,19 @@ fn main() -> Result<(), slint::PlatformError> {
             can_controller_thread.join().unwrap();
 
             if let Some(virtual_handler_handle) = virtual_handler_thread {
-                virtual_handler_handle.join().unwrap();
+                virtual_handler_handle
+                    .join()
+                    .expect("Failed to join virtual handler thread");
             }
         }
 
         if created_vcan {
-            match CanInterface::open(vcan_if_name) {
+            match CanInterface::open(VCAN_IF_NAME) {
                 Ok(vcan_interface) => match vcan_interface.delete() {
-                    Ok(_) => println!("Deleted virtual CAN interface {vcan_if_name}"),
-                    _ => println!("Failed to delete virtual CAN interface {vcan_if_name}"),
+                    Ok(_) => println!("Deleted virtual CAN interface {VCAN_IF_NAME}"),
+                    _ => println!("Failed to delete virtual CAN interface {VCAN_IF_NAME}"),
                 },
-                _ => println!("Failed to delete virtual CAN interface {vcan_if_name}"),
+                _ => println!("Failed to delete virtual CAN interface {VCAN_IF_NAME}"),
             }
         }
     } else {
