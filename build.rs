@@ -60,7 +60,7 @@ fn build_dbc() {
 }
 
 /// Generates Rust code for virtual CAN data generation
-pub fn generate_can_data_code() {
+fn generate_vcan_handler() {
     use std::fs;
     use std::io::{self, Write};
     use std::path;
@@ -191,7 +191,7 @@ pub fn generate_can_data_code() {
                             signal_path,
                             param_names.join(", ")
                         );
-                        let write_frame_expression: String = format!("if let Some(frame) = CanDataFrame::new({0}.id(), {0}.data()) {{socket.write_frame::<CanDataFrame>(&frame).expect(\"Failed to write frame\");}}",
+                        let write_frame_expression: String = format!("if let Some(frame) = Frame::new({0}.id(), {0}.data()) {{socket.write_frame(frame).unwrap().await.unwrap();}}",
                             frame_ident
                         );
 
@@ -207,27 +207,19 @@ pub fn generate_can_data_code() {
         }
     }
 
-    gen_output += "/// Generated code from build.rs::generate_can_data_code()!\n";
+    gen_output += "/// Generated code from build.rs::generate_vcan_handler()!\n";
     gen_output += "use embedded_can::Frame;";
     gen_output += "use rand::Rng;";
-    gen_output += "use socketcan::{CanDataFrame, CanSocket, Socket};";
+    gen_output += "use socketcan::tokio::CanSocket;";
     gen_output += "use std::sync::atomic::{AtomicBool, Ordering};";
     gen_output += "use std::sync::Arc;";
-    gen_output += "use std::thread;";
     gen_output += &imports.join("\n");
 
-    gen_output += "pub fn handle_virtual_can(";
-    gen_output += "    vcan_if_name: &str,";
-    gen_output += "    running: Arc<AtomicBool>,";
-    gen_output += ") -> Result<std::thread::JoinHandle<()>, ()> {";
-    gen_output += "    let socket = CanSocket::open(vcan_if_name);";
-    gen_output += "    match socket {";
-    gen_output += "        Ok(socket) => Ok(thread::spawn(move || {";
-    gen_output += "            while running.load(Ordering::SeqCst) {";
-
-    gen_output += &gen_block;
     gen_output +=
-        "}},)),_ => Err(eprintln!(\"Failed to run virtual interface {vcan_if_name}\")),}}";
+        "pub async fn run_vcan_generator(socket: &mut CanSocket, running: Arc<AtomicBool>) {";
+    gen_output += "    while running.load(Ordering::SeqCst) {";
+    gen_output += &gen_block;
+    gen_output += "}}";
 
     let rs_out_dir = path::Path::new("src/can/virtual_can_generator.rs");
     let rs_out_file = fs::File::create(rs_out_dir).expect("Unable to create file");
@@ -243,7 +235,7 @@ pub fn generate_can_data_code() {
 
 fn main() {
     build_dbc();
-    generate_can_data_code();
+    generate_vcan_handler();
 
     slint_build::compile("ui/main.slint").unwrap();
 }

@@ -2,7 +2,7 @@
 name = "wrx-digital-instrument-cluster-rs"
 description = "A digital instrument cluster for the 2018 Subaru WRX"
 repository = "https://github.com/Hentai-Racing/wrx-digital-instrument-cluster-rs"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Bryce Happel Walton <brycewaltonmail@gmail.com>"]
 edition = "2021"
 build = "build.rs"
@@ -19,19 +19,21 @@ wayland = ["slint/backend-winit-wayland", "slint/renderer-femtovg"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-slint = { version = "1.7.2", default-features = false, features = [
+slint = { version = "1.8.0", default-features = false, features = [
 	"compat-1-2",
 	"std",
 ] }
-socketcan = "3.3.0"
+socketcan = { version = "3.3.0", features = ["tokio"] }
 rand = "0.8.5"
+tokio = { version = "1.40.0", features = ["full"] }
 
 # required due to dbc-codegen
 bitvec = "1.0.1"
 embedded-can = "0.4.1"
+futures = "0.3.30"
 
 [build-dependencies]
-slint-build = "1.7.2"
+slint-build = "1.8.0"
 dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }
 syn = "2.0.77"
 prettyplease = "0.2.22"
