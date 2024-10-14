@@ -1,11 +1,12 @@
 mod can;
-mod car_data;
-mod unit_conversion;
-use crate::can::messages::wrx_2018;
-use crate::can::virtual_can_generator::run_vcan_generator;
-use car_data::CarData;
-use futures::stream::StreamExt;
-use slint::{ComponentHandle, Weak};
+mod can_data_bridge;
+mod data;
+
+use can::messages::wrx_2018;
+use can::virtual_can_generator::run_vcan_generator;
+use can_data_bridge::CanDataBridge;
+use data::car_data::CarData;
+use data::units;
 use socketcan::tokio::CanSocket;
 use socketcan::CanInterface;
 use std::env;
@@ -13,7 +14,7 @@ use std::string::ToString;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::{signal, task};
-use unit_conversion::Units;
+use units::UnitSystem;
 
 slint::include_modules!();
 
@@ -50,10 +51,11 @@ async fn main() {
         }
     }
 
-    let running_vcan = Arc::new(AtomicBool::new(false));
+    let running_vcan = Arc::new(AtomicBool::new(false)); // todo: is this necessary?
     let mut vcan_task: Option<task::JoinHandle<()>> = None;
+    let init_ui = false;
 
-    let mut car_data: Arc<CarData> = Arc::new(CarData { engine_rpm: 0 });
+    let car_data = CarData::new();
 
     if let Some(can_if_name) = in_use_can_if_name {
         println!("Using CAN interface {can_if_name}");
@@ -80,10 +82,11 @@ async fn main() {
             });
 
         if socket_up {
-            let mut can_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
+            let can_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
+            let mut can_data_bridge = CanDataBridge::new(car_data, can_socket);
 
             task::spawn(async move {
-                read_can_frames(&mut can_socket).await;
+                can_data_bridge.read_can_frames().await;
             });
 
             if virtual_cluster {
@@ -100,8 +103,16 @@ async fn main() {
         }
     }
 
-    let ui = AppWindow::new().unwrap();
-    ui.run().unwrap();
+    if init_ui {
+        let ui = AppWindow::new().unwrap();
+        ui.run().unwrap();
+    } else {
+        println!("Ctrl+C to stop");
+        signal::ctrl_c()
+            .await
+            .expect("Failed to listen for ctrl_c signal");
+        println!();
+    }
 
     if let Some(vcan_task) = vcan_task {
         running_vcan.store(false, Ordering::SeqCst); // stop the task loop
@@ -117,25 +128,6 @@ async fn main() {
             },
             Err(e) => println!("Error opening interface when deleting {VCAN_IF_NAME}: {e}"),
         }
-    }
-}
-
-async fn read_can_frames(can_socket: &mut socketcan::tokio::CanSocket) {
-    while let Some(Ok(frame)) = can_socket.next().await {
-        parse_can_frame(frame);
-    }
-}
-
-fn parse_can_frame(frame: impl embedded_can::Frame) {
-    use wrx_2018::Messages;
-
-    match Messages::from_can_message(frame.id(), frame.data()) {
-        Ok(message) => match message {
-            _ => {
-                todo!()
-            }
-        },
-        _ => {}
     }
 }
 
@@ -156,20 +148,20 @@ impl ToString for wrx_2018::EngineStatusMtGear {
 }
 
 // implement these here because Slint is included here
-impl Into<SUnits> for Units {
+impl Into<SUnits> for UnitSystem {
     fn into(self) -> SUnits {
         match self {
-            Units::SI => SUnits::SI,
-            Units::USCS => SUnits::USCS,
+            UnitSystem::SI => SUnits::SI,
+            UnitSystem::USCS => SUnits::USCS,
         }
     }
 }
 
-impl From<SUnits> for Units {
+impl From<SUnits> for UnitSystem {
     fn from(units: SUnits) -> Self {
         match units {
-            SUnits::SI => Units::SI,
-            SUnits::USCS => Units::USCS,
+            SUnits::SI => UnitSystem::SI,
+            SUnits::USCS => UnitSystem::USCS,
         }
     }
 }

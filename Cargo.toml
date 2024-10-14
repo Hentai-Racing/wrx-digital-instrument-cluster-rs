@@ -9,7 +9,8 @@ build = "build.rs"
 license = "GPL-3.0"
 
 [features]
-default = ["slint/backend-default", "slint/renderer-femtovg"]
+default = ["slint/backend-default", "slint/renderer-femtovg", "wrx_2018"]
+wrx_2018 = []
 kms = [
 	"slint/backend-linuxkms",
 	"slint/renderer-femtovg",
@@ -35,5 +36,5 @@ futures = "0.3.30"
 [build-dependencies]
 slint-build = "1.8.0"
 dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }
-syn = "2.0.77"
+syn = "2.0.79"
 prettyplease = "0.2.22"
