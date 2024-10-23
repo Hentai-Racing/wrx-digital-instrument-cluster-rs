@@ -1,4 +1,4 @@
-use tokio::sync::broadcast;
+use tokio::sync::watch;
 
 #[derive(Clone)]
 pub struct DataParameter<T> {
@@ -12,7 +12,7 @@ pub struct DataParameter<T> {
 
     init_value: bool, // Whether we've recieved an initial value. This may not be necessary
 
-    changed: broadcast::Sender<T>,
+    changed: watch::Sender<T>,
 }
 
 impl<T> DataParameter<T>
@@ -20,7 +20,7 @@ where
     T: Copy + Clone + Default + PartialEq + PartialOrd + ToString,
 {
     pub fn new(min: T, max: T) -> Self {
-        let (channel_sender, _) = broadcast::channel(1);
+        let (channel_sender, _) = watch::channel(Default::default());
 
         Self {
             min,
@@ -97,7 +97,7 @@ where
         }
     }
 
-    pub fn changed(&self) -> broadcast::Receiver<T> {
+    pub fn watch(&self) -> watch::Receiver<T> {
         self.changed.subscribe()
     }
 }

@@ -2,33 +2,39 @@ mod can;
 mod can_data_bridge;
 mod data;
 
-use can::messages::wrx_2018;
-use can::virtual_can_generator::run_vcan_generator;
-use can_data_bridge::CanDataBridge;
-use data::car_data::CarData;
-use data::units;
+use crate::can::messages::wrx_2018;
+use crate::can::virtual_can_generator::run_vcan_generator;
+use crate::can_data_bridge::CanDataBridge;
+use crate::data::car_data::CarData;
+use crate::data::units::UnitSystem;
+
 use socketcan::tokio::CanSocket;
 use socketcan::CanInterface;
 use std::env;
 use std::string::ToString;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use tokio::{signal, task};
-use units::UnitSystem;
-
-slint::include_modules!();
+use tokio::signal;
 
 const VCAN_IF_NAME: &str = "vcan0";
 const CAN_IF_NAME: &str = "can0";
 
-#[tokio::main]
-async fn main() {
+slint::include_modules!();
+
+fn main() -> Result<(), slint::PlatformError> {
+    let tokio_runtime = tokio::runtime::Runtime::new().unwrap();
+    let mut handles = Vec::<tokio::task::JoinHandle<()>>::new();
+
+    let mut car_data = CarData::new();
+
     let virtual_cluster = env::var("HR_CLUSTER_VIRTUAL").is_ok_and(|val| val == "1");
+    let running_vcan = Arc::new(AtomicBool::new(false));
     let mut created_vcan = false;
 
-    let in_use_can_if_name: Option<&str>;
-    if virtual_cluster {
-        in_use_can_if_name = match CanInterface::open(&VCAN_IF_NAME) {
+    let init_ui = true;
+
+    let in_use_can_if_name: Option<&str> = if virtual_cluster {
+        match CanInterface::open(&VCAN_IF_NAME) {
             Ok(_) => Some(VCAN_IF_NAME),
             Err(_) => match CanInterface::create_vcan(&VCAN_IF_NAME, None) {
                 Ok(_) => Some(VCAN_IF_NAME).inspect(|vcan_if_name| {
@@ -42,20 +48,14 @@ async fn main() {
             },
         }
     } else {
-        in_use_can_if_name = match CanInterface::open(&CAN_IF_NAME) {
+        match CanInterface::open(&CAN_IF_NAME) {
             Ok(_) => Some(CAN_IF_NAME),
             Err(e) => {
                 eprintln!("Failed to open CAN interface {CAN_IF_NAME}: {e}");
                 None
             }
         }
-    }
-
-    let running_vcan = Arc::new(AtomicBool::new(false)); // todo: is this necessary?
-    let mut vcan_task: Option<task::JoinHandle<()>> = None;
-    let init_ui = true;
-
-    let mut car_data = CarData::new();
+    };
 
     if let Some(can_if_name) = in_use_can_if_name {
         println!("Using CAN interface {can_if_name}");
@@ -82,13 +82,16 @@ async fn main() {
             });
 
         if socket_up {
+            let _guard = tokio_runtime.enter();
             let can_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
 
             let mut can_data_bridge = CanDataBridge::new(car_data.clone(), can_socket);
 
-            task::spawn(async move {
+            let can_bridge_handle = tokio_runtime.spawn(async move {
                 can_data_bridge.read_can_frames().await;
             });
+
+            handles.push(can_bridge_handle);
 
             if virtual_cluster {
                 let mut virtual_socket =
@@ -97,25 +100,25 @@ async fn main() {
                 let task_arc = running_vcan.clone();
                 task_arc.store(true, Ordering::SeqCst);
 
-                vcan_task = Some(task::spawn(async move {
-                    run_vcan_generator(&mut virtual_socket, task_arc).await
-                }));
+                let vcan_handle = tokio_runtime
+                    .spawn(async move { run_vcan_generator(&mut virtual_socket, task_arc).await });
+
+                handles.push(vcan_handle);
             }
         }
     }
 
     if init_ui {
-        let ui = AppWindow::new().unwrap();
+        let ui = AppWindow::new()?;
 
         let weak_ui = ui.as_weak();
 
         slint::spawn_local(async_compat::Compat::new(async move {
-            // todo: figure out why this thread keeps dying
-            let mut engine_rpm_changed = car_data.engine_rpm().changed();
+            let mut engine_rpm = car_data.engine_rpm().watch();
 
             loop {
-                match engine_rpm_changed.recv().await {
-                    Ok(value) => {
+                match engine_rpm.changed().await {
+                    Ok(_) => {
                         let binding = weak_ui.unwrap();
                         let ui_cardata = binding.global::<SCarData>();
 
@@ -123,7 +126,7 @@ async fn main() {
                             max_value: car_data.engine_rpm().max().into(),
                             min_value: car_data.engine_rpm().min().into(),
                             units: "RPM".into(),
-                            value: value.into(),
+                            value: engine_rpm.borrow_and_update().clone().into(),
                         });
                     }
                     Err(e) => {
@@ -134,29 +137,34 @@ async fn main() {
         }))
         .unwrap();
 
-        ui.run().unwrap();
+        ui.run()?
     } else {
-        task::spawn(async move {
-            let mut engine_rpm_changed = car_data.engine_rpm().changed();
+        tokio_runtime.spawn(async move {
+            let mut engine_rpm = car_data.engine_rpm().watch();
 
             loop {
-                if let Ok(value) = engine_rpm_changed.recv().await {
-                    println!("Engine RPM changed: {value}")
+                if engine_rpm.changed().await.is_ok() {
+                    println!(
+                        "Engine RPM changed: {}",
+                        engine_rpm.borrow_and_update().clone()
+                    )
                 }
             }
         });
 
         println!("Ctrl+C to stop");
-        signal::ctrl_c()
-            .await
-            .expect("Failed to listen for ctrl_c signal");
+        tokio_runtime.block_on(async {
+            signal::ctrl_c()
+                .await
+                .expect("Failed to listen for ctrl_c signal");
+        });
         println!();
     }
 
-    if let Some(vcan_task) = vcan_task {
-        running_vcan.store(false, Ordering::SeqCst); // stop the task loop
+    running_vcan.store(false, Ordering::SeqCst); // stop the task loop
 
-        vcan_task.abort(); // wait for the task to be aborted before deleting the interface
+    for handle in &handles {
+        handle.abort();
     }
 
     if created_vcan {
@@ -168,6 +176,8 @@ async fn main() {
             Err(e) => println!("Error opening interface when deleting {VCAN_IF_NAME}: {e}"),
         }
     }
+
+    Ok(())
 }
 
 impl ToString for wrx_2018::EngineStatusMtGear {

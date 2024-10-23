@@ -18,7 +18,11 @@ slint = { version = "1.8.0", default-features = false, features = [
 ] }
 socketcan = { version = "3.3.0", features = ["tokio"] }
 rand = "0.8.5"
-tokio = { version = "1.41.0", features = ["full", "sync"] }
+tokio = { version = "1.41.0", features = [
+	"sync",
+	"signal",
+	"rt-multi-thread",
+], default-features = false }
 async-compat = "0.2.4"
 
 # required due to dbc-codegen
