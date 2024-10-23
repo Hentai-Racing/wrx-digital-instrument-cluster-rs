@@ -45,57 +45,75 @@ impl ToString for Pressure {
     }
 }
 
+#[inline]
 pub fn km_to_mi(km: f32) -> f32 {
     km * 0.621371
 }
+#[inline]
 pub fn mi_to_km(mi: f32) -> f32 {
     mi / 0.621371
 }
+#[inline]
 pub fn degc_to_degf(c: f32) -> f32 {
     c * 9.0 / 5.0 + 32.0
 }
+#[inline]
 pub fn degf_to_degc(f: f32) -> f32 {
     (f - 32.0) * 5.0 / 9.0
 }
+#[inline]
 pub fn kg_to_lb(kg: f32) -> f32 {
     kg * 2.20462
 }
+#[inline]
 pub fn lb_to_kg(lb: f32) -> f32 {
     lb / 2.20462
 }
+#[inline]
 pub fn l_to_gal(l: f32) -> f32 {
     l * 0.264172
 }
+#[inline]
 pub fn gal_to_l(gal: f32) -> f32 {
     gal / 0.264172
 }
+#[inline]
 pub fn mph_to_kph(mph: f32) -> f32 {
     mph * 1.60934
 }
+#[inline]
 pub fn kph_to_mph(kph: f32) -> f32 {
     kph / 1.60934
 }
+#[inline]
 pub fn psi_to_kpa(psi: f32) -> f32 {
     psi * 6.89476
 }
+#[inline]
 pub fn kpa_to_psi(kpa: f32) -> f32 {
     kpa / 6.89476
 }
+#[inline]
 pub fn psi_to_bar(psi: f32) -> f32 {
     psi * 0.0689476
 }
+#[inline]
 pub fn bar_to_psi(bar: f32) -> f32 {
     bar / 0.0689476
 }
+#[inline]
 pub fn kpa_to_bar(kpa: f32) -> f32 {
     kpa * 0.01
 }
+#[inline]
 pub fn bar_to_kpa(bar: f32) -> f32 {
     bar / 0.01
 }
+#[inline]
 pub fn lbmin_to_galmin(lbmin: f32) -> f32 {
     lbmin * 0.119826
 }
+#[inline]
 pub fn galmin_to_lbmin(galmin: f32) -> f32 {
     galmin / 0.119826
 }

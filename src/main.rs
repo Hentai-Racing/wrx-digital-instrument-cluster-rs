@@ -53,9 +53,9 @@ async fn main() {
 
     let running_vcan = Arc::new(AtomicBool::new(false)); // todo: is this necessary?
     let mut vcan_task: Option<task::JoinHandle<()>> = None;
-    let init_ui = false;
+    let init_ui = true;
 
-    let car_data = CarData::new();
+    let mut car_data = CarData::new();
 
     if let Some(can_if_name) = in_use_can_if_name {
         println!("Using CAN interface {can_if_name}");
@@ -83,7 +83,8 @@ async fn main() {
 
         if socket_up {
             let can_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
-            let mut can_data_bridge = CanDataBridge::new(car_data, can_socket);
+
+            let mut can_data_bridge = CanDataBridge::new(car_data.clone(), can_socket);
 
             task::spawn(async move {
                 can_data_bridge.read_can_frames().await;
@@ -105,8 +106,47 @@ async fn main() {
 
     if init_ui {
         let ui = AppWindow::new().unwrap();
+
+        let weak_ui = ui.as_weak();
+
+        slint::spawn_local(async_compat::Compat::new(async move {
+            // todo: figure out why this thread keeps dying
+            let mut engine_rpm_changed = car_data.engine_rpm().changed();
+
+            loop {
+                println!("Hello");
+                match engine_rpm_changed.recv().await {
+                    Ok(value) => {
+                        let binding = weak_ui.unwrap();
+                        let ui_cardata = binding.global::<SCarData>();
+
+                        ui_cardata.set_engine_rpm(IDataParameter {
+                            max_value: car_data.engine_rpm().max().into(),
+                            min_value: car_data.engine_rpm().min().into(),
+                            units: "RPM".into(),
+                            value: value.into(),
+                        });
+                    }
+                    Err(e) => {
+                        println!("{e}")
+                    }
+                }
+            }
+        }))
+        .unwrap();
+
         ui.run().unwrap();
     } else {
+        task::spawn(async move {
+            let mut engine_rpm_changed = car_data.engine_rpm().changed();
+
+            loop {
+                if let Ok(value) = engine_rpm_changed.recv().await {
+                    println!("Engine RPM changed: {value}")
+                }
+            }
+        });
+
         println!("Ctrl+C to stop");
         signal::ctrl_c()
             .await

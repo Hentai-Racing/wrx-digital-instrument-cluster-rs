@@ -9,15 +9,7 @@ build = "build.rs"
 license = "GPL-3.0"
 
 [features]
-default = ["slint/backend-default", "slint/renderer-femtovg", "wrx_2018"]
-wrx_2018 = []
-kms = [
-	"slint/backend-linuxkms",
-	"slint/renderer-femtovg",
-] # todo: add kms support
-wayland = ["slint/backend-winit-wayland", "slint/renderer-femtovg"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+default = ["slint/backend-default", "slint/renderer-femtovg"]
 
 [dependencies]
 slint = { version = "1.8.0", default-features = false, features = [
@@ -26,15 +18,16 @@ slint = { version = "1.8.0", default-features = false, features = [
 ] }
 socketcan = { version = "3.3.0", features = ["tokio"] }
 rand = "0.8.5"
-tokio = { version = "1.40.0", features = ["full"] }
+tokio = { version = "1.41.0", features = ["full", "sync"] }
+async-compat = "0.2.4"
 
 # required due to dbc-codegen
 bitvec = "1.0.1"
 embedded-can = "0.4.1"
-futures = "0.3.30"
+futures = "0.3.31"
 
 [build-dependencies]
 slint-build = "1.8.0"
 dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }
-syn = "2.0.79"
-prettyplease = "0.2.22"
+syn = "2.0.82"
+prettyplease = "0.2.24"
