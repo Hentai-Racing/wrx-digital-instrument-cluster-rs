@@ -114,7 +114,6 @@ async fn main() {
             let mut engine_rpm_changed = car_data.engine_rpm().changed();
 
             loop {
-                println!("Hello");
                 match engine_rpm_changed.recv().await {
                     Ok(value) => {
                         let binding = weak_ui.unwrap();
