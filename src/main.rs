@@ -1,15 +1,16 @@
+mod application;
 mod can;
-mod can_data_bridge;
 mod data;
 
+use crate::application::can_data_bridge::CanDataBridge;
+use crate::application::ui_data_bridge::UIDataBridge;
 use crate::can::messages::wrx_2018;
 use crate::can::virtual_can_generator::run_vcan_generator;
-use crate::can_data_bridge::CanDataBridge;
 use crate::data::car_data::CarData;
 use crate::data::units::UnitSystem;
 
 use socketcan::tokio::CanSocket;
-use socketcan::CanInterface;
+use socketcan::{CanInterface, SocketOptions};
 use std::env;
 use std::string::ToString;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -23,119 +24,91 @@ slint::include_modules!();
 
 fn main() -> Result<(), slint::PlatformError> {
     let tokio_runtime = tokio::runtime::Runtime::new().unwrap();
+    let _guard = tokio_runtime.enter();
+
     let mut handles = Vec::<tokio::task::JoinHandle<()>>::new();
 
     let mut car_data = CarData::new();
 
     let virtual_cluster = env::var("HR_CLUSTER_VIRTUAL").is_ok_and(|val| val == "1");
     let running_vcan = Arc::new(AtomicBool::new(false));
-    let mut created_vcan = false;
+    let mut created_interface = false;
 
     let init_ui = true;
 
-    let in_use_can_if_name: Option<&str> = if virtual_cluster {
-        match CanInterface::open(&VCAN_IF_NAME) {
-            Ok(_) => Some(VCAN_IF_NAME),
-            Err(_) => match CanInterface::create_vcan(&VCAN_IF_NAME, None) {
-                Ok(_) => Some(VCAN_IF_NAME).inspect(|vcan_if_name| {
-                    created_vcan = true;
-                    println!("Created virtual CAN interface {vcan_if_name}")
-                }),
-                Err(e) => {
-                    eprintln!("Failed to create virtual CAN interface {VCAN_IF_NAME}: {e}");
-                    None
-                }
-            },
-        }
+    let (can_if_name, can_if_type) = if virtual_cluster {
+        (VCAN_IF_NAME, "vcan")
     } else {
-        match CanInterface::open(&CAN_IF_NAME) {
-            Ok(_) => Some(CAN_IF_NAME),
-            Err(e) => {
-                eprintln!("Failed to open CAN interface {CAN_IF_NAME}: {e}");
-                None
-            }
-        }
+        (CAN_IF_NAME, "can")
     };
 
-    if let Some(can_if_name) = in_use_can_if_name {
-        println!("Using CAN interface {can_if_name}");
-
-        let socket_up =
-            CanInterface::open(can_if_name).is_ok_and(|interface| match interface.details() {
-                Ok(details) => {
-                    if details.is_up {
-                        true
-                    } else {
-                        match interface.bring_up() {
-                            Ok(_) => true,
-                            Err(e) => {
-                                eprintln!("Failed to bring up interface {can_if_name}: {e:?}");
-                                false
-                            }
+    let can_interface: Option<CanInterface> = match CanInterface::open(&can_if_name) {
+        Ok(can_interface) => Some(can_interface),
+        _ => match CanInterface::create(&can_if_name, None, can_if_type) {
+            Ok(can_interface) => {
+                created_interface = true;
+                println!("Created CAN interface {can_if_name}");
+                Some(can_interface)
+            }
+            Err(e) => {
+                eprintln!("Failed to create CAN interface {can_if_name}: {e}");
+                None
+            }
+        },
+    };
+    let socket_up = if let Some(can_interface) = &can_interface {
+        match can_interface.details() {
+            Ok(details) => {
+                if details.is_up {
+                    true
+                } else {
+                    match can_interface.bring_up() {
+                        Ok(_) => true,
+                        Err(e) => {
+                            eprintln!("Failed to bring up interface {can_if_name}: {e:?}");
+                            false
                         }
                     }
                 }
-                Err(e) => {
-                    eprintln!("Failed to get details from interface {can_if_name}: {e:?}");
-                    false
-                }
-            });
-
-        if socket_up {
-            let _guard = tokio_runtime.enter();
-            let can_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
-
-            let mut can_data_bridge = CanDataBridge::new(car_data.clone(), can_socket);
-
-            let can_bridge_handle = tokio_runtime.spawn(async move {
-                can_data_bridge.read_can_frames().await;
-            });
-
-            handles.push(can_bridge_handle);
-
-            if virtual_cluster {
-                let mut virtual_socket =
-                    CanSocket::open(can_if_name).expect("Failed to open can socket");
-
-                let task_arc = running_vcan.clone();
-                task_arc.store(true, Ordering::SeqCst);
-
-                let vcan_handle = tokio_runtime
-                    .spawn(async move { run_vcan_generator(&mut virtual_socket, task_arc).await });
-
-                handles.push(vcan_handle);
+            }
+            Err(e) => {
+                eprintln!("Failed to get details from interface {can_if_name}: {e:?}");
+                false
             }
         }
+    } else {
+        false
+    };
+
+    if socket_up {
+        let can_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
+
+        let mut can_data_bridge = CanDataBridge::new(car_data.clone(), can_socket);
+
+        let can_bridge_handle = tokio_runtime.spawn(async move {
+            can_data_bridge.read_can_frames().await;
+        });
+        handles.push(can_bridge_handle);
+    }
+
+    if virtual_cluster {
+        let mut virtual_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
+        let _ = virtual_socket.set_loopback(true);
+
+        running_vcan.store(true, Ordering::SeqCst);
+
+        let running_vcan_clone = running_vcan.clone();
+        let vcan_handle = tokio_runtime.spawn(async move {
+            run_vcan_generator(&mut virtual_socket, running_vcan_clone).await
+        });
+        handles.push(vcan_handle);
     }
 
     if init_ui {
         let ui = AppWindow::new()?;
 
-        let weak_ui = ui.as_weak();
-
-        slint::spawn_local(async_compat::Compat::new(async move {
-            let mut engine_rpm = car_data.engine_rpm().watch();
-
-            loop {
-                match engine_rpm.changed().await {
-                    Ok(_) => {
-                        let binding = weak_ui.unwrap();
-                        let ui_cardata = binding.global::<SCarData>();
-
-                        ui_cardata.set_engine_rpm(IDataParameter {
-                            max_value: car_data.engine_rpm().max().into(),
-                            min_value: car_data.engine_rpm().min().into(),
-                            units: "RPM".into(),
-                            value: engine_rpm.borrow_and_update().clone().into(),
-                        });
-                    }
-                    Err(e) => {
-                        println!("{e}")
-                    }
-                }
-            }
-        }))
-        .unwrap();
+        let mut ui_data_bridge = UIDataBridge::new(ui.as_weak(), car_data.clone());
+        ui_data_bridge.run();
 
         ui.run()?
     } else {
@@ -161,19 +134,18 @@ fn main() -> Result<(), slint::PlatformError> {
         println!();
     }
 
-    running_vcan.store(false, Ordering::SeqCst); // stop the task loop
+    running_vcan.store(false, Ordering::SeqCst);
 
-    for handle in &handles {
+    for handle in handles {
         handle.abort();
     }
 
-    if created_vcan {
-        match CanInterface::open(VCAN_IF_NAME) {
-            Ok(vcan_interface) => match vcan_interface.delete() {
+    if created_interface {
+        if let Some(can_interface) = can_interface {
+            match can_interface.delete() {
                 Ok(_) => println!("Deleted interface {VCAN_IF_NAME}"),
                 Err(e) => println!("Error deleting interface {VCAN_IF_NAME}: {e:?}"),
-            },
-            Err(e) => println!("Error opening interface when deleting {VCAN_IF_NAME}: {e}"),
+            }
         }
     }
 

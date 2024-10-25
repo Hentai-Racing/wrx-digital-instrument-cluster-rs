@@ -22,8 +22,12 @@ tokio = { version = "1.41.0", features = [
 	"sync",
 	"signal",
 	"rt-multi-thread",
+	"macros",
 ], default-features = false }
 async-compat = "0.2.4"
+syn = "2.0.85"
+proc_macros = "0.1.0"
+quote = "1.0.37"
 
 # required due to dbc-codegen
 bitvec = "1.0.1"
@@ -33,5 +37,5 @@ futures = "0.3.31"
 [build-dependencies]
 slint-build = "1.8.0"
 dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }
-syn = "2.0.82"
-prettyplease = "0.2.24"
+syn = "2.0.85"
+prettyplease = "0.2.25"
