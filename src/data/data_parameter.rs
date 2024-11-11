@@ -1,3 +1,4 @@
+use crate::data::units;
 use tokio::sync::watch;
 
 #[derive(Clone)]
@@ -9,6 +10,7 @@ pub struct DataParameter<T> {
     observed_max: T,
 
     value: T,
+    units: units::Unit,
 
     init_value: bool, // Whether we've recieved an initial value. This may not be necessary
 
@@ -30,6 +32,7 @@ where
             observed_min: Default::default(),
 
             value: Default::default(),
+            units: Default::default(),
 
             init_value: false,
 
@@ -44,6 +47,11 @@ where
             self.update_observed_values();
             self.send_changed();
         }
+    }
+
+    #[allow(unused)]
+    pub fn units(&self) -> units::Unit {
+        self.units
     }
 
     #[allow(unused)]
@@ -99,5 +107,14 @@ where
 
     pub fn watch(&self) -> watch::Receiver<T> {
         self.changed.subscribe()
+    }
+}
+
+impl<T> Default for DataParameter<T>
+where
+    T: Copy + Clone + Default + PartialEq + PartialOrd + ToString,
+{
+    fn default() -> Self {
+        Self::new(Default::default(), Default::default())
     }
 }

@@ -7,12 +7,10 @@ use crate::application::ui_data_bridge::UIDataBridge;
 use crate::can::messages::wrx_2018;
 use crate::can::virtual_can_generator::run_vcan_generator;
 use crate::data::car_data::CarData;
-use crate::data::units::UnitSystem;
 
 use socketcan::tokio::CanSocket;
 use socketcan::{CanInterface, SocketOptions};
 use std::env;
-use std::string::ToString;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::signal;
@@ -150,39 +148,4 @@ fn main() -> Result<(), slint::PlatformError> {
     }
 
     Ok(())
-}
-
-impl ToString for wrx_2018::EngineStatusMtGear {
-    fn to_string(&self) -> String {
-        match self {
-            wrx_2018::EngineStatusMtGear::Floating => " ".to_string(),
-            wrx_2018::EngineStatusMtGear::Neutral => "N".to_string(),
-            wrx_2018::EngineStatusMtGear::X1 => "1".to_string(),
-            wrx_2018::EngineStatusMtGear::X2 => "2".to_string(),
-            wrx_2018::EngineStatusMtGear::X3 => "3".to_string(),
-            wrx_2018::EngineStatusMtGear::X4 => "4".to_string(),
-            wrx_2018::EngineStatusMtGear::X5 => "5".to_string(),
-            wrx_2018::EngineStatusMtGear::X6 => "6".to_string(),
-            _ => "?ERR_MT_GEAR".to_string(),
-        }
-    }
-}
-
-// implement these here because Slint is included here
-impl Into<SUnits> for UnitSystem {
-    fn into(self) -> SUnits {
-        match self {
-            UnitSystem::SI => SUnits::SI,
-            UnitSystem::USCS => SUnits::USCS,
-        }
-    }
-}
-
-impl From<SUnits> for UnitSystem {
-    fn from(units: SUnits) -> Self {
-        match units {
-            SUnits::SI => UnitSystem::SI,
-            SUnits::USCS => UnitSystem::USCS,
-        }
-    }
 }

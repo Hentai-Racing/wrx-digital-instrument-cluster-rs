@@ -2,7 +2,6 @@ use crate::data::car_data::CarData;
 use crate::wrx_2018::Messages;
 use embedded_can::Frame;
 use socketcan::tokio::CanSocket;
-use tokio::signal;
 
 pub struct CanDataBridge {
     car_data: CarData,
@@ -36,10 +35,37 @@ impl CanDataBridge {
         match message {
             Messages::EngineStatus(signal) => {
                 self.car_data.engine_rpm().set_value(signal.engine_rpm());
+                self.car_data.mt_gear().set_value(signal.mt_gear());
             }
+
             Messages::Odometer(signal) => {
                 self.car_data.odometer().set_value(signal.odometer());
             }
+
+            Messages::XxxMsg209(signal) => {
+                self.car_data
+                    .vehicle_speed()
+                    .set_value(signal.vehicle_speed());
+            }
+
+            Messages::StatusSwitches(signal) => {
+                self.car_data
+                    .lowbeams_enabled()
+                    .set_value(signal.lowbeams_enabled());
+                self.car_data
+                    .handbrake_sw()
+                    .set_value(signal.handbrake_sw());
+            }
+
+            Messages::XxxMsg640(signal) => {
+                self.car_data
+                    .left_turn_signal_enabled()
+                    .set_value(signal.left_turn_signal_enabled());
+                self.car_data
+                    .right_turn_signal_enabled()
+                    .set_value(signal.right_turn_signal_enabled());
+            }
+
             _ => {}
         }
     }

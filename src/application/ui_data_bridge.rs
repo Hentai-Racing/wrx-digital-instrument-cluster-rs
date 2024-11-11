@@ -1,7 +1,23 @@
 use crate::data::car_data::CarData;
 use crate::slint_generatedAppWindow::*;
-use slint::{ComponentHandle, Weak};
-use tokio;
+use paste::paste;
+use slint::Weak;
+
+// todo: make a round-robin system to stop higher freqency signals from bullying
+// this will involve creating our own "event" system which has a queue
+macro_rules! BridgeEvents {
+    ($car_data:ident, $window:ident, $($name:ident),*) => {
+        $(let mut $name = $car_data.$name().watch();)*
+
+        loop {
+            tokio::select! {
+                $(_ = $name.changed() => {
+                    paste!{$window.[<set_ $name>]((*$name.borrow_and_update()).into());}
+                },)*
+            }
+        }
+    };
+}
 
 pub struct UIDataBridge {
     main_window: Weak<AppWindow>,
@@ -20,35 +36,26 @@ impl UIDataBridge {
         let main_window = self.main_window.clone();
         let mut car_data = self.car_data.clone();
 
-        slint::spawn_local(async_compat::Compat::new(async move {
-            let mut engine_rpm = car_data.engine_rpm().watch();
-            let mut odometer = car_data.odometer().watch();
+        match slint::spawn_local(async_compat::Compat::new(async move {
+            let window = main_window.unwrap();
 
-            let binding = main_window.unwrap();
-            let ui_cardata = binding.global::<SCarData>();
+            BridgeEvents!(
+                car_data,
+                window,
+                //
+                engine_rpm,
+                mt_gear,
+                vehicle_speed,
+                odometer,
+                lowbeams_enabled,
+                right_turn_signal_enabled,
+                left_turn_signal_enabled,
+                handbrake_sw
+            );
+        })) {
+            Err(e) => eprintln!("UIDataBridge failed with error: {e}"),
 
-            loop {
-                // todo: this may not be the best example of an event handler
-                tokio::select! {
-                    _ = engine_rpm.changed() => {
-                        ui_cardata.set_engine_rpm(IDataParameter {
-                            max_value: car_data.engine_rpm().max().into(),
-                            min_value: car_data.engine_rpm().min().into(),
-                            units: "RPM".into(),
-                            value: engine_rpm.borrow_and_update().clone().into(),
-                        });
-                    },
-                    _ = odometer.changed() => {
-                        ui_cardata.set_odometer(FDataParameter {
-                            max_value: car_data.odometer().max().into(),
-                            min_value: car_data.odometer().min().into(),
-                            units: "MI".into(),
-                            value: odometer.borrow_and_update().clone().into(),
-                        });
-                    }
-                }
-            }
-        }))
-        .unwrap();
+            _ => {}
+        };
     }
 }
