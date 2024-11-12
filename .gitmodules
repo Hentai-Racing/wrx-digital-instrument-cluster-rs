@@ -1,0 +1,3 @@
+[submodule "Montserrat"]
+	path = resources/fonts/Montserrat
+	url = https://github.com/JulietaUla/Montserrat.git
