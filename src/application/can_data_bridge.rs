@@ -25,48 +25,31 @@ impl CanDataBridge {
     }
 
     fn parse_can_frame(&mut self, frame: impl Frame) {
-        match Messages::from_can_message(frame.id(), frame.data()) {
-            Ok(message) => self.process_message(message),
-            _ => {}
+        if let Ok(message) = Messages::from_can_message(frame.id(), frame.data()) {
+            self.process_message(message)
         }
     }
 
     fn process_message(&mut self, message: Messages) {
-        match message {
-            Messages::EngineStatus(signal) => {
-                self.car_data.engine_rpm().set_value(signal.engine_rpm());
-                self.car_data.mt_gear().set_value(signal.mt_gear());
-            }
-
-            Messages::Odometer(signal) => {
-                self.car_data.odometer().set_value(signal.odometer());
-            }
-
-            Messages::XxxMsg209(signal) => {
-                self.car_data
-                    .vehicle_speed()
-                    .set_value(signal.vehicle_speed());
-            }
-
-            Messages::StatusSwitches(signal) => {
-                self.car_data
-                    .lowbeams_enabled()
-                    .set_value(signal.lowbeams_enabled());
-                self.car_data
-                    .handbrake_sw()
-                    .set_value(signal.handbrake_sw());
-            }
-
-            Messages::XxxMsg640(signal) => {
-                self.car_data
-                    .left_turn_signal_enabled()
-                    .set_value(signal.left_turn_signal_enabled());
-                self.car_data
-                    .right_turn_signal_enabled()
-                    .set_value(signal.right_turn_signal_enabled());
-            }
-
-            _ => {}
+        /// Takes the message enum and its signals and does the necessary binding to cardata
+        macro_rules! signal_bridge {
+            ( $($msg:path => { $($param:ident),* });* ; ) => {
+                match message {
+                    $($msg(sig) => {
+                            $({self.car_data.$param().set_value(sig.$param())})*
+                    })*
+                    _ => {}
+                }
+            };
         }
+
+        use Messages::*;
+        signal_bridge!(
+            EngineStatus => {engine_rpm, mt_gear};
+            Odometer => {odometer};
+            XxxMsg209 => {vehicle_speed};
+            StatusSwitches => {lowbeams_enabled, handbrake_sw};
+            XxxMsg640 => {left_turn_signal_enabled, right_turn_signal_enabled};
+        );
     }
 }

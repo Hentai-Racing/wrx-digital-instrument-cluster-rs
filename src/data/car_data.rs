@@ -1,9 +1,8 @@
 use crate::data::data_parameter::DataParameter;
 use crate::wrx_2018::EngineStatusMtGear;
 
-//todo: use syn to get all parameters from the message file like is done for virtual_can_generator in build.rs
 macro_rules! CarData {
-    ($($name:ident: $type:ty),*) => {
+    ($($name:ident: $type:ty $(= $init:expr)?),*) => {
         #[derive(Clone, Default)]
         pub struct CarData {
             $($name: DataParameter<$type>,)*
@@ -11,29 +10,32 @@ macro_rules! CarData {
 
         impl CarData {
             pub fn new() -> Self {
-                Self {
-                    ..Default::default()
-                }
+                let mut ret = Self {..Default::default()};
+
+                $($({ret.$name.set_value($init)})?)* // allow for optional initial values
+
+                ret
             }
 
-            $(
-                pub fn $name(&mut self) -> &mut DataParameter<$type> {
-                    &mut self.$name
-                }
-            )*
+            $(pub fn $name(&mut self) -> &mut DataParameter<$type> {
+                &mut self.$name
+            })*
         }
     }
 }
 
 CarData!(
     engine_rpm: u16,
-    mt_gear: EngineStatusMtGear,
+
     vehicle_speed: f32,
     odometer: f32,
-    lowbeams_enabled: bool,
-    right_turn_signal_enabled: bool,
-    left_turn_signal_enabled: bool,
-    handbrake_sw: bool
+
+    lowbeams_enabled: bool = true,
+    right_turn_signal_enabled: bool = true,
+    left_turn_signal_enabled: bool = true,
+    handbrake_sw: bool = true,
+
+    mt_gear: EngineStatusMtGear = EngineStatusMtGear::Neutral
 );
 
 //
