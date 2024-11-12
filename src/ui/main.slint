@@ -1,15 +1,17 @@
 import { Button, VerticalBox } from "std-widgets.slint";
 import { InstrumentGauge, GaugeArc } from "components/instrument_gauge.slint";
+import { SCarData } from "data/car_data.slint";
 
-import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-Black.ttf";
-import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-Bold.ttf";
-import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-ExtraLight.ttf";
-import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-Light.ttf";
-import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-Medium.ttf";
-import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-Regular.ttf";
-import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-SemiBold.ttf";
-import "../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
+import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Black.ttf";
+import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Bold.ttf";
+import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-ExtraLight.ttf";
+import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Light.ttf";
+import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Medium.ttf";
+import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Regular.ttf";
+import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-SemiBold.ttf";
+import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
 
+export { SCarData }
 export global SymbolColors {
     out property <color> symbol_color_blue: #0000ff;
     out property <color> symbol_color_dark_grey: #4b4b4b;
@@ -25,15 +27,6 @@ component PrimarySection inherits Rectangle {
 }
 
 export component AppWindow inherits Window {
-    in property <int> engine_rpm;
-    in property <string> mt_gear;
-    in property <float> vehicle_speed;
-    in property <float> odometer;
-    in property <bool> lowbeams_enabled;
-    in property <bool> right_turn_signal_enabled;
-    in property <bool> left_turn_signal_enabled;
-    in property <bool> handbrake_sw;
-
     property <length> icon_size: 75px;
 
     default-font-family: "Montserrat";
@@ -48,13 +41,22 @@ export component AppWindow inherits Window {
 
     VerticalLayout {
         top_span := PrimarySection {
-            background: Colors.cadetblue;
-            height: max(40px, root.height * 1 / 20);
+            background: transparent;
+            height: max(icon_size, root.height * 1 / 20);
+
+            LowbeamIndicatorLight := Image {
+                height: icon_size;
+                width <=> self.height;
+
+                source: @image-url("../../resources/images/headlight-indicator-light.png");
+                colorize: SymbolColors.symbol_color_green;
+
+                visible: SCarData.lowbeams_enabled;
+            }
         }
 
         HorizontalLayout {
             left_tri := PrimarySection {
-                background: Colors.aquamarine;
                 width: parent.width * 38%;
 
                 EngineRPMGauge := InstrumentGauge {
@@ -66,7 +68,7 @@ export component AppWindow inherits Window {
                     inner_radius: self.width / 2px - self.width / 6px;
                     background_inner_radius: self.width / 2px - 2;
 
-                    progress: engine_rpm / 8191;
+                    progress: SCarData.engine_rpm / 8191;
 
                     property <int> ticks: 8;
                     property <int> minor_ticks: 3;
@@ -75,10 +77,22 @@ export component AppWindow inherits Window {
                     property <float> tick_step: self.range / self.ticks;
                     property <float> minor_tick_step: tick_step / (self.minor_ticks + 1);
 
+                    rpm-first-tick := GaugeArc {
+                        viewbox-width: parent.width / 1px;
+                        viewbox-height: parent.height / 1px;
+
+                        fill: EngineRPMGauge.tick_color;
+                        fill-rule: FillRule.nonzero;
+                        inner-radius: EngineRPMGauge.inner_radius + EngineRPMGauge.width / 15px;
+                        progress: EngineRPMGauge.tick_size;
+                        start: parent.start;
+                        range: 75%;
+                    }
+
                     for tick in ticks: Rectangle {
                         property <int> display_tick: tick + 1;
                         property <float> start: parent.start - display_tick * parent.tick_step;
-                        property <length> real_radius: parent.inner_radius * 1px + 35px - rpm-tick-label.font-size;
+                        property <length> label_radius: parent.inner_radius * 1px + 30px - rpm-tick-label.font-size;
 
                         width: parent.width;
                         height: parent.height;
@@ -88,7 +102,7 @@ export component AppWindow inherits Window {
                             viewbox-height: parent.height / 1px;
 
                             fill: EngineRPMGauge.tick_color;
-                            inner_radius: EngineRPMGauge.inner_radius + EngineRPMGauge.width / 15px;
+                            inner_radius: rpm-first-tick.inner_radius;
                             progress: EngineRPMGauge.tick_size;
                             start: parent.start - 0.25 + (75% / EngineRPMGauge.ticks);
                             range: 75%;
@@ -98,8 +112,8 @@ export component AppWindow inherits Window {
                             text: display_tick;
                             color: white;
                             font-size: 25px;
-                            x: parent.width / 2 + real_radius * cos(-parent.start * 360deg) - self.width / 2;
-                            y: parent.height / 2 + real_radius * sin(-parent.start * 360deg) - self.height / 2;
+                            x: parent.width / 2 + label_radius * cos(-parent.start * 360deg) - self.width / 2;
+                            y: parent.height / 2 + label_radius * sin(-parent.start * 360deg) - self.height / 2;
                         }
 
                         for minor_tick in minor_ticks: Rectangle {
@@ -120,46 +134,44 @@ export component AppWindow inherits Window {
                         }
                     }
 
-                    GaugeArc {
-                        viewbox-width: parent.width / 1px;
-                        viewbox-height: parent.height / 1px;
-
-                        fill: EngineRPMGauge.tick_color;
-                        fill-rule: FillRule.nonzero;
-                        inner-radius: 50;
-                        progress: EngineRPMGauge.tick_size;
-                        start: parent.start;
-                        range: 75%;
-                    }
-
                     MTGearLabel := Text {
-                        text: mt_gear;
+                        text: SCarData.mt_gear;
                         color: white;
                         font-size: 50px;
                     }
                 }
+
+                LeftTurnSignal := Image {
+                    height <=> RightTurnSignal.height;
+                    width <=> RightTurnSignal.width;
+
+                    x: EngineRPMGauge.x + EngineRPMGauge.width / 2 - self.width / 2 + EngineRPMGauge.width / 1.5 * cos(45deg);
+                    y: EngineRPMGauge.y + EngineRPMGauge.height / 2 - self.height / 2 - EngineRPMGauge.height / 1.5 * sin(45deg);
+
+                    image-fit: ImageFit.contain;
+                    source: @image-url("../../resources/images/turn-signal-arrow.png");
+                    colorize: SymbolColors.symbol_color_green;
+
+                    visible: SCarData.left_turn_signal_enabled;
+                    rotation-angle: 180deg;
+                }
             }
 
-            mid_tri := PrimarySection {
-                background: Colors.powderblue;
-            }
+            mid_tri := PrimarySection { }
 
             right_tri := PrimarySection {
-                background: Colors.blueviolet;
                 width: left-tri.width;
 
                 VehicleSpeedGauge := InstrumentGauge {
                     width: self.height;
                     height: EngineRPMGauge.height;
-                    // x: parent.width - parent.width - root.width * 5%;
-                    // y: parent.height / 2 - self.height / 2;
                     range: 75%;
                     start: -50% + 25% / 2;
 
                     inner_radius: EngineRPMGauge.inner_radius;
                     background_inner_radius: EngineRPMGauge.background_inner_radius;
 
-                    progress: vehicle_speed / 290;
+                    progress: SCarData.vehicle_speed / 290;
 
                     property <int> ticks: 18;
                     property <int> minor_ticks: 1;
@@ -168,10 +180,21 @@ export component AppWindow inherits Window {
                     property <float> tick_step: self.range / self.ticks;
                     property <float> minor_tick_step: tick_step / (self.minor_ticks + 1);
 
+                    speed-first-tick := GaugeArc {
+                        viewbox-width: parent.width / 1px;
+                        viewbox-height: parent.height / 1px;
+
+                        fill: VehicleSpeedGauge.tick_color;
+                        inner_radius: VehicleSpeedGauge.inner_radius + VehicleSpeedGauge.width / 10px;
+                        progress: VehicleSpeedGauge.tick_size;
+                        start: parent.start;
+                        range: 75%;
+                    }
+
                     for tick in ticks: Rectangle {
                         property <int> display_tick: tick + 1;
                         property <float> start: parent.start - display_tick * parent.tick_step;
-                        property <length> real_radius: parent.inner_radius * 1px + 35px - speed-tick-label.font-size;
+                        property <length> label_radius: parent.inner_radius * 1px + 33px - speed-tick-label.font-size;
 
                         width: parent.width;
                         height: parent.height;
@@ -181,7 +204,7 @@ export component AppWindow inherits Window {
                             viewbox-height: parent.height / 1px;
 
                             fill: VehicleSpeedGauge.tick_color;
-                            inner_radius: VehicleSpeedGauge.inner_radius + 35;
+                            inner_radius: speed-first-tick.inner_radius;
                             progress: VehicleSpeedGauge.tick_size;
                             start: parent.start - 0.25 + (75% / VehicleSpeedGauge.ticks);
                             range: 75%;
@@ -191,8 +214,8 @@ export component AppWindow inherits Window {
                             text: display_tick * 10;
                             color: white;
                             font-size: 15px;
-                            x: parent.width / 2 + real_radius * cos(-parent.start * 360deg) - self.width / 2;
-                            y: parent.height / 2 + real_radius * sin(-parent.start * 360deg) - self.height / 2;
+                            x: parent.width / 2 + label_radius * cos(-parent.start * 360deg) - self.width / 2;
+                            y: parent.height / 2 + label_radius * sin(-parent.start * 360deg) - self.height / 2;
                         }
 
                         for minor_tick in minor_ticks: Rectangle {
@@ -213,19 +236,8 @@ export component AppWindow inherits Window {
                         }
                     }
 
-                    GaugeArc {
-                        viewbox-width: parent.width / 1px;
-                        viewbox-height: parent.height / 1px;
-
-                        fill: VehicleSpeedGauge.tick_color;
-                        inner_radius: VehicleSpeedGauge.inner_radius + 40;
-                        progress: VehicleSpeedGauge.tick_size;
-                        start: parent.start;
-                        range: 75%;
-                    }
-
                     VehicleSpeedLabel := Text {
-                        text: round(vehicle_speed);
+                        text: round(SCarData.vehicle_speed);
                         color: white;
                         font-size: 45px;
 
@@ -237,70 +249,38 @@ export component AppWindow inherits Window {
                         height: icon_size * 1.1;
                         width: icon_size;
 
-                        y: parent.height - self.height - 90px;
+                        y: parent.height - self.height - parent.height * 10%;
 
-                        source: @image-url("../resources/images/brake-warning-indicator-light-letters-only.png");
+                        source: @image-url("../../resources/images/brake-warning-indicator-light-letters-only.png");
                         colorize: SymbolColors.symbol_color_red;
 
-                        visible: handbrake_sw;
+                        visible: SCarData.handbrake_sw;
                     }
+                }
+
+                RightTurnSignal := Image {
+                    height: icon_size * 0.9;
+                    width <=> self.height;
+
+                    x: VehicleSpeedGauge.x + VehicleSpeedGauge.width / 2 - self.width / 2 - VehicleSpeedGauge.width / 1.5 * cos(45deg);
+                    y: VehicleSpeedGauge.y + VehicleSpeedGauge.height / 2 - self.height / 2 - VehicleSpeedGauge.height / 1.5 * sin(45deg);
+
+                    source: @image-url("../../resources/images/turn-signal-arrow.png");
+                    colorize: SymbolColors.symbol_color_green;
+
+                    visible: SCarData.right_turn_signal_enabled;
                 }
             }
         }
 
         bottom_span := PrimarySection {
-            background: Colors.purple;
-            height: top_span.height;
+            height: OdometerText.height * 110%;
+
+            OdometerText := Text {
+                color: white;
+                text: SCarData.odometer;
+                font-size: 30px;
+            }
         }
     }
-
-
-
-
-
-    // HeadlightIndicatorLight := Image {
-    //     height: icon_size;
-    //     width <=> self.height;
-
-    //     source: @image-url("../resources/images/headlight-indicator-light.png");
-    //     colorize: SymbolColors.symbol_color_green;
-
-    //     visible: lowbeams_enabled;
-    // }
-
-    // RightTurnSignal := Image {
-    //     height: icon_size * 0.9;
-    //     width <=> self.height;
-
-    //     x: VehicleSpeedGauge.x - self.width + 50px;
-    //     y: VehicleSpeedGauge.y + 20px;
-
-    //     source: @image-url("../resources/images/turn-signal-arrow.png");
-    //     colorize: SymbolColors.symbol_color_green;
-
-    //     visible: right_turn_signal_enabled;
-    // }
-
-    // LeftTurnSignal := Image {
-    //     height <=> RightTurnSignal.height;
-    //     width <=> RightTurnSignal.width;
-
-    //     x: EngineRPMGauge.x + EngineRPMGauge.width - 50px;
-    //     y: RightTurnSignal.y;
-
-    //     image-fit: ImageFit.contain;
-    //     source: @image-url("../resources/images/turn-signal-arrow.png");
-    //     colorize: SymbolColors.symbol_color_green;
-
-    //     visible: left_turn_signal_enabled;
-    //     rotation-angle: 180deg;
-    // }
-
-    // OdometerText := Text {
-    //     color: white;
-    //     text: odometer;
-    //     font-size: 35px;
-    //     x: root.width / 2 - self.width / 2;
-    //     y: root.height - self.height - 20px;
-    // }
 }

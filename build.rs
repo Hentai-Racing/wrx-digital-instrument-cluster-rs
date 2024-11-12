@@ -233,9 +233,164 @@ fn generate_vcan_handler() {
         .expect("Failed to write to file");
 }
 
+// generates slint car data globals
+fn generate_slint_car_data() {
+    use std::fs;
+    use std::io::{self, Write};
+    use std::path;
+    use syn;
+
+    // Read the mod.rs file
+    let mod_rs_content =
+        fs::read_to_string("src/can/messages/mod.rs").expect("Unable to read mod.rs");
+    let mod_rs: syn::File = syn::parse_str(&mod_rs_content).expect("Unable to parse mod.rs");
+
+    // Extract module names
+    let module_names: Vec<String> = mod_rs
+        .items
+        .iter()
+        .filter_map(|item| {
+            if let syn::Item::Mod(syn::ItemMod { ident, .. }) = item {
+                Some(ident.to_string())
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    let mut gen_output = String::new(); // full file contents
+    let mut gen_block = String::new(); // generated code
+    let mut imports: Vec<String> = Vec::new(); // imported can message modules
+
+    // Process each module
+    for module_name in module_names {
+        let module_path = format!("src/can/messages/{}.rs", module_name);
+        imports.push(format!("use crate::can::messages::{};", module_name));
+
+        let module_content = fs::read_to_string(&module_path).expect("Unable to read module file");
+        let module_file: syn::File =
+            syn::parse_str(&module_content).expect("Unable to parse module file");
+
+        // Find the Messages enum
+        let messages_enum = module_file
+            .items
+            .iter()
+            .find_map(|item| {
+                if let syn::Item::Enum(syn::ItemEnum {
+                    ident, variants, ..
+                }) = item
+                {
+                    if ident == "Messages" {
+                        Some(variants)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .expect("Messages enum not found");
+
+        // Find all implementations for each message in messages_enum
+        let impls: Vec<&syn::ItemImpl> = module_file
+            .items
+            .iter()
+            .filter_map(|item| {
+                if let syn::Item::Impl(item_impl) = item {
+                    item_impl
+                        .items
+                        .iter()
+                        .any(|impl_item| {
+                            if let syn::ImplItem::Const(constant) = impl_item {
+                                constant.ident == "MESSAGE_ID"
+                            } else {
+                                false
+                            }
+                        })
+                        .then_some(item_impl)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        for (variant, item_impl) in messages_enum.iter().zip(impls.iter()) {
+            for impl_item in &item_impl.items {
+                if let syn::ImplItem::Fn(func) = impl_item {
+                    if func.sig.ident == "new" {
+                        gen_block += &format!("// {}\n", variant.ident);
+                        for input in &func.sig.inputs {
+                            if let syn::FnArg::Typed(pat_type) = input {
+                                let param_name = if let syn::Pat::Ident(pat_ident) = &*pat_type.pat
+                                {
+                                    &pat_ident.ident
+                                } else {
+                                    continue;
+                                };
+
+                                // we have to get the actual return type in case the type is an enum
+                                // to do this we must search all the functions again for the current
+                                // parameter and get the return type of that function
+                                for impl_item in &item_impl.items {
+                                    if let syn::ImplItem::Fn(func) = impl_item {
+                                        if &func.sig.ident == param_name {
+                                            match &func.sig.output {
+                                                syn::ReturnType::Type(_, ty) => {
+                                                    if let syn::Type::Path(type_path) = &**ty {
+                                                        let slint_type = match type_path
+                                                            .path
+                                                            .segments
+                                                            .last()
+                                                            .unwrap()
+                                                            .ident
+                                                            .to_string()
+                                                            .as_str()
+                                                        {
+                                                            "bool" => "bool",
+                                                            "u8" | "u16" | "u32" | "u64" | "i8"
+                                                            | "i16" | "i32" | "i64" => "int",
+                                                            "f32" | "f64" => "float",
+                                                            //-// ! must implement to_string and into<SharedString> for all enum types
+                                                            _ => "string",
+                                                        };
+
+                                                        gen_block += &format!(
+                                                            "\tin property <{}> {};\n",
+                                                            slint_type, param_name
+                                                        );
+                                                    };
+                                                }
+                                                _ => {}
+                                            };
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    gen_output += "// Generated code from build.rs::generate_slint_car_data()!\n";
+    gen_output += "export global SCarData {\n";
+    gen_output += &gen_block;
+    gen_output += "}";
+
+    let rs_out_dir = path::Path::new("src/ui/data/car_data.slint");
+    let rs_out_file = fs::File::create(rs_out_dir).expect("Unable to create file");
+    let mut mod_writter = io::BufWriter::new(rs_out_file);
+
+    mod_writter
+        .write(gen_output.as_bytes())
+        .expect("Failed to write to file");
+}
+
 fn main() {
     build_dbc();
     generate_vcan_handler();
+    generate_slint_car_data();
 
-    slint_build::compile("ui/main.slint").unwrap();
+    slint_build::compile("src/ui/main.slint").unwrap();
 }
