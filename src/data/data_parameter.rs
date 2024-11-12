@@ -1,8 +1,7 @@
-use std::{cell::RefCell, rc::Rc};
+use crate::data::units;
+use tokio::sync::watch;
 
-type Callback<T> = Rc<RefCell<dyn FnMut(T)>>;
-
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct DataParameter<T> {
     min: T,
     max: T,
@@ -11,24 +10,33 @@ pub struct DataParameter<T> {
     observed_max: T,
 
     value: T,
+    units: units::Unit,
 
-    init_value: bool,
-    // on_changed_listeners: Rc<RefCell<Vec<Callback<T>>>>,
+    init_value: bool, // Whether we've recieved an initial value. This may not be necessary
+
+    changed: watch::Sender<T>,
 }
 
 impl<T> DataParameter<T>
 where
-    T: Copy + Clone + Default + Eq + Ord,
+    T: Copy + Clone + Default + PartialEq + PartialOrd + ToString,
 {
     pub fn new(min: T, max: T) -> Self {
+        let (channel_sender, _) = watch::channel(Default::default());
+
         Self {
             min,
             max,
-            init_value: false,
+
             observed_max: Default::default(),
             observed_min: Default::default(),
+
             value: Default::default(),
-            // on_changed_listeners: Rc::new(RefCell::new(Vec::new())),
+            units: Default::default(),
+
+            init_value: false,
+
+            changed: channel_sender,
         }
     }
 
@@ -37,14 +45,42 @@ where
             self.value = value;
 
             self.update_observed_values();
-            self.changed();
+            self.send_changed();
         }
     }
 
+    #[allow(unused)]
+    pub fn units(&self) -> units::Unit {
+        self.units
+    }
+
+    #[allow(unused)]
+    pub fn value(&self) -> T {
+        self.value
+    }
+
+    #[allow(unused)]
+    pub fn min(&self) -> T {
+        self.min
+    }
+
+    #[allow(unused)]
+    pub fn max(&self) -> T {
+        self.max
+    }
+
+    #[allow(unused)]
+    pub fn observed_min(&self) -> T {
+        self.observed_min
+    }
+
+    #[allow(unused)]
+    pub fn observed_max(&self) -> T {
+        self.observed_max
+    }
+
     /// Checks if the observed minimum and maximum values have been exceeded, then updates them.
-    ///
     /// If `self.init_value` is `false`, we first set the observed values to the current value.
-    ///
     /// `self.init` value serves to stop the `Default::default()` value from taking precedence.
     fn update_observed_values(&mut self) {
         let value = self.value;
@@ -63,38 +99,22 @@ where
         }
     }
 
-    pub fn value(&self) -> T {
-        self.value
+    fn send_changed(&self) {
+        match self.changed.send(self.value) {
+            _ => {}
+        }
     }
 
-    pub fn min(&self) -> T {
-        self.min
+    pub fn watch(&self) -> watch::Receiver<T> {
+        self.changed.subscribe()
     }
+}
 
-    pub fn max(&self) -> T {
-        self.max
-    }
-
-    pub fn observed_min(&self) -> T {
-        self.observed_min
-    }
-
-    pub fn observed_max(&self) -> T {
-        self.observed_max
-    }
-
-    pub fn on_changed<F>(&self, callback: F)
-    where
-        F: FnMut(T) + 'static,
-    {
-        // self.on_changed_listeners
-        //     .borrow_mut()
-        //     .push(Rc::new(RefCell::new(callback)));
-    }
-
-    fn changed(&self) {
-        // for callback in self.on_changed_listeners.borrow_mut().iter() {
-        //     callback.borrow_mut()(self.value);
-        // }
+impl<T> Default for DataParameter<T>
+where
+    T: Copy + Clone + Default + PartialEq + PartialOrd + ToString,
+{
+    fn default() -> Self {
+        Self::new(Default::default(), Default::default())
     }
 }
