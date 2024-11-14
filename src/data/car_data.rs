@@ -1,42 +1,123 @@
 use crate::data::data_parameter::DataParameter;
-use crate::wrx_2018::EngineStatusMtGear;
+use crate::wrx_2018::{self, EngineStatusMtGear, Messages};
+use paste::paste;
+use socketcan::tokio::CanSocket;
+
+macro_rules! param_max_min {
+    ($car_data:ident, $msg:path, $param:ident) => {
+        $car_data.$param().set_min(paste!($msg::[<$param:upper _MIN>]));
+        $car_data.$param().set_max(paste!($msg::[<$param:upper _MAX>]));
+    };
+}
+
+macro_rules! get_param_range {
+    ($car_data:ident, $msg:path => $param:ident: f32) => {
+        param_max_min!($car_data, $msg, $param)
+    };
+    ($car_data:ident, $msg:path => $param:ident: f64) => {
+        param_max_min!($car_data, $msg, $param)
+    };
+    ($car_data:ident, $msg:path => $param:ident: u8) => {
+        param_max_min!($car_data, $msg, $param)
+    };
+    ($car_data:ident, $msg:path => $param:ident: u16) => {
+        param_max_min!($car_data, $msg, $param)
+    };
+    ($car_data:ident, $msg:path => $param:ident: u32) => {
+        param_max_min!($car_data, $msg, $param)
+    };
+    ($car_data:ident, $msg:path => $param:ident: u64) => {
+        param_max_min!($car_data, $msg, $param)
+    };
+    ($car_data:ident, $msg:path => $param:ident: i8) => {
+        param_max_min!($car_data, $msg, $param)
+    };
+    ($car_data:ident, $msg:path => $param:ident: i16) => {
+        param_max_min!($car_data, $msg, $param)
+    };
+    ($car_data:ident, $msg:path => $param:ident: i32) => {
+        param_max_min!($car_data, $msg, $param)
+    };
+    ($car_data:ident, $msg:path => $param:ident: i64) => {
+        param_max_min!($car_data, $msg, $param)
+    };
+    ($car_data:ident, $msg:path => $param:ident: $type:ty) => {}; // ($car_data:ident, $msg:path => $param:ident: $_:ty) => {};
+}
 
 macro_rules! CarData {
-    ($($name:ident: $type:ty $(= $init:expr)?),*) => {
+    ( $($msg:ident => { $($param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );*; ) => {
         #[derive(Clone, Default)]
         pub struct CarData {
-            $($name: DataParameter<$type>,)*
+            $($($param: DataParameter<$type>,)*)*
         }
 
         impl CarData {
             pub fn new() -> Self {
-                let mut ret = Self {..Default::default()};
+                let mut car_data = Self {..Default::default()};
 
-                $($({ret.$name.set_value($init)})?)* // allow for optional initial values
+                $($(
+                    $(car_data.$param.set_value($init);)? // allow for optional initial values
+                    get_param_range!(car_data, wrx_2018::$msg => $param: $type); // set min and max values for number types
+                )*)*
 
-                ret
+                car_data
             }
 
-            $(pub fn $name(&mut self) -> &mut DataParameter<$type> {
-                &mut self.$name
-            })*
+            fn process_message(&mut self, message: Messages) {
+                match message {
+                    $(
+                        Messages::$msg(sig) => {
+                        $(self.$param().set_value(sig.$param());)*
+                    })*
+                    _ => {}
+                }
+            }
+
+            $($(pub fn $param(&mut self) -> &mut DataParameter<$type> {
+                &mut self.$param
+            })*)*
         }
     }
 }
 
 CarData!(
-    engine_rpm: u16,
+    EngineStatus => {
+        engine_rpm: u16,
+        mt_gear: EngineStatusMtGear = EngineStatusMtGear::Neutral
+    };
 
-    vehicle_speed: f32,
-    odometer: f32,
+    Odometer => {
+        odometer: f32
+    };
 
-    lowbeams_enabled: bool = true,
-    right_turn_signal_enabled: bool = true,
-    left_turn_signal_enabled: bool = true,
-    handbrake_sw: bool = true,
+    XxxMsg209 => {
+        vehicle_speed: f32
+    };
 
-    mt_gear: EngineStatusMtGear = EngineStatusMtGear::Neutral
+    StatusSwitches => {
+        lowbeams_enabled: bool = true,
+        handbrake_sw: bool = true
+    };
+
+    XxxMsg640 => {
+        left_turn_signal_enabled: bool = true,
+        right_turn_signal_enabled: bool = true,
+    };
 );
+
+impl CarData {
+    pub async fn bridge_socketcan(&mut self, mut can_socket: CanSocket) {
+        use crate::wrx_2018::Messages;
+        use embedded_can::Frame;
+        use futures::stream::StreamExt;
+
+        while let Some(Ok(frame)) = can_socket.next().await {
+            if let Ok(message) = Messages::from_can_message(frame.id(), frame.data()) {
+                self.process_message(message)
+            }
+        }
+    }
+}
 
 //
 // EngineStatusMtGear implementations for DataParameter
@@ -50,8 +131,8 @@ impl Default for EngineStatusMtGear {
 
 impl PartialOrd for EngineStatusMtGear {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        let v1: u8 = (*self).into();
-        let v2: u8 = (*other).into();
+        let v1 = u8::from(*self);
+        let v2 = u8::from(*other);
 
         if v1 > v2 {
             Some(std::cmp::Ordering::Greater)
@@ -62,27 +143,5 @@ impl PartialOrd for EngineStatusMtGear {
         } else {
             None
         }
-    }
-}
-
-impl ToString for EngineStatusMtGear {
-    fn to_string(&self) -> String {
-        match &self {
-            EngineStatusMtGear::Floating => " ".into(),
-            EngineStatusMtGear::Neutral => "N".into(),
-            EngineStatusMtGear::X1 => "1".into(),
-            EngineStatusMtGear::X2 => "2".into(),
-            EngineStatusMtGear::X3 => "3".into(),
-            EngineStatusMtGear::X4 => "4".into(),
-            EngineStatusMtGear::X5 => "5".into(),
-            EngineStatusMtGear::X6 => "6".into(),
-            _ => "?ERR_MT_GEAR".into(),
-        }
-    }
-}
-
-impl Into<slint::SharedString> for EngineStatusMtGear {
-    fn into(self) -> slint::SharedString {
-        self.to_string().into()
     }
 }

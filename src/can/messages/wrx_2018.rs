@@ -8,7 +8,7 @@
 
 //! Message definitions from file `"WRX_2018.dbc"`
 //!
-//! - Version: `Version("0.2.0")`
+//! - Version: `Version("0.2.1")`
 
 use core::ops::BitOr;
 use bitvec::prelude::*;
@@ -279,7 +279,7 @@ impl XxxMsg209 {
     pub const BRAKE_PEDAL_PRESSURE_MIN: f32 = 0_f32;
     pub const BRAKE_PEDAL_PRESSURE_MAX: f32 = 100_f32;
     pub const VEHICLE_SPEED_MIN: f32 = 0_f32;
-    pub const VEHICLE_SPEED_MAX: f32 = 290_f32;
+    pub const VEHICLE_SPEED_MAX: f32 = 280_f32;
     
     /// Construct new XXXMsg209 from values
     pub fn new(brake_pedal_pressure: f32, vehicle_speed: f32) -> Result<Self, CanError> {
@@ -339,7 +339,7 @@ impl XxxMsg209 {
     /// vehicle_speed
     ///
     /// - Min: 0
-    /// - Max: 290
+    /// - Max: 280
     /// - Unit: "KPH"
     /// - Receivers: Vector__XXX
     #[inline(always)]
@@ -367,7 +367,7 @@ impl XxxMsg209 {
     /// Set value of vehicle_speed
     #[inline(always)]
     pub fn set_vehicle_speed(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 290_f32 < value {
+        if value < 0_f32 || 280_f32 < value {
             return Err(CanError::ParameterOutOfRange { message_id: XxxMsg209::MESSAGE_ID });
         }
         let factor = 0.05625_f32;
@@ -1280,7 +1280,7 @@ impl EngineStatus {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x141)});
     
     pub const ENGINE_RPM_MIN: u16 = 0_u16;
-    pub const ENGINE_RPM_MAX: u16 = 8191_u16;
+    pub const ENGINE_RPM_MAX: u16 = 8000_u16;
     pub const ENGINE_TORQUE_MIN: u16 = 0_u16;
     pub const ENGINE_TORQUE_MAX: u16 = 255_u16;
     pub const MT_GEAR_MIN: u8 = 0_u8;
@@ -1307,7 +1307,7 @@ impl EngineStatus {
     /// engine_rpm
     ///
     /// - Min: 0
-    /// - Max: 8191
+    /// - Max: 8000
     /// - Unit: "RPM"
     /// - Receivers: Vector__XXX
     #[inline(always)]
@@ -1334,7 +1334,7 @@ impl EngineStatus {
     /// Set value of engine_rpm
     #[inline(always)]
     pub fn set_engine_rpm(&mut self, value: u16) -> Result<(), CanError> {
-        if value < 0_u16 || 8191_u16 < value {
+        if value < 0_u16 || 8000_u16 < value {
             return Err(CanError::ParameterOutOfRange { message_id: EngineStatus::MESSAGE_ID });
         }
         let factor = 1;

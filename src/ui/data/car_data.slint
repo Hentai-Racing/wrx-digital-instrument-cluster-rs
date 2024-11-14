@@ -1,100 +1,101 @@
 // Generated code from build.rs::generate_slint_car_data()!
+import {SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter} from "data_parameter.slint";
 export global SCarData {
 // GSensor
-	in property <float> g_sensor_lateral;
-	in property <float> g_sensor_longitudinal;
+	in property <SFDataParameter> g_sensor_lateral;
+	in property <SFDataParameter> g_sensor_longitudinal;
 // XxxMsg209
-	in property <float> brake_pedal_pressure;
-	in property <float> vehicle_speed;
+	in property <SFDataParameter> brake_pedal_pressure;
+	in property <SFDataParameter> vehicle_speed;
 // DriverRoadAssists
-	in property <bool> hill_assist_enabled;
-	in property <bool> tq_vectoring_enabled;
-	in property <bool> traction_control_enabled;
+	in property <SBDataParameter> hill_assist_enabled;
+	in property <SBDataParameter> tq_vectoring_enabled;
+	in property <SBDataParameter> traction_control_enabled;
 // WheelSpeeds
-	in property <float> left_front_wheel_speed;
-	in property <float> left_rear_wheel_speed;
-	in property <float> right_front_wheel_speed;
-	in property <float> right_rear_wheel_speed;
+	in property <SFDataParameter> left_front_wheel_speed;
+	in property <SFDataParameter> left_rear_wheel_speed;
+	in property <SFDataParameter> right_front_wheel_speed;
+	in property <SFDataParameter> right_rear_wheel_speed;
 // Steering
-	in property <float> steering_angle;
+	in property <SFDataParameter> steering_angle;
 // MotorControl
-	in property <float> accelerator_pedal_position;
-	in property <bool> clutch_sw;
-	in property <float> combined_accelerator;
-	in property <bool> n_accelerator_pedal_max_sw;
-	in property <float> throttle_plate_position;
+	in property <SFDataParameter> accelerator_pedal_position;
+	in property <SBDataParameter> clutch_sw;
+	in property <SFDataParameter> combined_accelerator;
+	in property <SBDataParameter> n_accelerator_pedal_max_sw;
+	in property <SFDataParameter> throttle_plate_position;
 // EngineStatus
-	in property <int> engine_rpm;
-	in property <bool> engine_stop;
-	in property <int> engine_torque;
-	in property <string> mt_gear;
-	in property <int> wheel_torque;
+	in property <SIDataParameter> engine_rpm;
+	in property <SBDataParameter> engine_stop;
+	in property <SIDataParameter> engine_torque;
+	in property <SStrDataParameter> mt_gear;
+	in property <SIDataParameter> wheel_torque;
 // Transmission
-	in property <int> mt_gear_verify;
+	in property <SIDataParameter> mt_gear_verify;
 // StatusSwitches
-	in property <bool> brake_sw;
-	in property <bool> handbrake_sw;
-	in property <bool> highbeams_enabled;
-	in property <bool> lowbeams_enabled;
-	in property <bool> parking_lights_enabled;
-	in property <bool> reverse_sw;
-	in property <bool> running_lights_enabled;
-	in property <bool> wiper_moving_sw;
+	in property <SBDataParameter> brake_sw;
+	in property <SBDataParameter> handbrake_sw;
+	in property <SBDataParameter> highbeams_enabled;
+	in property <SBDataParameter> lowbeams_enabled;
+	in property <SBDataParameter> parking_lights_enabled;
+	in property <SBDataParameter> reverse_sw;
+	in property <SBDataParameter> running_lights_enabled;
+	in property <SBDataParameter> wiper_moving_sw;
 // XxxMsg340
-	in property <bool> any_door_open;
+	in property <SBDataParameter> any_door_open;
 // BsdRcta
-	in property <bool> rcta_enabled;
-	in property <bool> rcta_left;
-	in property <bool> rcta_right;
-	in property <bool> rtca_left_adjacent;
-	in property <bool> rtca_left_approaching;
-	in property <bool> rtca_right_adjacent;
-	in property <bool> rtca_right_approaching;
+	in property <SBDataParameter> rcta_enabled;
+	in property <SBDataParameter> rcta_left;
+	in property <SBDataParameter> rcta_right;
+	in property <SBDataParameter> rtca_left_adjacent;
+	in property <SBDataParameter> rtca_left_approaching;
+	in property <SBDataParameter> rtca_right_adjacent;
+	in property <SBDataParameter> rtca_right_approaching;
 // XxxMsg640
-	in property <bool> passenger_seatbelt_warning_enabled;
-	in property <bool> driver_seatbelt_warning_enabled;
-	in property <float> fuel_level;
-	in property <bool> left_turn_signal_enabled;
-	in property <int> raw_fuel;
-	in property <bool> right_turn_signal_enabled;
+	in property <SBDataParameter> passenger_seatbelt_warning_enabled;
+	in property <SBDataParameter> driver_seatbelt_warning_enabled;
+	in property <SFDataParameter> fuel_level;
+	in property <SBDataParameter> left_turn_signal_enabled;
+	in property <SIDataParameter> raw_fuel;
+	in property <SBDataParameter> right_turn_signal_enabled;
 // Ignition
-	in property <bool> access_key_detected;
-	in property <bool> ignition_acc;
-	in property <bool> ignition_on;
+	in property <SBDataParameter> access_key_detected;
+	in property <SBDataParameter> ignition_acc;
+	in property <SBDataParameter> ignition_on;
 // EngineStatus2
-	in property <bool> cruise_control_enabled;
-	in property <bool> cruise_control_set_enabled;
-	in property <int> cruise_control_speed;
-	in property <float> engine_boost_pressure;
-	in property <int> engine_coolant_temp;
-	in property <int> engine_fuel_flow;
-	in property <int> engine_oil_temp;
+	in property <SBDataParameter> cruise_control_enabled;
+	in property <SBDataParameter> cruise_control_set_enabled;
+	in property <SIDataParameter> cruise_control_speed;
+	in property <SFDataParameter> engine_boost_pressure;
+	in property <SIDataParameter> engine_coolant_temp;
+	in property <SIDataParameter> engine_fuel_flow;
+	in property <SIDataParameter> engine_oil_temp;
 // EngineWarningLights
-	in property <bool> check_engine_light_enabled;
-	in property <bool> oil_pressure_warning_light_enabled;
+	in property <SBDataParameter> check_engine_light_enabled;
+	in property <SBDataParameter> oil_pressure_warning_light_enabled;
 // SrsStatus
-	in property <bool> srs_system_warning_light_enabled;
+	in property <SBDataParameter> srs_system_warning_light_enabled;
 // XxxMsg884
-	in property <bool> fog_lights_enabled;
-	in property <bool> tpms_warning_light_enabled;
+	in property <SBDataParameter> fog_lights_enabled;
+	in property <SBDataParameter> tpms_warning_light_enabled;
 // XxxMsg885
-	in property <bool> dimmer_max_brightness_enable;
-	in property <bool> headlight_dimmer_enabled;
-	in property <bool> left_front_door_open;
-	in property <bool> left_rear_door_open;
-	in property <bool> right_front_door_open;
-	in property <bool> right_rear_door_open;
-	in property <bool> trunk_open;
+	in property <SBDataParameter> dimmer_max_brightness_enable;
+	in property <SBDataParameter> headlight_dimmer_enabled;
+	in property <SBDataParameter> left_front_door_open;
+	in property <SBDataParameter> left_rear_door_open;
+	in property <SBDataParameter> right_front_door_open;
+	in property <SBDataParameter> right_rear_door_open;
+	in property <SBDataParameter> trunk_open;
 // DimmerAndHood
-	in property <string> dimmer_dial_value;
-	in property <bool> hood_closed;
+	in property <SStrDataParameter> dimmer_dial_value;
+	in property <SBDataParameter> hood_closed;
 // DashState2Verify
-	in property <bool> units;
+	in property <SBDataParameter> units;
 // Odometer
-	in property <float> odometer;
+	in property <SFDataParameter> odometer;
 // Tpms
-	in property <int> left_front_tire_pressure;
-	in property <int> left_rear_tire_pressure;
-	in property <int> right_front_tire_pressure;
-	in property <int> right_rear_tire_pressure;
+	in property <SIDataParameter> left_front_tire_pressure;
+	in property <SIDataParameter> left_rear_tire_pressure;
+	in property <SIDataParameter> right_front_tire_pressure;
+	in property <SIDataParameter> right_rear_tire_pressure;
 }

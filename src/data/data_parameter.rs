@@ -12,14 +12,14 @@ pub struct DataParameter<T> {
     value: T,
     units: units::Unit,
 
-    init_value: bool, // Whether we've recieved an initial value. This may not be necessary
+    init_value: bool,
 
     changed: watch::Sender<T>,
 }
 
 impl<T> DataParameter<T>
 where
-    T: Copy + Clone + Default + PartialEq + PartialOrd + ToString,
+    T: Copy + Clone + Default + PartialEq + PartialOrd,
 {
     pub fn new(min: T, max: T) -> Self {
         let (channel_sender, _) = watch::channel(Default::default());
@@ -34,14 +34,26 @@ where
             value: Default::default(),
             units: Default::default(),
 
-            init_value: false,
+            init_value: true,
 
             changed: channel_sender,
         }
     }
 
+    pub fn set_max(&mut self, value: T) {
+        self.max = value;
+    }
+
+    pub fn set_min(&mut self, value: T) {
+        self.min = value;
+    }
+
     pub fn set_value(&mut self, value: T) {
-        if self.value != value {
+        if self.init_value || (self.value != value) {
+            if self.init_value {
+                self.init_value = false;
+            }
+
             self.value = value;
 
             self.update_observed_values();
@@ -79,17 +91,12 @@ where
         self.observed_max
     }
 
-    /// Checks if the observed minimum and maximum values have been exceeded, then updates them.
-    /// If `self.init_value` is `false`, we first set the observed values to the current value.
-    /// `self.init` value serves to stop the `Default::default()` value from taking precedence.
     fn update_observed_values(&mut self) {
         let value = self.value;
 
-        if !self.init_value {
+        if self.init_value {
             self.observed_min = value;
             self.observed_max = value;
-
-            self.init_value = true;
         } else {
             if value > self.observed_max {
                 self.observed_max = value
@@ -112,7 +119,7 @@ where
 
 impl<T> Default for DataParameter<T>
 where
-    T: Copy + Clone + Default + PartialEq + PartialOrd + ToString,
+    T: Copy + Clone + Default + PartialEq + PartialOrd,
 {
     fn default() -> Self {
         Self::new(Default::default(), Default::default())

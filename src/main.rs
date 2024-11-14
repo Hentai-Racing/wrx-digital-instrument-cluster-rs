@@ -2,7 +2,6 @@ mod application;
 mod can;
 mod data;
 
-use crate::application::can_data_bridge::CanDataBridge;
 use crate::application::ui_data_bridge::UIDataBridge;
 use crate::can::messages::wrx_2018;
 use crate::can::virtual_can_generator::run_vcan_generator;
@@ -81,10 +80,10 @@ fn main() -> Result<(), slint::PlatformError> {
     if socket_up {
         let can_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
 
-        let mut can_data_bridge = CanDataBridge::new(car_data.clone(), can_socket);
+        let mut car_data_clone = car_data.clone();
 
         let can_bridge_handle = tokio_runtime.spawn(async move {
-            can_data_bridge.read_can_frames().await;
+            car_data_clone.bridge_socketcan(can_socket).await;
         });
         handles.push(can_bridge_handle);
     }

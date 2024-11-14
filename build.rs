@@ -346,12 +346,14 @@ fn generate_slint_car_data() {
                                                             .to_string()
                                                             .as_str()
                                                         {
-                                                            "bool" => "bool",
+                                                            "bool" => "SBDataParameter",
                                                             "u8" | "u16" | "u32" | "u64" | "i8"
-                                                            | "i16" | "i32" | "i64" => "int",
-                                                            "f32" | "f64" => "float",
+                                                            | "i16" | "i32" | "i64" => {
+                                                                "SIDataParameter"
+                                                            }
+                                                            "f32" | "f64" => "SFDataParameter",
                                                             //-// ! must implement to_string and into<SharedString> for all enum types
-                                                            _ => "string",
+                                                            _ => "SStrDataParameter",
                                                         };
 
                                                         gen_block += &format!(
@@ -374,6 +376,7 @@ fn generate_slint_car_data() {
     }
 
     gen_output += "// Generated code from build.rs::generate_slint_car_data()!\n";
+    gen_output += "import {SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter} from \"data_parameter.slint\";\n";
     gen_output += "export global SCarData {\n";
     gen_output += &gen_block;
     gen_output += "}";
