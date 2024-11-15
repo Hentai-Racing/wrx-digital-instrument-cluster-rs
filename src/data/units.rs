@@ -2,379 +2,220 @@
 
 use std::default;
 
-#[derive(Debug, Clone, Copy)]
-pub enum UnitsSystem {
-    USCS, // US Customary System
-    SI,   // International System of Units
-}
+use rand::distributions::DistIter;
 
-impl Default for UnitsSystem {
-    fn default() -> Self {
-        UnitsSystem::SI
-    }
-}
-
-impl ToString for UnitsSystem {
-    fn to_string(&self) -> String {
-        match self {
-            UnitsSystem::SI => "SI".to_string(),
-            UnitsSystem::USCS => "USCS".to_string(),
-        }
-    }
-}
-
-#[derive(Debug, Default)]
+#[derive(Clone, Copy, Default)]
 pub enum PressureUnit {
-    PSI,
     #[default]
-    KPA,
     BAR,
+    KPA,
+    PSI,
 }
 
 #[derive(Clone, Copy, Default)]
 pub enum Unit {
     #[default]
-    Distance,
-    Pressure,
-    Speed,
-    Temperature,
-    Flow,
-    Volume,
+    None,
+    Distance(UnitsSystem), // default
+    Pressure(UnitsSystem),
+    Speed(UnitsSystem),
+    Temperature(UnitsSystem),
+    Flow(UnitsSystem),
+    Volume(UnitsSystem),
+}
+
+impl Unit {
+    pub fn convert_to(&self, value: impl Into<f64>, to: UnitsSystem) -> f64 {
+        use Unit::*;
+        use UnitsSystem::*;
+
+        match to {
+            USCS => match *self {
+                None => value.into(),
+                Distance(from) => match from {
+                    SI => km_to_mi(value),
+                    USCS => value.into(),
+                },
+                Pressure(from) => match from {
+                    SI => bar_to_psi(value),
+                    USCS => value.into(),
+                },
+                Speed(from) => match from {
+                    SI => kph_to_mph(value),
+                    USCS => value.into(),
+                },
+                Temperature(from) => match from {
+                    SI => degc_to_degf(value),
+                    USCS => value.into(),
+                },
+                Flow(from) => match from {
+                    SI => lmin_to_galmin(value),
+                    USCS => value.into(),
+                },
+                Volume(from) => match from {
+                    SI => l_to_gal(value),
+                    USCS => value.into(),
+                },
+            },
+            SI => match *self {
+                None => value.into(),
+                Distance(from) => match from {
+                    USCS => mi_to_km(value),
+                    SI => value.into(),
+                },
+                Pressure(from) => match from {
+                    USCS => psi_to_bar(value),
+                    SI => value.into(),
+                },
+                Speed(from) => match from {
+                    USCS => mph_to_kph(value),
+                    SI => value.into(),
+                },
+                Temperature(from) => match from {
+                    USCS => degf_to_degc(value),
+                    SI => value.into(),
+                },
+                Flow(from) => match from {
+                    USCS => galmin_to_lmin(value),
+                    SI => value.into(),
+                },
+                Volume(from) => match from {
+                    USCS => gal_to_l(value),
+                    SI => value.into(),
+                },
+            },
+        }
+    }
+
+    pub fn get_short_str(&self) -> &str {
+        use Unit::*;
+        use UnitsSystem::*;
+
+        match *self {
+            None => "NONE",
+            Distance(unit_system) => match unit_system {
+                USCS => "MI",
+                SI => "KM",
+            },
+            Pressure(unit_system) => match unit_system {
+                USCS => "PSI",
+                SI => "BAR",
+            },
+            Speed(unit_system) => match unit_system {
+                USCS => "MPH",
+                SI => "KPH",
+            },
+            Temperature(unit_system) => match unit_system {
+                USCS => "°F",
+                SI => "°C",
+            },
+            Flow(unit_system) => match unit_system {
+                USCS => "GAL/MIN",
+                SI => "L/MIN",
+            },
+            Volume(unit_system) => match unit_system {
+                USCS => "GAL",
+                SI => "L",
+            },
+        }
+    }
+}
+
+#[derive(Copy, Clone, Default)]
+pub enum UnitsSystem {
+    #[default]
+    SI, // International System of Units
+    USCS, // US Customary System
+}
+
+impl ToString for UnitsSystem {
+    fn to_string(&self) -> String {
+        match self {
+            UnitsSystem::SI => String::from("SI"),
+            UnitsSystem::USCS => String::from("USCS"),
+        }
+    }
 }
 
 impl ToString for PressureUnit {
     fn to_string(&self) -> String {
         match self {
-            Self::PSI => "PSI".to_string(),
-            Self::KPA => "KPA".to_string(),
-            Self::BAR => "BAR".to_string(),
+            Self::PSI => String::from("PSI"),
+            Self::KPA => String::from("KPA"),
+            Self::BAR => String::from("BAR"),
         }
     }
 }
 
 #[inline]
-pub fn km_to_mi(km: f32) -> f32 {
-    km * 0.621371
+pub fn km_to_mi(km: impl Into<f64>) -> f64 {
+    km.into() * 0.621371
 }
 #[inline]
-pub fn mi_to_km(mi: f32) -> f32 {
-    mi / 0.621371
+pub fn mi_to_km(mi: impl Into<f64>) -> f64 {
+    mi.into() / 0.621371
 }
 #[inline]
-pub fn degc_to_degf(c: f32) -> f32 {
-    c * 9.0 / 5.0 + 32.0
+pub fn degc_to_degf(c: impl Into<f64>) -> f64 {
+    c.into() * 9.0 / 5.0 + 32.0
 }
 #[inline]
-pub fn degf_to_degc(f: f32) -> f32 {
-    (f - 32.0) * 5.0 / 9.0
+pub fn degf_to_degc(f: impl Into<f64>) -> f64 {
+    (f.into() - 32.0) * 5.0 / 9.0
 }
 #[inline]
-pub fn kg_to_lb(kg: f32) -> f32 {
-    kg * 2.20462
+pub fn kg_to_lb(kg: impl Into<f64>) -> f64 {
+    kg.into() * 2.20462
 }
 #[inline]
-pub fn lb_to_kg(lb: f32) -> f32 {
-    lb / 2.20462
+pub fn lb_to_kg(lb: impl Into<f64>) -> f64 {
+    lb.into() / 2.20462
 }
 #[inline]
-pub fn l_to_gal(l: f32) -> f32 {
-    l * 0.264172
+pub fn l_to_gal(l: impl Into<f64>) -> f64 {
+    l.into() * 0.264172
 }
 #[inline]
-pub fn gal_to_l(gal: f32) -> f32 {
-    gal / 0.264172
+pub fn gal_to_l(gal: impl Into<f64>) -> f64 {
+    gal.into() / 0.264172
 }
 #[inline]
-pub fn mph_to_kph(mph: f32) -> f32 {
-    mph * 1.60934
+pub fn mph_to_kph(mph: impl Into<f64>) -> f64 {
+    mph.into() * 1.60934
 }
 #[inline]
-pub fn kph_to_mph(kph: f32) -> f32 {
-    kph / 1.60934
+pub fn kph_to_mph(kph: impl Into<f64>) -> f64 {
+    kph.into() / 1.60934
 }
 #[inline]
-pub fn psi_to_kpa(psi: f32) -> f32 {
-    psi * 6.89476
+pub fn psi_to_kpa(psi: impl Into<f64>) -> f64 {
+    psi.into() * 6.89476
 }
 #[inline]
-pub fn kpa_to_psi(kpa: f32) -> f32 {
-    kpa / 6.89476
+pub fn kpa_to_psi(kpa: impl Into<f64>) -> f64 {
+    kpa.into() / 6.89476
 }
 #[inline]
-pub fn psi_to_bar(psi: f32) -> f32 {
-    psi * 0.0689476
+pub fn psi_to_bar(psi: impl Into<f64>) -> f64 {
+    psi.into() * 0.0689476
 }
 #[inline]
-pub fn bar_to_psi(bar: f32) -> f32 {
-    bar / 0.0689476
+pub fn bar_to_psi(bar: impl Into<f64>) -> f64 {
+    bar.into() / 0.0689476
 }
 #[inline]
-pub fn kpa_to_bar(kpa: f32) -> f32 {
-    kpa * 0.01
+pub fn kpa_to_bar(kpa: impl Into<f64>) -> f64 {
+    kpa.into() * 0.01
 }
 #[inline]
-pub fn bar_to_kpa(bar: f32) -> f32 {
-    bar / 0.01
+pub fn bar_to_kpa(bar: impl Into<f64>) -> f64 {
+    bar.into() / 0.01
 }
 #[inline]
-pub fn lbmin_to_galmin(lbmin: f32) -> f32 {
-    lbmin * 0.119826
+pub fn lmin_to_galmin(lmin: impl Into<f64>) -> f64 {
+    lmin.into() * 0.264172
 }
 #[inline]
-pub fn galmin_to_lbmin(galmin: f32) -> f32 {
-    galmin / 0.119826
-}
-
-pub trait UnitConversion<T>
-where
-    T: Into<f32>,
-{
-    fn input_units(&self) -> UnitsSystem;
-    fn output_units(&self) -> UnitsSystem;
-    fn input_value(&self) -> T;
-
-    fn distance(&self) -> f32 {
-        let input = self.input_value().into();
-
-        match self.input_units() {
-            UnitsSystem::USCS => match self.output_units() {
-                UnitsSystem::USCS => input,
-                UnitsSystem::SI => mi_to_km(input),
-            },
-            UnitsSystem::SI => match self.output_units() {
-                UnitsSystem::USCS => km_to_mi(input),
-                UnitsSystem::SI => input,
-            },
-        }
-    }
-
-    fn distance_special(&self, input_units: UnitsSystem) -> f32 {
-        let input = self.input_value().into();
-
-        match input_units {
-            UnitsSystem::USCS => match self.output_units() {
-                UnitsSystem::USCS => input,
-                UnitsSystem::SI => mi_to_km(input),
-            },
-            UnitsSystem::SI => match self.output_units() {
-                UnitsSystem::USCS => km_to_mi(input),
-                UnitsSystem::SI => input,
-            },
-        }
-    }
-
-    fn speed(&self) -> f32 {
-        let input = self.input_value().into();
-
-        match self.input_units() {
-            UnitsSystem::USCS => match self.output_units() {
-                UnitsSystem::USCS => input,
-                UnitsSystem::SI => mph_to_kph(input),
-            },
-            UnitsSystem::SI => match self.output_units() {
-                UnitsSystem::USCS => kph_to_mph(input),
-                UnitsSystem::SI => input,
-            },
-        }
-    }
-
-    fn speed_special(&self, input_units: UnitsSystem) -> f32 {
-        let input = self.input_value().into();
-
-        match input_units {
-            UnitsSystem::USCS => match self.output_units() {
-                UnitsSystem::USCS => input,
-                UnitsSystem::SI => mph_to_kph(input),
-            },
-            UnitsSystem::SI => match self.output_units() {
-                UnitsSystem::USCS => kph_to_mph(input),
-                UnitsSystem::SI => input,
-            },
-        }
-    }
-
-    fn temperature(&self) -> f32 {
-        let input = self.input_value().into();
-
-        match self.input_units() {
-            UnitsSystem::USCS => match self.output_units() {
-                UnitsSystem::USCS => input,
-                UnitsSystem::SI => degf_to_degc(input),
-            },
-            UnitsSystem::SI => match self.output_units() {
-                UnitsSystem::USCS => degc_to_degf(input),
-                UnitsSystem::SI => input,
-            },
-        }
-    }
-
-    fn temperature_special(&self, input_units: UnitsSystem) -> f32 {
-        let input = self.input_value().into();
-
-        match input_units {
-            UnitsSystem::USCS => match self.output_units() {
-                UnitsSystem::USCS => input,
-                UnitsSystem::SI => degf_to_degc(input),
-            },
-            UnitsSystem::SI => match self.output_units() {
-                UnitsSystem::USCS => degc_to_degf(input),
-                UnitsSystem::SI => input,
-            },
-        }
-    }
-
-    fn mass(&self) -> f32 {
-        let input = self.input_value().into();
-
-        match self.input_units() {
-            UnitsSystem::USCS => match self.output_units() {
-                UnitsSystem::USCS => input,
-                UnitsSystem::SI => lb_to_kg(input),
-            },
-            UnitsSystem::SI => match self.output_units() {
-                UnitsSystem::USCS => kg_to_lb(input),
-                UnitsSystem::SI => input,
-            },
-        }
-    }
-
-    fn mass_special(&self, input_units: UnitsSystem) -> f32 {
-        let input = self.input_value().into();
-
-        match input_units {
-            UnitsSystem::USCS => match self.output_units() {
-                UnitsSystem::USCS => input,
-                UnitsSystem::SI => lb_to_kg(input),
-            },
-            UnitsSystem::SI => match self.output_units() {
-                UnitsSystem::USCS => kg_to_lb(input),
-                UnitsSystem::SI => input,
-            },
-        }
-    }
-
-    fn volume(&self) -> f32 {
-        let input = self.input_value().into();
-
-        match self.input_units() {
-            UnitsSystem::USCS => match self.output_units() {
-                UnitsSystem::USCS => input,
-                UnitsSystem::SI => gal_to_l(input),
-            },
-            UnitsSystem::SI => match self.output_units() {
-                UnitsSystem::USCS => l_to_gal(input),
-                UnitsSystem::SI => input,
-            },
-        }
-    }
-
-    fn volume_special(&self, input_units: UnitsSystem) -> f32 {
-        let input = self.input_value().into();
-
-        match input_units {
-            UnitsSystem::USCS => match self.output_units() {
-                UnitsSystem::USCS => input,
-                UnitsSystem::SI => gal_to_l(input),
-            },
-            UnitsSystem::SI => match self.output_units() {
-                UnitsSystem::USCS => l_to_gal(input),
-                UnitsSystem::SI => input,
-            },
-        }
-    }
-
-    fn pressure(&self, input_units: PressureUnit) -> f32 {
-        let input = self.input_value().into();
-
-        match input_units {
-            PressureUnit::PSI => match self.output_units() {
-                UnitsSystem::USCS => psi_to_kpa(input),
-                UnitsSystem::SI => psi_to_bar(input),
-            },
-            PressureUnit::KPA => match self.output_units() {
-                UnitsSystem::USCS => kpa_to_psi(input),
-                UnitsSystem::SI => kpa_to_bar(input),
-            },
-            PressureUnit::BAR => match self.output_units() {
-                UnitsSystem::USCS => bar_to_psi(input),
-                UnitsSystem::SI => bar_to_kpa(input),
-            },
-        }
-    }
-
-    fn mass_flow(&self) -> f32 {
-        let input = self.input_value().into();
-
-        match self.input_units() {
-            UnitsSystem::USCS => match self.output_units() {
-                UnitsSystem::USCS => input,
-                UnitsSystem::SI => lbmin_to_galmin(input),
-            },
-            UnitsSystem::SI => match self.output_units() {
-                UnitsSystem::USCS => galmin_to_lbmin(input),
-                UnitsSystem::SI => input,
-            },
-        }
-    }
-
-    fn mass_flow_special(&self, input_units: UnitsSystem) -> f32 {
-        let input = self.input_value().into();
-
-        match input_units {
-            UnitsSystem::USCS => match self.output_units() {
-                UnitsSystem::USCS => input,
-                UnitsSystem::SI => lbmin_to_galmin(input),
-            },
-            UnitsSystem::SI => match self.output_units() {
-                UnitsSystem::USCS => galmin_to_lbmin(input),
-                UnitsSystem::SI => input,
-            },
-        }
-    }
-
-    fn distance_unit_string(&self) -> String {
-        match self.output_units() {
-            UnitsSystem::USCS => "mi".to_string(),
-            UnitsSystem::SI => "km".to_string(),
-        }
-    }
-
-    fn speed_unit_string(&self) -> String {
-        match self.output_units() {
-            UnitsSystem::USCS => "mph".to_string(),
-            UnitsSystem::SI => "kph".to_string(),
-        }
-    }
-
-    fn temperature_unit_string(&self) -> String {
-        match self.output_units() {
-            UnitsSystem::USCS => "f".to_string(),
-            UnitsSystem::SI => "c".to_string(),
-        }
-    }
-
-    fn mass_unit_string(&self) -> String {
-        match self.output_units() {
-            UnitsSystem::USCS => "lb".to_string(),
-            UnitsSystem::SI => "kg".to_string(),
-        }
-    }
-
-    fn volume_unit_string(&self) -> String {
-        match self.output_units() {
-            UnitsSystem::USCS => "gal".to_string(),
-            UnitsSystem::SI => "l".to_string(),
-        }
-    }
-
-    fn pressure_unit_string(&self, output_units: PressureUnit) -> String {
-        output_units.to_string()
-    }
-
-    fn mass_flow_unit_string(&self) -> String {
-        match self.output_units() {
-            UnitsSystem::USCS => "lb/min".to_string(),
-            UnitsSystem::SI => "gal/min".to_string(),
-        }
-    }
+pub fn galmin_to_lmin(galmin: impl Into<f64>) -> f64 {
+    galmin.into() / 0.264172
 }

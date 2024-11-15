@@ -1,4 +1,5 @@
 use crate::data::data_parameter::DataParameter;
+use crate::data::units::{Unit, UnitsSystem};
 use crate::wrx_2018::{self, EngineStatusMtGear, Messages};
 use paste::paste;
 use socketcan::tokio::CanSocket;
@@ -41,11 +42,11 @@ macro_rules! get_param_range {
     ($car_data:ident, $msg:path => $param:ident: i64) => {
         param_max_min!($car_data, $msg, $param)
     };
-    ($car_data:ident, $msg:path => $param:ident: $type:ty) => {}; // ($car_data:ident, $msg:path => $param:ident: $_:ty) => {};
+    ($car_data:ident, $msg:path => $param:ident: $type:ty) => {};
 }
 
 macro_rules! CarData {
-    ( $($msg:ident => { $($param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );*; ) => {
+    ( $($msg:ident => { $($(<$unit:path>)?$param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );*; ) => {
         #[derive(Clone, Default)]
         pub struct CarData {
             $($($param: DataParameter<$type>,)*)*
@@ -53,10 +54,12 @@ macro_rules! CarData {
 
         impl CarData {
             pub fn new() -> Self {
+                use Unit::*;
                 let mut car_data = Self {..Default::default()};
 
                 $($(
                     $(car_data.$param.set_value($init);)? // allow for optional initial values
+                    $(car_data.$param.set_units($unit(UnitsSystem::SI));)? // allow for optional unit type
                     get_param_range!(car_data, wrx_2018::$msg => $param: $type); // set min and max values for number types
                 )*)*
 
@@ -87,11 +90,11 @@ CarData!(
     };
 
     Odometer => {
-        odometer: f32
+        <Distance> odometer: f32
     };
 
     XxxMsg209 => {
-        vehicle_speed: f32
+        <Speed> vehicle_speed: f32
     };
 
     StatusSwitches => {

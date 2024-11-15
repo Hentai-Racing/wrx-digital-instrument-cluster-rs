@@ -71,7 +71,7 @@ export component AppWindow inherits Window {
                     inner_radius: self.width / 2px - self.width / 6px;
                     background_inner_radius: self.width / 2px - 2;
 
-                    progress: SCarData.engine_rpm.value / SCarData.engine_rpm.max;
+                    progress: SCarData.engine_rpm.value / (SCarData.engine_rpm.max != 0 ? SCarData.engine_rpm.max : 1);
 
                     property <int> ticks: ceil(SCarData.engine_rpm.max / 1000);
                     property <int> minor_ticks: 3;
@@ -174,7 +174,8 @@ export component AppWindow inherits Window {
                     inner_radius: EngineRPMGauge.inner_radius;
                     background_inner_radius: EngineRPMGauge.background_inner_radius;
 
-                    progress: SCarData.vehicle_speed.value / SCarData.vehicle_speed.max;
+                    progress: SCarData.vehicle_speed.value / (SCarData.vehicle_speed.max != 0 ? SCarData.vehicle_speed.max : 1);
+                    // progress: SCarData.vehicle_speed.value / SCarData.vehicle_speed.max;
 
                     property <int> speed_delim: ceil(SCarData.vehicle_speed.max / 10);
                     property <int> final_speed_delim: speed_delim > 20 ? ceil(speed_delim / 2) : speed_delim;
@@ -286,6 +287,14 @@ export component AppWindow inherits Window {
                 color: white;
                 text: round(SCarData.odometer.value);
                 font-size: 30px;
+            }
+
+            OdometerUnitText := Text {
+                color: gray;
+                text: SCarData.odometer.unit_str;
+                font-size: OdometerText.font-size;
+                height: OdometerText.height;
+                x: OdometerText.x + OdometerText.width;
             }
         }
     }

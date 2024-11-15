@@ -8,6 +8,7 @@ macro_rules! stype_number_instantiate {
         $type {
             name: stringify!($param).into(),
             value: $car_data.$param().value().into(),
+            unit_str: $car_data.$param().get_unit_short_str().into(),
             max: $car_data.$param().max().into(),
             min: $car_data.$param().max().into(),
             ..Default::default()

@@ -40,6 +40,10 @@ where
         }
     }
 
+    pub fn get_unit_short_str(&self) -> &str {
+        self.units.get_short_str()
+    }
+
     pub fn set_max(&mut self, value: T) {
         self.max = value;
     }
@@ -59,6 +63,10 @@ where
             self.update_observed_values();
             self.send_changed();
         }
+    }
+
+    pub fn set_units(&mut self, unit: units::Unit) {
+        self.units = unit;
     }
 
     #[allow(unused)]
@@ -114,6 +122,15 @@ where
 
     pub fn watch(&self) -> watch::Receiver<T> {
         self.changed.subscribe()
+    }
+}
+
+impl<T> DataParameter<T>
+where
+    T: Copy + Clone + Default + PartialEq + PartialOrd + Into<f64>,
+{
+    pub fn convert_to_unit(&self, to: units::UnitsSystem) -> f64 {
+        self.units.convert_to(self.value, to)
     }
 }
 

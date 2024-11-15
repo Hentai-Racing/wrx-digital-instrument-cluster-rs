@@ -6,6 +6,7 @@ use crate::application::ui_data_bridge::UIDataBridge;
 use crate::can::messages::wrx_2018;
 use crate::can::virtual_can_generator::run_vcan_generator;
 use crate::data::car_data::CarData;
+use crate::data::units;
 
 use socketcan::tokio::CanSocket;
 use socketcan::{CanInterface, SocketOptions};
@@ -26,6 +27,7 @@ fn main() -> Result<(), slint::PlatformError> {
     let mut handles = Vec::<tokio::task::JoinHandle<()>>::new();
 
     let mut car_data = CarData::new();
+    let mut display_unit = units::UnitsSystem::USCS;
 
     let virtual_cluster = env::var("HR_CLUSTER_VIRTUAL").is_ok_and(|val| val == "1");
     let running_vcan = Arc::new(AtomicBool::new(false));
