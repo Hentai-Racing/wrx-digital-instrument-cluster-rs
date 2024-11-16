@@ -16,18 +16,18 @@ pub enum PressureUnit {
 pub enum Unit {
     #[default]
     None,
-    Distance(UnitsSystem), // default
-    Pressure(UnitsSystem),
-    Speed(UnitsSystem),
-    Temperature(UnitsSystem),
-    Flow(UnitsSystem),
-    Volume(UnitsSystem),
+    Distance(UnitSystem), // default
+    Pressure(UnitSystem),
+    Speed(UnitSystem),
+    Temperature(UnitSystem),
+    Flow(UnitSystem),
+    Volume(UnitSystem),
 }
 
 impl Unit {
-    pub fn convert_to(&self, value: impl Into<f64>, to: UnitsSystem) -> f64 {
+    pub fn convert_to(&self, value: impl Into<f64>, to: UnitSystem) -> f64 {
         use Unit::*;
-        use UnitsSystem::*;
+        use UnitSystem::*;
 
         match to {
             USCS => match *self {
@@ -89,7 +89,7 @@ impl Unit {
 
     pub fn get_short_str(&self) -> &str {
         use Unit::*;
-        use UnitsSystem::*;
+        use UnitSystem::*;
 
         match *self {
             None => "NONE",
@@ -122,17 +122,17 @@ impl Unit {
 }
 
 #[derive(Copy, Clone, Default)]
-pub enum UnitsSystem {
+pub enum UnitSystem {
     #[default]
     SI, // International System of Units
     USCS, // US Customary System
 }
 
-impl ToString for UnitsSystem {
+impl ToString for UnitSystem {
     fn to_string(&self) -> String {
         match self {
-            UnitsSystem::SI => String::from("SI"),
-            UnitsSystem::USCS => String::from("USCS"),
+            UnitSystem::SI => String::from("SI"),
+            UnitSystem::USCS => String::from("USCS"),
         }
     }
 }

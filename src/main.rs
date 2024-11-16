@@ -15,10 +15,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::signal;
 
+slint::include_modules!();
+
 const VCAN_IF_NAME: &str = "vcan0";
 const CAN_IF_NAME: &str = "can0";
-
-slint::include_modules!();
 
 fn main() -> Result<(), slint::PlatformError> {
     let tokio_runtime = tokio::runtime::Runtime::new().unwrap();
@@ -27,7 +27,7 @@ fn main() -> Result<(), slint::PlatformError> {
     let mut handles = Vec::<tokio::task::JoinHandle<()>>::new();
 
     let mut car_data = CarData::new();
-    let mut display_unit = units::UnitsSystem::USCS;
+    let mut display_unit = units::UnitSystem::USCS;
 
     let virtual_cluster = env::var("HR_CLUSTER_VIRTUAL").is_ok_and(|val| val == "1");
     let running_vcan = Arc::new(AtomicBool::new(false));

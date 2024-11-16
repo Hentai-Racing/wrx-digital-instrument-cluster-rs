@@ -1,5 +1,5 @@
 use crate::data::data_parameter::DataParameter;
-use crate::data::units::{Unit, UnitsSystem};
+use crate::data::units::{Unit, UnitSystem};
 use crate::wrx_2018::{self, EngineStatusMtGear, Messages};
 use paste::paste;
 use socketcan::tokio::CanSocket;
@@ -59,7 +59,7 @@ macro_rules! CarData {
 
                 $($(
                     $(car_data.$param.set_value($init);)? // allow for optional initial values
-                    $(car_data.$param.set_units($unit(UnitsSystem::SI));)? // allow for optional unit type
+                    $(car_data.$param.set_units($unit(UnitSystem::SI));)? // allow for optional unit type
                     get_param_range!(car_data, wrx_2018::$msg => $param: $type); // set min and max values for number types
                 )*)*
 

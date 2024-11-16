@@ -1,4 +1,4 @@
-use crate::data::car_data::CarData;
+use crate::data::{car_data::CarData, units::UnitSystem};
 use crate::slint_generatedAppWindow::*;
 use paste::paste;
 use slint::{ComponentHandle, Weak};
@@ -32,6 +32,41 @@ macro_rules! stype_instantiate {
     };
 }
 
+macro_rules! number_param_convertion_handle {
+    ($car_data:ident, $ui_car_data:ident, $sparam:ident, $param:ident: $type:ty) => {
+        paste!(
+            let mut sparam_clone = $sparam.clone();
+
+            let unit_system = UnitSystem::USCS;
+            let units = $car_data.$param().units();
+            let new_value: f64 = (*$param.borrow_and_update()).into();
+            let converted_value = units.convert_to(new_value, unit_system);
+            sparam_clone.min = units.convert_to($car_data.$param().min(), unit_system) as $type;
+            sparam_clone.max = units.convert_to($car_data.$param().max(), unit_system) as $type;
+            sparam_clone.value = converted_value as $type;
+
+            $ui_car_data.[<set_ $param>](sparam_clone);
+        )
+    };
+}
+
+macro_rules! param_convertion_handle {
+    ($car_data:ident, $ui_car_data:ident, $sparam:ident, $param:ident: SIDataParameter) => {
+        number_param_convertion_handle!{$car_data, $ui_car_data, $sparam, $param: i32}
+    };
+    ($car_data:ident, $ui_car_data:ident, $sparam:ident, $param:ident: SFDataParameter) => {
+        number_param_convertion_handle!{$car_data, $ui_car_data, $sparam, $param: f32}
+    };
+    ($car_data:ident, $ui_car_data:ident, $sparam:ident, $param:ident: $type:tt) => {
+        paste!(
+            let mut sparam_clone = $sparam.clone();
+            sparam_clone.value = (*$param.borrow_and_update()).into();
+
+            $ui_car_data.[<set_ $param>](sparam_clone);
+        )
+    };
+}
+
 // todo: make a round-robin system to stop higher freqency signals from bullying if that is possible
 // this will involve creating our own "event" system which has a queue
 macro_rules! event_bridge {
@@ -49,9 +84,7 @@ macro_rules! event_bridge {
             tokio::select! {
                 $(_ = $param.changed() => {
                     paste!{
-                        let mut sparam_clone = [<sparam_ $param>].clone();
-                        sparam_clone.value = (*$param.borrow_and_update()).into();
-                        $ui_car_data.[<set_ $param>](sparam_clone);
+                        param_convertion_handle!($car_data, $ui_car_data, [<sparam_ $param>], $param: $type);
                     }
                 },)*
             }
@@ -117,8 +150,20 @@ impl Into<slint::SharedString> for EngineStatusMtGear {
     }
 }
 
-impl Into<i32> for EngineStatusMtGear {
-    fn into(self) -> i32 {
-        u8::from(self).into()
+impl Into<UnitSystem> for SUnitSystem {
+    fn into(self) -> UnitSystem {
+        match self {
+            Self::USCS => UnitSystem::USCS,
+            Self::SI => UnitSystem::SI,
+        }
+    }
+}
+
+impl Into<SUnitSystem> for UnitSystem {
+    fn into(self) -> SUnitSystem {
+        match self {
+            Self::USCS => SUnitSystem::USCS,
+            Self::SI => SUnitSystem::SI,
+        }
     }
 }

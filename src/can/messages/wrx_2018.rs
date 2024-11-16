@@ -279,7 +279,7 @@ impl XxxMsg209 {
     pub const BRAKE_PEDAL_PRESSURE_MIN: f32 = 0_f32;
     pub const BRAKE_PEDAL_PRESSURE_MAX: f32 = 100_f32;
     pub const VEHICLE_SPEED_MIN: f32 = 0_f32;
-    pub const VEHICLE_SPEED_MAX: f32 = 280_f32;
+    pub const VEHICLE_SPEED_MAX: f32 = 290_f32;
     
     /// Construct new XXXMsg209 from values
     pub fn new(brake_pedal_pressure: f32, vehicle_speed: f32) -> Result<Self, CanError> {
@@ -339,7 +339,7 @@ impl XxxMsg209 {
     /// vehicle_speed
     ///
     /// - Min: 0
-    /// - Max: 280
+    /// - Max: 290
     /// - Unit: "KPH"
     /// - Receivers: Vector__XXX
     #[inline(always)]
@@ -367,7 +367,7 @@ impl XxxMsg209 {
     /// Set value of vehicle_speed
     #[inline(always)]
     pub fn set_vehicle_speed(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 280_f32 < value {
+        if value < 0_f32 || 290_f32 < value {
             return Err(CanError::ParameterOutOfRange { message_id: XxxMsg209::MESSAGE_ID });
         }
         let factor = 0.05625_f32;

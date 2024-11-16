@@ -1,7 +1,8 @@
 import { Button, VerticalBox } from "std-widgets.slint";
 import { InstrumentGauge, GaugeArc } from "components/instrument_gauge.slint";
-import { SCarData } from "data/car_data.slint";
 import { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter } from "data/data_parameter.slint";
+import { SCarData } from "data/car_data.slint";
+import { SUnitSystem, SUserUnit } from "data/units.slint";
 
 import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Black.ttf";
 import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Bold.ttf";
@@ -12,8 +13,10 @@ import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Regular.ttf";
 import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-SemiBold.ttf";
 import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
 
-export { SCarData }
-export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter }
+// Export types
+export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, SUnitSystem }
+// Export globals
+export { SCarData, SUserUnit }
 
 export global SymbolColors {
     out property <color> symbol_color_blue: #0000ff;

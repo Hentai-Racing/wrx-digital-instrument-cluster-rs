@@ -1,0 +1,9 @@
+export enum SUnitSystem {
+	USCS,
+	SI
+}
+
+export global SUserUnit {
+    in-out property <SUnitSystem> user_unit;
+    callback update_user_unit(SUnitSystem);
+}

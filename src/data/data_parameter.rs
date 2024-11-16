@@ -129,7 +129,7 @@ impl<T> DataParameter<T>
 where
     T: Copy + Clone + Default + PartialEq + PartialOrd + Into<f64>,
 {
-    pub fn convert_to_unit(&self, to: units::UnitsSystem) -> f64 {
+    pub fn convert_to_unitsystem(&self, to: units::UnitSystem) -> f64 {
         self.units.convert_to(self.value, to)
     }
 }
