@@ -50,6 +50,19 @@ export component AppWindow inherits Window {
             background: transparent;
             height: max(icon_size, root.height * 1 / 20);
 
+            unit_toggle_button := Button {
+                text: "Toggle Unit System";
+                clicked => {
+                    SUserUnit.update_user_unit(SUserUnit.user_unit == SUnitSystem.USCS ? SUnitSystem.SI : SUnitSystem.USCS);
+                }
+                x: 0;
+            }
+
+            Text {
+                text: SUserUnit.user_unit == SUnitSystem.USCS ? "USCS" : "SI";
+                x: unit-toggle-button.x + unit-toggle-button.width + 10px;
+            }
+
             LowbeamIndicatorLight := Image {
                 height: icon_size;
                 width <=> self.height;
@@ -178,10 +191,9 @@ export component AppWindow inherits Window {
                     background_inner_radius: EngineRPMGauge.background_inner_radius;
 
                     progress: SCarData.vehicle_speed.value / (SCarData.vehicle_speed.max != 0 ? SCarData.vehicle_speed.max : 1);
-                    // progress: SCarData.vehicle_speed.value / SCarData.vehicle_speed.max;
 
-                    property <int> speed_delim: ceil(SCarData.vehicle_speed.max / 10);
-                    property <int> final_speed_delim: speed_delim > 20 ? ceil(speed_delim / 2) : speed_delim;
+                    property <int> speed_delim: SUserUnit.user_unit == SUnitSystem.USCS ? 10 : 20;
+                    property <int> final_speed_delim: SCarData.vehicle_speed.max / speed_delim;
 
                     property <int> ticks: final_speed_delim;
                     property <int> minor_ticks: 1;
@@ -221,7 +233,7 @@ export component AppWindow inherits Window {
                         }
 
                         speed-tick-label := Text {
-                            text: ceil(display_tick / final_speed_delim * SCarData.vehicle_speed.max);
+                            text: display_tick * speed_delim;
                             color: white;
                             font-size: 15px;
                             x: parent.width / 2 + label_radius * cos(-parent.start * 360deg) - self.width / 2;

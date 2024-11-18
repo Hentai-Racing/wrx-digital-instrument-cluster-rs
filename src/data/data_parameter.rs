@@ -115,22 +115,11 @@ where
     }
 
     fn send_changed(&self) {
-        match self.changed.send(self.value) {
-            _ => {}
-        }
+        self.changed.send_replace(self.value);
     }
 
     pub fn watch(&self) -> watch::Receiver<T> {
         self.changed.subscribe()
-    }
-}
-
-impl<T> DataParameter<T>
-where
-    T: Copy + Clone + Default + PartialEq + PartialOrd + Into<f64>,
-{
-    pub fn convert_to_unitsystem(&self, to: units::UnitSystem) -> f64 {
-        self.units.convert_to(self.value, to)
     }
 }
 

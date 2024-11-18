@@ -27,7 +27,6 @@ fn main() -> Result<(), slint::PlatformError> {
     let mut handles = Vec::<tokio::task::JoinHandle<()>>::new();
 
     let mut car_data = CarData::new();
-    let mut display_unit = units::UnitSystem::USCS;
 
     let virtual_cluster = env::var("HR_CLUSTER_VIRTUAL").is_ok_and(|val| val == "1");
     let running_vcan = Arc::new(AtomicBool::new(false));

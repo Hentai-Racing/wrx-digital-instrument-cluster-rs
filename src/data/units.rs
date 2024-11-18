@@ -4,6 +4,13 @@ use std::default;
 
 use rand::distributions::DistIter;
 
+#[derive(Copy, Clone, Default, Debug)]
+pub enum UnitSystem {
+    #[default]
+    SI, // International System of Units
+    USCS, // US Customary System
+}
+
 #[derive(Clone, Copy, Default)]
 pub enum PressureUnit {
     #[default]
@@ -25,7 +32,7 @@ pub enum Unit {
 }
 
 impl Unit {
-    pub fn convert_to(&self, value: impl Into<f64>, to: UnitSystem) -> f64 {
+    pub fn convert_value_to(&self, value: impl Into<f64>, to: UnitSystem) -> f64 {
         use Unit::*;
         use UnitSystem::*;
 
@@ -87,6 +94,20 @@ impl Unit {
         }
     }
 
+    pub fn convert_system_to(&self, to: UnitSystem) -> Unit {
+        use Unit::*;
+
+        match *self {
+            None => Self::None,
+            Distance(_) => Self::Distance(to),
+            Pressure(_) => Self::Pressure(to),
+            Speed(_) => Self::Speed(to),
+            Temperature(_) => Self::Temperature(to),
+            Flow(_) => Self::Flow(to),
+            Volume(_) => Self::Volume(to),
+        }
+    }
+
     pub fn get_short_str(&self) -> &str {
         use Unit::*;
         use UnitSystem::*;
@@ -119,13 +140,6 @@ impl Unit {
             },
         }
     }
-}
-
-#[derive(Copy, Clone, Default)]
-pub enum UnitSystem {
-    #[default]
-    SI, // International System of Units
-    USCS, // US Customary System
 }
 
 impl ToString for UnitSystem {
