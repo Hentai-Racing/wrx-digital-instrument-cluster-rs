@@ -8,7 +8,7 @@
 
 //! Message definitions from file `"WRX_2018.dbc"`
 //!
-//! - Version: `Version("0.2.1")`
+//! - Version: `Version("0.3.0")`
 
 use core::ops::BitOr;
 use bitvec::prelude::*;
@@ -113,12 +113,15 @@ impl GSensor {
     pub const G_SENSOR_LATERAL_MAX: f32 = 255_f32;
     pub const G_SENSOR_LONGITUDINAL_MIN: f32 = -255_f32;
     pub const G_SENSOR_LONGITUDINAL_MAX: f32 = 255_f32;
+    pub const STEERING_ANGLE_MIN: f32 = 0_f32;
+    pub const STEERING_ANGLE_MAX: f32 = 1_f32;
     
     /// Construct new g_sensor from values
-    pub fn new(g_sensor_lateral: f32, g_sensor_longitudinal: f32) -> Result<Self, CanError> {
+    pub fn new(g_sensor_lateral: f32, g_sensor_longitudinal: f32, steering_angle: f32) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_g_sensor_lateral(g_sensor_lateral)?;
         res.set_g_sensor_longitudinal(g_sensor_longitudinal)?;
+        res.set_steering_angle(steering_angle)?;
         Ok(res)
     }
     
@@ -210,6 +213,51 @@ impl GSensor {
         
         let value = u16::from_ne_bytes(value.to_ne_bytes());
         self.raw.view_bits_mut::<Lsb0>()[48..64].store_le(value);
+        Ok(())
+    }
+    
+    /// steering_angle
+    ///
+    /// might_be_actual_wheel_angle_not_steering_wheel
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: "deg"
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn steering_angle(&self) -> f32 {
+        self.steering_angle_raw()
+    }
+    
+    /// Get raw value of steering_angle
+    ///
+    /// - Start bit: 0
+    /// - Signal size: 16 bits
+    /// - Factor: 0.01
+    /// - Offset: 0
+    /// - Byte order: LittleEndian
+    /// - Value type: Signed
+    #[inline(always)]
+    pub fn steering_angle_raw(&self) -> f32 {
+        let signal = self.raw.view_bits::<Lsb0>()[0..16].load_le::<i16>();
+        
+        let factor = 0.01_f32;
+        let offset = 0_f32;
+        (signal as f32) * factor + offset
+    }
+    
+    /// Set value of steering_angle
+    #[inline(always)]
+    pub fn set_steering_angle(&mut self, value: f32) -> Result<(), CanError> {
+        if value < 0_f32 || 1_f32 < value {
+            return Err(CanError::ParameterOutOfRange { message_id: GSensor::MESSAGE_ID });
+        }
+        let factor = 0.01_f32;
+        let offset = 0_f32;
+        let value = ((value - offset) / factor) as i16;
+        
+        let value = u16::from_ne_bytes(value.to_ne_bytes());
+        self.raw.view_bits_mut::<Lsb0>()[0..16].store_le(value);
         Ok(())
     }
     
@@ -876,13 +924,13 @@ pub struct Steering {
 impl Steering {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x11a)});
     
-    pub const STEERING_ANGLE_MIN: f32 = -500_f32;
-    pub const STEERING_ANGLE_MAX: f32 = 500_f32;
+    pub const STEERING_WHEEL_ANGLE_MIN: f32 = 0_f32;
+    pub const STEERING_WHEEL_ANGLE_MAX: f32 = 0_f32;
     
     /// Construct new steering from values
-    pub fn new(steering_angle: f32) -> Result<Self, CanError> {
+    pub fn new(steering_wheel_angle: f32) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
-        res.set_steering_angle(steering_angle)?;
+        res.set_steering_wheel_angle(steering_wheel_angle)?;
         Ok(res)
     }
     
@@ -891,46 +939,46 @@ impl Steering {
         &self.raw
     }
     
-    /// steering_angle
+    /// steering_wheel_angle
     ///
-    /// - Min: -500
-    /// - Max: 500
-    /// - Unit: "degree"
+    /// - Min: 0
+    /// - Max: 0
+    /// - Unit: "deg"
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn steering_angle(&self) -> f32 {
-        self.steering_angle_raw()
+    pub fn steering_wheel_angle(&self) -> f32 {
+        self.steering_wheel_angle_raw()
     }
     
-    /// Get raw value of steering_angle
+    /// Get raw value of steering_wheel_angle
     ///
-    /// - Start bit: 56
-    /// - Signal size: 8 bits
-    /// - Factor: 0.1
+    /// - Start bit: 48
+    /// - Signal size: 16 bits
+    /// - Factor: 0.02
     /// - Offset: 0
     /// - Byte order: LittleEndian
     /// - Value type: Signed
     #[inline(always)]
-    pub fn steering_angle_raw(&self) -> f32 {
-        let signal = self.raw.view_bits::<Lsb0>()[56..64].load_le::<i8>();
+    pub fn steering_wheel_angle_raw(&self) -> f32 {
+        let signal = self.raw.view_bits::<Lsb0>()[48..64].load_le::<i16>();
         
-        let factor = 0.1_f32;
+        let factor = 0.02_f32;
         let offset = 0_f32;
         (signal as f32) * factor + offset
     }
     
-    /// Set value of steering_angle
+    /// Set value of steering_wheel_angle
     #[inline(always)]
-    pub fn set_steering_angle(&mut self, value: f32) -> Result<(), CanError> {
-        if value < -500_f32 || 500_f32 < value {
+    pub fn set_steering_wheel_angle(&mut self, value: f32) -> Result<(), CanError> {
+        if value < 0_f32 || 0_f32 < value {
             return Err(CanError::ParameterOutOfRange { message_id: Steering::MESSAGE_ID });
         }
-        let factor = 0.1_f32;
+        let factor = 0.02_f32;
         let offset = 0_f32;
-        let value = ((value - offset) / factor) as i8;
+        let value = ((value - offset) / factor) as i16;
         
-        let value = u8::from_ne_bytes(value.to_ne_bytes());
-        self.raw.view_bits_mut::<Lsb0>()[56..64].store_le(value);
+        let value = u16::from_ne_bytes(value.to_ne_bytes());
+        self.raw.view_bits_mut::<Lsb0>()[48..64].store_le(value);
         Ok(())
     }
     
@@ -1733,11 +1781,13 @@ impl StatusSwitches {
     
     
     /// Construct new status_switches from values
-    pub fn new(brake_sw: bool, handbrake_sw: bool, highbeams_enabled: bool, lowbeams_enabled: bool, parking_lights_enabled: bool, reverse_sw: bool, running_lights_enabled: bool, wiper_moving_sw: bool) -> Result<Self, CanError> {
+    pub fn new(acc_power: bool, brake_sw: bool, handbrake_sw: bool, highbeams_enabled: bool, key_on: bool, lowbeams_enabled: bool, parking_lights_enabled: bool, reverse_sw: bool, running_lights_enabled: bool, wiper_moving_sw: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
+        res.set_acc_power(acc_power)?;
         res.set_brake_sw(brake_sw)?;
         res.set_handbrake_sw(handbrake_sw)?;
         res.set_highbeams_enabled(highbeams_enabled)?;
+        res.set_key_on(key_on)?;
         res.set_lowbeams_enabled(lowbeams_enabled)?;
         res.set_parking_lights_enabled(parking_lights_enabled)?;
         res.set_reverse_sw(reverse_sw)?;
@@ -1749,6 +1799,40 @@ impl StatusSwitches {
     /// Access message payload raw value
     pub fn raw(&self) -> &[u8; 8] {
         &self.raw
+    }
+    
+    /// acc_power
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: ""
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn acc_power(&self) -> bool {
+        self.acc_power_raw()
+    }
+    
+    /// Get raw value of acc_power
+    ///
+    /// - Start bit: 5
+    /// - Signal size: 1 bits
+    /// - Factor: 1
+    /// - Offset: 0
+    /// - Byte order: BigEndian
+    /// - Value type: Unsigned
+    #[inline(always)]
+    pub fn acc_power_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[2..3].load_be::<u8>();
+        
+        signal == 1
+    }
+    
+    /// Set value of acc_power
+    #[inline(always)]
+    pub fn set_acc_power(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Msb0>()[2..3].store_be(value);
+        Ok(())
     }
     
     /// brake_sw
@@ -1850,6 +1934,40 @@ impl StatusSwitches {
     pub fn set_highbeams_enabled(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Msb0>()[59..60].store_be(value);
+        Ok(())
+    }
+    
+    /// key_on
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: ""
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn key_on(&self) -> bool {
+        self.key_on_raw()
+    }
+    
+    /// Get raw value of key_on
+    ///
+    /// - Start bit: 6
+    /// - Signal size: 1 bits
+    /// - Factor: 1
+    /// - Offset: 0
+    /// - Byte order: BigEndian
+    /// - Value type: Unsigned
+    #[inline(always)]
+    pub fn key_on_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[1..2].load_be::<u8>();
+        
+        signal == 1
+    }
+    
+    /// Set value of key_on
+    #[inline(always)]
+    pub fn set_key_on(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Msb0>()[1..2].store_be(value);
         Ok(())
     }
     
@@ -2522,12 +2640,12 @@ impl XxxMsg640 {
     pub const RAW_FUEL_MAX: u16 = 4096_u16;
     
     /// Construct new XXXMsg640 from values
-    pub fn new(passenger_seatbelt_warning_enabled: bool, driver_seatbelt_warning_enabled: bool, fuel_level: f32, left_turn_signal_enabled: bool, raw_fuel: u16, right_turn_signal_enabled: bool) -> Result<Self, CanError> {
+    pub fn new(driver_seatbelt_warning_enabled: bool, fuel_level: f32, left_turn_signal_enabled: bool, passenger_seatbelt_warning_enabled: bool, raw_fuel: u16, right_turn_signal_enabled: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
-        res.set_passenger_seatbelt_warning_enabled(passenger_seatbelt_warning_enabled)?;
         res.set_driver_seatbelt_warning_enabled(driver_seatbelt_warning_enabled)?;
         res.set_fuel_level(fuel_level)?;
         res.set_left_turn_signal_enabled(left_turn_signal_enabled)?;
+        res.set_passenger_seatbelt_warning_enabled(passenger_seatbelt_warning_enabled)?;
         res.set_raw_fuel(raw_fuel)?;
         res.set_right_turn_signal_enabled(right_turn_signal_enabled)?;
         Ok(res)
@@ -2536,40 +2654,6 @@ impl XxxMsg640 {
     /// Access message payload raw value
     pub fn raw(&self) -> &[u8; 8] {
         &self.raw
-    }
-    
-    /// passenger_seatbelt_warning_enabled
-    ///
-    /// - Min: 0
-    /// - Max: 1
-    /// - Unit: ""
-    /// - Receivers: Vector__XXX
-    #[inline(always)]
-    pub fn passenger_seatbelt_warning_enabled(&self) -> bool {
-        self.passenger_seatbelt_warning_enabled_raw()
-    }
-    
-    /// Get raw value of passenger_seatbelt_warning_enabled
-    ///
-    /// - Start bit: 41
-    /// - Signal size: 1 bits
-    /// - Factor: 1
-    /// - Offset: 0
-    /// - Byte order: BigEndian
-    /// - Value type: Unsigned
-    #[inline(always)]
-    pub fn passenger_seatbelt_warning_enabled_raw(&self) -> bool {
-        let signal = self.raw.view_bits::<Msb0>()[46..47].load_be::<u8>();
-        
-        signal == 1
-    }
-    
-    /// Set value of passenger_seatbelt_warning_enabled
-    #[inline(always)]
-    pub fn set_passenger_seatbelt_warning_enabled(&mut self, value: bool) -> Result<(), CanError> {
-        let value = value as u8;
-        self.raw.view_bits_mut::<Msb0>()[46..47].store_be(value);
-        Ok(())
     }
     
     /// driver_seatbelt_warning_enabled
@@ -2681,6 +2765,40 @@ impl XxxMsg640 {
     pub fn set_left_turn_signal_enabled(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Msb0>()[43..44].store_be(value);
+        Ok(())
+    }
+    
+    /// passenger_seatbelt_warning_enabled
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: ""
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn passenger_seatbelt_warning_enabled(&self) -> bool {
+        self.passenger_seatbelt_warning_enabled_raw()
+    }
+    
+    /// Get raw value of passenger_seatbelt_warning_enabled
+    ///
+    /// - Start bit: 41
+    /// - Signal size: 1 bits
+    /// - Factor: 1
+    /// - Offset: 0
+    /// - Byte order: BigEndian
+    /// - Value type: Unsigned
+    #[inline(always)]
+    pub fn passenger_seatbelt_warning_enabled_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[46..47].load_be::<u8>();
+        
+        signal == 1
+    }
+    
+    /// Set value of passenger_seatbelt_warning_enabled
+    #[inline(always)]
+    pub fn set_passenger_seatbelt_warning_enabled(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Msb0>()[46..47].store_be(value);
         Ok(())
     }
     
@@ -4422,11 +4540,11 @@ impl Odometer {
     
     /// odometer
     ///
-    /// unit_determined_by_vehicle_region
+    /// USCS_converted
     ///
     /// - Min: 0
     /// - Max: 4294970000
-    /// - Unit: ""
+    /// - Unit: "KM"
     /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn odometer(&self) -> f32 {
@@ -4437,7 +4555,7 @@ impl Odometer {
     ///
     /// - Start bit: 0
     /// - Signal size: 32 bits
-    /// - Factor: 0.1
+    /// - Factor: 0.160934
     /// - Offset: 0
     /// - Byte order: LittleEndian
     /// - Value type: Unsigned
@@ -4445,7 +4563,7 @@ impl Odometer {
     pub fn odometer_raw(&self) -> f32 {
         let signal = self.raw.view_bits::<Lsb0>()[0..32].load_le::<u32>();
         
-        let factor = 0.1_f32;
+        let factor = 0.160934_f32;
         let offset = 0_f32;
         (signal as f32) * factor + offset
     }
@@ -4456,7 +4574,7 @@ impl Odometer {
         if value < 0_f32 || 4294970000_f32 < value {
             return Err(CanError::ParameterOutOfRange { message_id: Odometer::MESSAGE_ID });
         }
-        let factor = 0.1_f32;
+        let factor = 0.160934_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as u32;
         

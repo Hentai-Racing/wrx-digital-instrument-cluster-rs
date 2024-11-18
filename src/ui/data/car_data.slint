@@ -2,100 +2,103 @@
 import {SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter} from "data_parameter.slint";
 export global SCarData {
 // GSensor
-	in property <SFDataParameter> g_sensor_lateral;
-	in property <SFDataParameter> g_sensor_longitudinal;
+	in property <SFDataParameter> g_sensor_lateral: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> g_sensor_longitudinal: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> steering_angle: { value: 999.4, unit_str: "?UNIT?" };
 // XxxMsg209
-	in property <SFDataParameter> brake_pedal_pressure;
-	in property <SFDataParameter> vehicle_speed;
+	in property <SFDataParameter> brake_pedal_pressure: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> vehicle_speed: { value: 999.4, unit_str: "?UNIT?" };
 // DriverRoadAssists
-	in property <SBDataParameter> hill_assist_enabled;
-	in property <SBDataParameter> tq_vectoring_enabled;
-	in property <SBDataParameter> traction_control_enabled;
+	in property <SBDataParameter> hill_assist_enabled: { value: true };
+	in property <SBDataParameter> tq_vectoring_enabled: { value: true };
+	in property <SBDataParameter> traction_control_enabled: { value: true };
 // WheelSpeeds
-	in property <SFDataParameter> left_front_wheel_speed;
-	in property <SFDataParameter> left_rear_wheel_speed;
-	in property <SFDataParameter> right_front_wheel_speed;
-	in property <SFDataParameter> right_rear_wheel_speed;
+	in property <SFDataParameter> left_front_wheel_speed: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> left_rear_wheel_speed: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> right_front_wheel_speed: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> right_rear_wheel_speed: { value: 999.4, unit_str: "?UNIT?" };
 // Steering
-	in property <SFDataParameter> steering_angle;
+	in property <SFDataParameter> steering_wheel_angle: { value: 999.4, unit_str: "?UNIT?" };
 // MotorControl
-	in property <SFDataParameter> accelerator_pedal_position;
-	in property <SBDataParameter> clutch_sw;
-	in property <SFDataParameter> combined_accelerator;
-	in property <SBDataParameter> n_accelerator_pedal_max_sw;
-	in property <SFDataParameter> throttle_plate_position;
+	in property <SFDataParameter> accelerator_pedal_position: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SBDataParameter> clutch_sw: { value: true };
+	in property <SFDataParameter> combined_accelerator: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SBDataParameter> n_accelerator_pedal_max_sw: { value: true };
+	in property <SFDataParameter> throttle_plate_position: { value: 999.4, unit_str: "?UNIT?" };
 // EngineStatus
-	in property <SIDataParameter> engine_rpm;
-	in property <SBDataParameter> engine_stop;
-	in property <SIDataParameter> engine_torque;
-	in property <SStrDataParameter> mt_gear;
-	in property <SIDataParameter> wheel_torque;
+	in property <SIDataParameter> engine_rpm: { value: 999, unit_str: "?UNIT?" };
+	in property <SBDataParameter> engine_stop: { value: true };
+	in property <SIDataParameter> engine_torque: { value: 999, unit_str: "?UNIT?" };
+	in property <SStrDataParameter> mt_gear: { value: "?VAL?" };
+	in property <SIDataParameter> wheel_torque: { value: 999, unit_str: "?UNIT?" };
 // Transmission
-	in property <SIDataParameter> mt_gear_verify;
+	in property <SIDataParameter> mt_gear_verify: { value: 999, unit_str: "?UNIT?" };
 // StatusSwitches
-	in property <SBDataParameter> brake_sw;
-	in property <SBDataParameter> handbrake_sw;
-	in property <SBDataParameter> highbeams_enabled;
-	in property <SBDataParameter> lowbeams_enabled;
-	in property <SBDataParameter> parking_lights_enabled;
-	in property <SBDataParameter> reverse_sw;
-	in property <SBDataParameter> running_lights_enabled;
-	in property <SBDataParameter> wiper_moving_sw;
+	in property <SBDataParameter> acc_power: { value: true };
+	in property <SBDataParameter> brake_sw: { value: true };
+	in property <SBDataParameter> handbrake_sw: { value: true };
+	in property <SBDataParameter> highbeams_enabled: { value: true };
+	in property <SBDataParameter> key_on: { value: true };
+	in property <SBDataParameter> lowbeams_enabled: { value: true };
+	in property <SBDataParameter> parking_lights_enabled: { value: true };
+	in property <SBDataParameter> reverse_sw: { value: true };
+	in property <SBDataParameter> running_lights_enabled: { value: true };
+	in property <SBDataParameter> wiper_moving_sw: { value: true };
 // XxxMsg340
-	in property <SBDataParameter> any_door_open;
+	in property <SBDataParameter> any_door_open: { value: true };
 // BsdRcta
-	in property <SBDataParameter> rcta_enabled;
-	in property <SBDataParameter> rcta_left;
-	in property <SBDataParameter> rcta_right;
-	in property <SBDataParameter> rtca_left_adjacent;
-	in property <SBDataParameter> rtca_left_approaching;
-	in property <SBDataParameter> rtca_right_adjacent;
-	in property <SBDataParameter> rtca_right_approaching;
+	in property <SBDataParameter> rcta_enabled: { value: true };
+	in property <SBDataParameter> rcta_left: { value: true };
+	in property <SBDataParameter> rcta_right: { value: true };
+	in property <SBDataParameter> rtca_left_adjacent: { value: true };
+	in property <SBDataParameter> rtca_left_approaching: { value: true };
+	in property <SBDataParameter> rtca_right_adjacent: { value: true };
+	in property <SBDataParameter> rtca_right_approaching: { value: true };
 // XxxMsg640
-	in property <SBDataParameter> passenger_seatbelt_warning_enabled;
-	in property <SBDataParameter> driver_seatbelt_warning_enabled;
-	in property <SFDataParameter> fuel_level;
-	in property <SBDataParameter> left_turn_signal_enabled;
-	in property <SIDataParameter> raw_fuel;
-	in property <SBDataParameter> right_turn_signal_enabled;
+	in property <SBDataParameter> driver_seatbelt_warning_enabled: { value: true };
+	in property <SFDataParameter> fuel_level: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SBDataParameter> left_turn_signal_enabled: { value: true };
+	in property <SBDataParameter> passenger_seatbelt_warning_enabled: { value: true };
+	in property <SIDataParameter> raw_fuel: { value: 999, unit_str: "?UNIT?" };
+	in property <SBDataParameter> right_turn_signal_enabled: { value: true };
 // Ignition
-	in property <SBDataParameter> access_key_detected;
-	in property <SBDataParameter> ignition_acc;
-	in property <SBDataParameter> ignition_on;
+	in property <SBDataParameter> access_key_detected: { value: true };
+	in property <SBDataParameter> ignition_acc: { value: true };
+	in property <SBDataParameter> ignition_on: { value: true };
 // EngineStatus2
-	in property <SBDataParameter> cruise_control_enabled;
-	in property <SBDataParameter> cruise_control_set_enabled;
-	in property <SIDataParameter> cruise_control_speed;
-	in property <SFDataParameter> engine_boost_pressure;
-	in property <SIDataParameter> engine_coolant_temp;
-	in property <SIDataParameter> engine_fuel_flow;
-	in property <SIDataParameter> engine_oil_temp;
+	in property <SBDataParameter> cruise_control_enabled: { value: true };
+	in property <SBDataParameter> cruise_control_set_enabled: { value: true };
+	in property <SIDataParameter> cruise_control_speed: { value: 999, unit_str: "?UNIT?" };
+	in property <SFDataParameter> engine_boost_pressure: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SIDataParameter> engine_coolant_temp: { value: 999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> engine_fuel_flow: { value: 999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> engine_oil_temp: { value: 999, unit_str: "?UNIT?" };
 // EngineWarningLights
-	in property <SBDataParameter> check_engine_light_enabled;
-	in property <SBDataParameter> oil_pressure_warning_light_enabled;
+	in property <SBDataParameter> check_engine_light_enabled: { value: true };
+	in property <SBDataParameter> oil_pressure_warning_light_enabled: { value: true };
 // SrsStatus
-	in property <SBDataParameter> srs_system_warning_light_enabled;
+	in property <SBDataParameter> srs_system_warning_light_enabled: { value: true };
 // XxxMsg884
-	in property <SBDataParameter> fog_lights_enabled;
-	in property <SBDataParameter> tpms_warning_light_enabled;
+	in property <SBDataParameter> fog_lights_enabled: { value: true };
+	in property <SBDataParameter> tpms_warning_light_enabled: { value: true };
 // XxxMsg885
-	in property <SBDataParameter> dimmer_max_brightness_enable;
-	in property <SBDataParameter> headlight_dimmer_enabled;
-	in property <SBDataParameter> left_front_door_open;
-	in property <SBDataParameter> left_rear_door_open;
-	in property <SBDataParameter> right_front_door_open;
-	in property <SBDataParameter> right_rear_door_open;
-	in property <SBDataParameter> trunk_open;
+	in property <SBDataParameter> dimmer_max_brightness_enable: { value: true };
+	in property <SBDataParameter> headlight_dimmer_enabled: { value: true };
+	in property <SBDataParameter> left_front_door_open: { value: true };
+	in property <SBDataParameter> left_rear_door_open: { value: true };
+	in property <SBDataParameter> right_front_door_open: { value: true };
+	in property <SBDataParameter> right_rear_door_open: { value: true };
+	in property <SBDataParameter> trunk_open: { value: true };
 // DimmerAndHood
-	in property <SStrDataParameter> dimmer_dial_value;
-	in property <SBDataParameter> hood_closed;
+	in property <SStrDataParameter> dimmer_dial_value: { value: "?VAL?" };
+	in property <SBDataParameter> hood_closed: { value: true };
 // DashState2Verify
-	in property <SBDataParameter> units;
+	in property <SBDataParameter> units: { value: true };
 // Odometer
-	in property <SFDataParameter> odometer;
+	in property <SFDataParameter> odometer: { value: 999.4, unit_str: "?UNIT?" };
 // Tpms
-	in property <SIDataParameter> left_front_tire_pressure;
-	in property <SIDataParameter> left_rear_tire_pressure;
-	in property <SIDataParameter> right_front_tire_pressure;
-	in property <SIDataParameter> right_rear_tire_pressure;
+	in property <SIDataParameter> left_front_tire_pressure: { value: 999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> left_rear_tire_pressure: { value: 999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> right_front_tire_pressure: { value: 999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> right_rear_tire_pressure: { value: 999, unit_str: "?UNIT?" };
 }

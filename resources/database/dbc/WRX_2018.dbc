@@ -1,4 +1,4 @@
-VERSION "0.2.1"
+VERSION "0.3.0"
 
 
 NS_ :
@@ -36,6 +36,7 @@ BU_:
 BO_ 208 g_sensor: 8 Vector__XXX
    SG_ g_sensor_lateral : 16|16@1- (-0.0035,1) [-255|255] "" Vector__XXX
    SG_ g_sensor_longitudinal : 48|16@1- (-0.0035,1) [-255|255] "" Vector__XXX
+   SG_ steering_angle : 0|16@1- (0.01,0) [0|1] "deg" Vector__XXX
 
 BO_ 209 XXXMsg209: 4 Vector__XXX
    SG_ brake_pedal_pressure : 16|8@1+ (0.78125,0) [0|100] "%" Vector__XXX
@@ -53,7 +54,7 @@ BO_ 212 wheel_speeds: 8 Vector__XXX
    SG_ right_rear_wheel_speed : 48|16@1+ (0.0592,0) [0|255] "KPH" Vector__XXX
 
 BO_ 282 steering: 8 Vector__XXX
-   SG_ steering_angle : 56|8@1- (0.1,0) [-500|500] "degree" Vector__XXX
+   SG_ steering_wheel_angle : 48|16@1- (0.02,0) [0|0] "deg" Vector__XXX
 
 BO_ 320 motor_control: 8 Vector__XXX
    SG_ accelerator_pedal_position : 0|8@1+ (0.392157,0) [0|1] "%" Vector__XXX
@@ -73,9 +74,11 @@ BO_ 328 transmission: 8 Vector__XXX
    SG_ mt_gear_VERIFY : 4|4@1+ (1,0) [0|7] "" Vector__XXX
 
 BO_ 338 status_switches: 8 Vector__XXX
+   SG_ acc_power : 5|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ brake_sw : 52|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ handbrake_sw : 51|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ highbeams_enabled : 60|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ key_on : 6|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ lowbeams_enabled : 59|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ parking_lights_enabled : 58|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ reverse_sw : 50|1@0+ (1,0) [0|1] "" Vector__XXX
@@ -95,10 +98,10 @@ BO_ 604 bsd_rcta: 8 Vector__XXX
    SG_ rtca_right_approaching : 42|1@1+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 642 XXXMsg640: 8 Vector__XXX
-   SG_ passenger_seatbelt_warning_enabled : 41|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ driver_seatbelt_warning_enabled : 40|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ fuel_level : 0|12@1+ (0.033,0) [0|100] "%" Vector__XXX
    SG_ left_turn_signal_enabled : 44|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ passenger_seatbelt_warning_enabled : 41|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ raw_fuel : 0|12@1+ (1,0) [0|4096] "" Vector__XXX
    SG_ right_turn_signal_enabled : 45|1@0+ (1,0) [0|1] "" Vector__XXX
 
@@ -144,7 +147,7 @@ BO_ 977 Dash_State2_VERIFY: 8 Vector__XXX
    SG_ UNITS : 15|1@1+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 1745 odometer: 8 Vector__XXX
-   SG_ odometer : 0|32@1+ (0.1,0) [0|4.29497e+09] "" Vector__XXX
+   SG_ odometer : 0|32@1+ (0.160934,0) [0|4.29497e+09] "KM" Vector__XXX
 
 BO_ 1883 tpms: 8 Vector__XXX
    SG_ left_front_tire_pressure : 0|8@1+ (1,0) [0|1] "" Vector__XXX
@@ -152,6 +155,7 @@ BO_ 1883 tpms: 8 Vector__XXX
    SG_ right_front_tire_pressure : 8|8@1+ (1,0) [0|1] "" Vector__XXX
    SG_ right_rear_tire_pressure : 16|8@1+ (1,0) [0|1] "" Vector__XXX
 
+CM_ SG_ 208 steering_angle "might_be_actual_wheel_angle_not_steering_wheel";
 CM_ SG_ 320 n_accelerator_pedal_max_sw "is 0 when pressed NOT VERIFIED";
 CM_ SG_ 642 fuel_level "need_to_verify_min/max/scale";
 CM_ SG_ 644 access_key_detected "4:6_bits_are_set_but_only_check_6";
@@ -159,7 +163,7 @@ CM_ SG_ 864 cruise_control_speed "unit_is_determined_by_vehicle_region_or_bit_fl
 CM_ SG_ 864 engine_boost_pressure "need_to_verify";
 CM_ SG_ 864 engine_fuel_flow "scale/unit_undetermined";
 CM_ SG_ 977 UNITS "0 = Metric, 1 = Imperial NOT VERIFIED";
-CM_ SG_ 1745 odometer "unit_determined_by_vehicle_region";
+CM_ SG_ 1745 odometer "USCS_converted";
 CM_ BO_ 1883 "no successful communication with bcm yet";
 CM_ SG_ 1883 left_front_tire_pressure "scale/unit_undetermined";
 CM_ SG_ 1883 left_rear_tire_pressure "scale/unit_undetermined";
@@ -167,15 +171,7 @@ CM_ SG_ 1883 right_front_tire_pressure "scale/unit_undetermined";
 CM_ SG_ 1883 right_rear_tire_pressure "scale/unit_undetermined";
 BA_DEF_ BO_ "GenMsgBackgroundColor" STRING ;
 BA_DEF_ BO_ "GenMsgForegroundColor" STRING ;
-BA_DEF_ BO_ "matchingcriteria" INT 0 0;
-BA_DEF_ BO_ "filterlabeling" INT 0 0;
-BA_DEF_ BO_ "matchingcriteria" INT 0 0;
-BA_DEF_ BO_ "filterlabeling" INT 0 0;
 BA_DEF_DEF_ "GenMsgBackgroundColor" "#1b1e20";
 BA_DEF_DEF_ "GenMsgForegroundColor" "#fcfcfc";
-BA_DEF_DEF_ "matchingcriteria" 0;
-BA_DEF_DEF_ "filterlabeling" 1;
-BA_DEF_DEF_ "matchingcriteria" 0;
-BA_DEF_DEF_ "filterlabeling" 1;
 VAL_ 321 mt_gear 0 "FLOATING" 1 "1" 2 "2" 3 "3" 4 "4" 5 "5" 6 "6" 7 "NEUTRAL";
 VAL_ 886 dimmer_dial_value 0 "0" 33 "1" 82 "2" 125 "3" 173 "4" 250 "5";

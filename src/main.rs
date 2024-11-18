@@ -6,13 +6,13 @@ use crate::application::ui_data_bridge::UIDataBridge;
 use crate::can::messages::wrx_2018;
 use crate::can::virtual_can_generator::run_vcan_generator;
 use crate::data::car_data::CarData;
-use crate::data::units;
 
 use socketcan::tokio::CanSocket;
 use socketcan::{CanInterface, SocketOptions};
 use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::signal;
 
 slint::include_modules!();
@@ -29,6 +29,7 @@ fn main() -> Result<(), slint::PlatformError> {
     let mut car_data = CarData::new();
 
     let virtual_cluster = env::var("HR_CLUSTER_VIRTUAL").is_ok_and(|val| val == "1");
+    let running_simulation = Arc::new(AtomicBool::new(false));
     let running_vcan = Arc::new(AtomicBool::new(false));
     let mut created_interface = false;
 
@@ -83,21 +84,29 @@ fn main() -> Result<(), slint::PlatformError> {
 
         let mut car_data_clone = car_data.clone();
 
-        let can_bridge_handle = tokio_runtime.spawn(async move {
+        let car_data_bridge_handle = tokio_runtime.spawn(async move {
             car_data_clone.bridge_socketcan(can_socket).await;
         });
-        handles.push(can_bridge_handle);
+        handles.push(car_data_bridge_handle);
     }
 
     if virtual_cluster {
         let mut virtual_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
         let _ = virtual_socket.set_loopback(true);
 
+        running_simulation.store(true, Ordering::SeqCst);
         running_vcan.store(true, Ordering::SeqCst);
 
+        let running_simulation_clone = running_simulation.clone();
         let running_vcan_clone = running_vcan.clone();
         let vcan_handle = tokio_runtime.spawn(async move {
-            run_vcan_generator(&mut virtual_socket, running_vcan_clone).await
+            run_vcan_generator(
+                &mut virtual_socket,
+                running_vcan_clone,
+                running_simulation_clone,
+                Duration::from_millis(1),
+            )
+            .await
         });
         handles.push(vcan_handle);
     }
@@ -107,6 +116,16 @@ fn main() -> Result<(), slint::PlatformError> {
 
         let mut ui_data_bridge = UIDataBridge::new(ui.as_weak(), car_data.clone());
         ui_data_bridge.run();
+
+        if virtual_cluster {
+            let running_simulation_clone = running_simulation.clone();
+            ui.on_toggle_simulation(move || {
+                running_simulation_clone.store(
+                    !running_simulation_clone.load(Ordering::SeqCst),
+                    Ordering::SeqCst,
+                );
+            });
+        }
 
         ui.run()?
     } else {
@@ -133,6 +152,7 @@ fn main() -> Result<(), slint::PlatformError> {
     }
 
     running_vcan.store(false, Ordering::SeqCst);
+    running_simulation.store(false, Ordering::SeqCst);
 
     for handle in handles {
         handle.abort();

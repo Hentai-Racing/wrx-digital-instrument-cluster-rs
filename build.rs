@@ -213,13 +213,17 @@ fn generate_vcan_handler() {
     gen_output += "use socketcan::tokio::CanSocket;";
     gen_output += "use std::sync::atomic::{AtomicBool, Ordering};";
     gen_output += "use std::sync::Arc;";
+    gen_output += "use std::time::Duration;";
+    gen_output += "use std::thread::sleep;";
     gen_output += &imports.join("\n");
 
     gen_output +=
-        "pub async fn run_vcan_generator(socket: &mut CanSocket, running: Arc<AtomicBool>) {";
-    gen_output += "    while running.load(Ordering::SeqCst) {";
+        "pub async fn run_vcan_generator(socket: &mut CanSocket, running: Arc<AtomicBool>, simulating: Arc<AtomicBool>, delay: Duration) {";
+    gen_output +=
+        "    while running.load(Ordering::SeqCst) {while simulating.load(Ordering::SeqCst) {";
     gen_output += &gen_block;
-    gen_output += "}}";
+    gen_output += "sleep(delay);";
+    gen_output += "}}}";
 
     let rs_out_dir = path::Path::new("src/can/virtual_can_generator.rs");
     let rs_out_file = fs::File::create(rs_out_dir).expect("Unable to create file");
@@ -260,12 +264,10 @@ fn generate_slint_car_data() {
 
     let mut gen_output = String::new(); // full file contents
     let mut gen_block = String::new(); // generated code
-    let mut imports: Vec<String> = Vec::new(); // imported can message modules
 
     // Process each module
     for module_name in module_names {
         let module_path = format!("src/can/messages/{}.rs", module_name);
-        imports.push(format!("use crate::can::messages::{};", module_name));
 
         let module_content = fs::read_to_string(&module_path).expect("Unable to read module file");
         let module_file: syn::File =
@@ -337,29 +339,45 @@ fn generate_slint_car_data() {
                                             match &func.sig.output {
                                                 syn::ReturnType::Type(_, ty) => {
                                                     if let syn::Type::Path(type_path) = &**ty {
-                                                        let slint_type = match type_path
-                                                            .path
-                                                            .segments
-                                                            .last()
-                                                            .unwrap()
-                                                            .ident
-                                                            .to_string()
-                                                            .as_str()
-                                                        {
-                                                            "bool" => "SBDataParameter",
-                                                            "u8" | "u16" | "u32" | "u64" | "i8"
-                                                            | "i16" | "i32" | "i64" => {
-                                                                "SIDataParameter"
-                                                            }
-                                                            "f32" | "f64" => "SFDataParameter",
-                                                            //-// ! must implement to_string and into<SharedString> for all enum types
-                                                            _ => "SStrDataParameter",
-                                                        };
+                                                        let (slint_type, init_value) =
+                                                            match type_path
+                                                                .path
+                                                                .segments
+                                                                .last()
+                                                                .unwrap()
+                                                                .ident
+                                                                .to_string()
+                                                                .as_str()
+                                                            {
+                                                                "bool" => {
+                                                                    ("SBDataParameter", "true")
+                                                                }
+                                                                "u8" | "u16" | "u32" | "u64"
+                                                                | "i8" | "i16" | "i32" | "i64" => {
+                                                                    ("SIDataParameter", "999")
+                                                                }
+                                                                "f32" | "f64" => {
+                                                                    ("SFDataParameter", "999.4")
+                                                                }
+                                                                //-// ! must implement into<SharedString> for all enum types
+                                                                _ => (
+                                                                    "SStrDataParameter",
+                                                                    "\"?VAL?\"",
+                                                                ),
+                                                            };
 
                                                         gen_block += &format!(
-                                                            "\tin property <{}> {};\n",
-                                                            slint_type, param_name
+                                                            "\tin property <{slint_type}> {param_name}: {{ value: {init_value}"
                                                         );
+                                                        match slint_type {
+                                                            "SIDataParameter"
+                                                            | "SFDataParameter" => {
+                                                                gen_block +=
+                                                                    ", unit_str: \"?UNIT?\"";
+                                                            }
+                                                            _ => {}
+                                                        }
+                                                        gen_block += " };\n";
                                                     };
                                                 }
                                                 _ => {}

@@ -50,32 +50,17 @@ export component GaugeArc inherits Path {
 }
 
 component GaugeDisplay inherits Rectangle {
-    in property <brush> fill_brush;
+    in property <brush> fill_brush <=> gauge-sweep.fill;
     in property <brush> background_brush: #aaaaaa1f;
-    in property <float> background_inner_radius: 0;
-    in property <float> inner_radius: 0;
+    in property <float> background_inner_radius <=> gauge-background.inner_radius;
+    in property <float> inner_radius <=> gauge-sweep.inner_radius;
     in property <float> progress: 0;
     in property <float> start: 0;
     in property <float> range: 0;
 
-    gauge-background := GaugeArc {
-        fill: root.background_brush;
+    gauge-sweep := GaugeArc {
         width: 100%;
         height: 100%;
-        inner_radius: background_inner_radius;
-        start: root.start;
-        range: root.range;
-        progress: 100%;
-
-        viewbox-width: parent.width / 1px;
-        viewbox-height: parent.height / 1px;
-    }
-
-    gauge-fill := GaugeArc {
-        fill: root.fill_brush;
-        width: 100%;
-        height: 100%;
-        inner_radius: root.inner_radius;
         range: root.range;
         progress: root.progress;
         start: root.start;
@@ -84,36 +69,17 @@ component GaugeDisplay inherits Rectangle {
         viewbox-height: parent.height / 1px;
     }
 
-    // needle := Path {
-    //     width: 100%;
-    //     height: 100%;
+    gauge-background := GaugeArc {
+        fill: root.background_brush;
+        width: 100%;
+        height: 100%;
+        start: root.start;
+        range: root.range;
+        progress: 100%;
 
-    //     fill: white;
-    //     stroke-width: 1px;
-    //     stroke: #929cb2;
-
-    //     viewbox-width: 100;
-    //     viewbox-height: 100;
-
-    //     MoveTo {
-    //         x: 50 + (50 + root.thickness / 4) * cos(root.angle);
-    //         y: 50 + (50 + root.thickness / 4) * sin(root.angle);
-    //     }
-
-    //     ArcTo {
-    //         radius-x: root.thickness / 4;
-    //         radius-y: root.thickness / 4;
-    //         x: 50 + (50 - root.thickness * 1.25) * cos(root.angle);
-    //         y: 50 + (50 - root.thickness * 1.25) * sin(root.angle);
-    //     }
-
-    //     ArcTo {
-    //         radius-x: root.thickness / 4;
-    //         radius-y: root.thickness / 4;
-    //         x: 50 + (50 + root.thickness * 0.25) * cos(root.angle);
-    //         y: 50 + (50 + root.thickness * 0.25) * sin(root.angle);
-    //     }
-    // }
+        viewbox-width: parent.width / 1px;
+        viewbox-height: parent.height / 1px;
+    }
 }
 
 export component InstrumentGauge inherits Rectangle {
@@ -123,12 +89,47 @@ export component InstrumentGauge inherits Rectangle {
     in property <float> inner_radius: 100;
     in property <float> progress: 0;
 
+    in property <brush> fill_brush <=> gauge-display.fill_brush;
+    in property <brush> needle_brush <=> needle.fill;
+
+    in property <float> needle_inner_radius <=> needle.inner-radius;
+    in property <float> needle_thickness <=> needle.thickness;
+
     gauge-display := GaugeDisplay {
         background_brush: #ffffff;
-        fill_brush: #ffffff5f;
-        // fill_brush: @linear-gradient(0deg, #ffffff, #ffffff);
+        fill_brush: @radial-gradient(circle, #00000090 65%, #ffffff85 95%, #ffffff90 100%);
         background_inner_radius: root.background_inner_radius;
         inner_radius: root.inner_radius;
         progress: root.progress;
+    }
+
+    needle := Path {
+        property <angle> rotation: (root.start * 1deg) + (parent.range * 360deg * -parent.progress) + 180deg + 45deg;
+        property <float> inner-radius: 25;
+        property <float> thickness: 1.25;
+
+        viewbox-width: 100;
+        viewbox-height: 100;
+
+        fill: white;
+        MoveTo {
+            x: (parent.viewbox-width / 2) + cos(rotation) * (parent.viewbox-width / 2);
+            y: (parent.viewbox-height / 2) - sin(rotation) * (parent.viewbox-height / 2);
+        }
+
+        LineTo {
+            x: (parent.viewbox-width / 2) + cos(rotation + thickness * 1deg) * (inner-radius);
+            y: (parent.viewbox-height / 2) - sin(rotation + thickness * 1deg) * (inner-radius);
+        }
+
+        LineTo {
+            x: (parent.viewbox-width / 2) + cos(rotation) * (inner-radius - 0.75);
+            y: (parent.viewbox-height / 2) - sin(rotation) * (inner-radius - 0.75);
+        }
+
+        LineTo {
+            x: (parent.viewbox-width / 2) + cos(rotation - thickness * 1deg) * (inner-radius);
+            y: (parent.viewbox-height / 2) - sin(rotation - thickness * 1deg) * (inner-radius);
+        }
     }
 }
