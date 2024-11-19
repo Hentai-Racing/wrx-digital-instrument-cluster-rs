@@ -104,7 +104,7 @@ export component InstrumentGauge inherits Rectangle {
     }
 
     needle := Path {
-        property <angle> rotation: (root.start * 1deg) + (parent.range * 360deg * -parent.progress) + 180deg + 45deg;
+        property <angle> rotation: (parent.start * -360deg) - (parent.range * 360deg) - (parent.progress * parent.range * 360deg);
         property <float> inner-radius: 25;
         property <float> thickness: 1.25;
 

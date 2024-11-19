@@ -18,6 +18,10 @@ export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, S
 // Export globals
 export { SCarData, SUserUnit }
 
+export global ApplicationState {
+    in property <bool> virtual_cluster: true;
+}
+
 export global SymbolColors {
     out property <color> symbol_color_blue: #0000ff;
     out property <color> symbol_color_dark_grey: #4b4b4b;
@@ -61,7 +65,7 @@ export component AppWindow inherits Window {
                 }
             }
 
-            simulation-toggle-button := Button {
+            if ApplicationState.virtual_cluster: simulation-toggle-button := Button {
                 text: "Toggle Simulation";
                 x: parent.width - self.width;
 

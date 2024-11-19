@@ -114,6 +114,9 @@ fn main() -> Result<(), slint::PlatformError> {
     if init_ui {
         let ui = AppWindow::new()?;
 
+        ui.global::<ApplicationState>()
+            .set_virtual_cluster(virtual_cluster);
+
         let mut ui_data_bridge = UIDataBridge::new(ui.as_weak(), car_data.clone());
         ui_data_bridge.run();
 
