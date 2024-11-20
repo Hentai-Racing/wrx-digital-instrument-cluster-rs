@@ -45,8 +45,31 @@ macro_rules! get_param_range {
     ($car_data:ident, $msg:path => $param:ident: $type:ty) => {};
 }
 
+macro_rules! HandleSignalProcess {
+    ($self:ident, $sig:ident, $param:ident) => {
+        $self.$param().set_value($sig.$param());
+    };
+    ($self:ident, $sig:ident, $param:ident, $process_override:ident) => {
+        $self.$process_override(&$sig.$param());
+    };
+}
+
+/// Example:
+///```
+/// CarData! {
+///     MessageEnum => {
+///         <Unit>? [OverrideSetterFn]? param_name: type (= default)?,+
+///     };+
+/// }
+///
+/// impl CarData {
+///     fn OverrideSetterFn(&mut self, input: &dyn Any) {
+///         ...
+///     }
+/// }
+///```
 macro_rules! CarData {
-    ( $($msg:ident => { $($(<$unit:path>)?$param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );*; ) => {
+    ( $($msg:ident => { $($(<$unit:path>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; ) => {
         #[derive(Clone, Default)]
         pub struct CarData {
             $($($param: DataParameter<$type>,)*)*
@@ -70,7 +93,9 @@ macro_rules! CarData {
                 match message {
                     $(
                         Messages::$msg(sig) => {
-                        $(self.$param().set_value(sig.$param());)*
+                        $(
+                            HandleSignalProcess!(self, sig, $param $(, $process_override)?);
+                        )*
                     })*
                     _ => {}
                 }
@@ -99,10 +124,15 @@ CarData!(
 
     StatusSwitches => {
         lowbeams_enabled: bool = true,
-        handbrake_sw: bool = true
+        handbrake_sw: bool = true,
+        parking_lights_enabled: bool = true,
+        highbeams_enabled: bool = true,
+        reverse_sw: bool = true
     };
 
     XxxMsg640 => {
+        driver_seatbelt_warning_enabled: bool = true,
+        passenger_seatbelt_warning_enabled: bool = true,
         left_turn_signal_enabled: bool = true,
         right_turn_signal_enabled: bool = true,
     };

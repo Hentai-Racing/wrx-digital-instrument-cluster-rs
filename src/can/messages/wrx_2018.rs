@@ -8,7 +8,7 @@
 
 //! Message definitions from file `"WRX_2018.dbc"`
 //!
-//! - Version: `Version("0.3.0")`
+//! - Version: `Version("0.3.1")`
 
 use core::ops::BitOr;
 use bitvec::prelude::*;
@@ -134,7 +134,7 @@ impl GSensor {
     ///
     /// - Min: -255
     /// - Max: 255
-    /// - Unit: ""
+    /// - Unit: "deg"
     /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn g_sensor_lateral(&self) -> f32 {
@@ -177,7 +177,7 @@ impl GSensor {
     ///
     /// - Min: -255
     /// - Max: 255
-    /// - Unit: ""
+    /// - Unit: "deg"
     /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn g_sensor_longitudinal(&self) -> f32 {

@@ -1,4 +1,4 @@
-VERSION "0.3.0"
+VERSION "0.3.1"
 
 
 NS_ :
@@ -34,8 +34,8 @@ NS_ :
 BS_:
 BU_:
 BO_ 208 g_sensor: 8 Vector__XXX
-   SG_ g_sensor_lateral : 16|16@1- (-0.0035,1) [-255|255] "" Vector__XXX
-   SG_ g_sensor_longitudinal : 48|16@1- (-0.0035,1) [-255|255] "" Vector__XXX
+   SG_ g_sensor_lateral : 16|16@1- (-0.0035,1) [-255|255] "deg" Vector__XXX
+   SG_ g_sensor_longitudinal : 48|16@1- (-0.0035,1) [-255|255] "deg" Vector__XXX
    SG_ steering_angle : 0|16@1- (0.01,0) [0|1] "deg" Vector__XXX
 
 BO_ 209 XXXMsg209: 4 Vector__XXX

@@ -25,7 +25,6 @@ fn main() -> Result<(), slint::PlatformError> {
     let _guard = tokio_runtime.enter();
 
     let mut handles = Vec::<tokio::task::JoinHandle<()>>::new();
-
     let mut car_data = CarData::new();
 
     let virtual_cluster = env::var("HR_CLUSTER_VIRTUAL").is_ok_and(|val| val == "1");
@@ -122,12 +121,13 @@ fn main() -> Result<(), slint::PlatformError> {
 
         if virtual_cluster {
             let running_simulation_clone = running_simulation.clone();
-            ui.on_toggle_simulation(move || {
-                running_simulation_clone.store(
-                    !running_simulation_clone.load(Ordering::SeqCst),
-                    Ordering::SeqCst,
-                );
-            });
+            ui.global::<ApplicationState>()
+                .on_toggle_simulation(move || {
+                    running_simulation_clone.store(
+                        !running_simulation_clone.load(Ordering::SeqCst),
+                        Ordering::SeqCst,
+                    );
+                });
         }
 
         ui.run()?

@@ -33,11 +33,11 @@ macro_rules! stype_instantiate {
 }
 
 macro_rules! number_param_convertion_handle {
-    ($car_data:ident, $ui_car_data:ident, $ui_suser_unit:ident, $sparam:ident, $param:ident: $type:ty) => {
+    ($car_data:ident, $ui_car_data:ident, $ui_application_state:ident, $sparam:ident, $param:ident: $type:ty) => {
         paste!(
             let mut sparam_clone = $sparam.clone();
 
-            let unit_system: UnitSystem = $ui_suser_unit.get_user_unit().into();
+            let unit_system: UnitSystem = $ui_application_state.get_user_unit().into();
             let units = $car_data.$param().units();
 
             let new_value: f64 = (*$param.borrow_and_update()).into();
@@ -54,13 +54,13 @@ macro_rules! number_param_convertion_handle {
 }
 
 macro_rules! param_convertion_handle {
-    ($car_data:ident, $ui_car_data:ident, $ui_suser_unit:ident, $sparam:ident, $param:ident: SIDataParameter) => {
-        number_param_convertion_handle!{$car_data, $ui_car_data, $ui_suser_unit, $sparam, $param: i32}
+    ($car_data:ident, $ui_car_data:ident, $ui_application_state:ident, $sparam:ident, $param:ident: SIDataParameter) => {
+        number_param_convertion_handle!{$car_data, $ui_car_data, $ui_application_state, $sparam, $param: i32}
     };
-    ($car_data:ident, $ui_car_data:ident, $ui_suser_unit:ident, $sparam:ident, $param:ident: SFDataParameter) => {
-        number_param_convertion_handle!{$car_data, $ui_car_data, $ui_suser_unit, $sparam, $param: f32}
+    ($car_data:ident, $ui_car_data:ident, $ui_application_state:ident, $sparam:ident, $param:ident: SFDataParameter) => {
+        number_param_convertion_handle!{$car_data, $ui_car_data, $ui_application_state, $sparam, $param: f32}
     };
-    ($car_data:ident, $ui_car_data:ident, $ui_suser_unit:ident, $sparam:ident, $param:ident: $type:tt) => {
+    ($car_data:ident, $ui_car_data:ident, $ui_application_state:ident, $sparam:ident, $param:ident: $type:tt) => {
         paste!(
             let mut sparam_clone = $sparam.clone();
             sparam_clone.value = (*$param.borrow_and_update()).into();
@@ -83,14 +83,14 @@ macro_rules! bridge {
             match slint::spawn_local(async_compat::Compat::new(async move {
                 let window_binding = main_window.unwrap();
                 let ui_car_data = window_binding.global::<SCarData>();
-                let ui_suser_unit = window_binding.global::<SUserUnit>();
+                let ui_application_state = window_binding.global::<ApplicationState>();
 
                 $(
                     let mut $param = car_data.$param().watch();
 
                     paste!{
                         let [<sparam_ $param>] = stype_instantiate!{car_data, $param: $type};
-                        param_convertion_handle!(car_data, ui_car_data, ui_suser_unit, [<sparam_ $param>], $param: $type);
+                        param_convertion_handle!(car_data, ui_car_data, ui_application_state, [<sparam_ $param>], $param: $type);
                     }
                 )*
 
@@ -98,7 +98,7 @@ macro_rules! bridge {
                     tokio::select! {
                         $(_ = $param.changed() => {
                             paste!{
-                                param_convertion_handle!(car_data, ui_car_data, ui_suser_unit, [<sparam_ $param>], $param: $type);
+                                param_convertion_handle!(car_data, ui_car_data, ui_application_state, [<sparam_ $param>], $param: $type);
                             }
                         },)*
                     }
@@ -114,12 +114,12 @@ macro_rules! bridge {
             let mut car_data = self.car_data.clone();
             let window_binding = self.main_window.clone().unwrap();
             let ui_car_data = window_binding.global::<SCarData>();
-            let ui_suser_unit = window_binding.global::<SUserUnit>();
+            let ui_application_state = window_binding.global::<ApplicationState>();
 
             $(paste!{
                 let mut $param = car_data.$param().watch();
                 let [<sparam_ $param>] = stype_instantiate!{car_data, $param: $type};
-                param_convertion_handle!(car_data, ui_car_data, ui_suser_unit, [<sparam_ $param>], $param: $type);
+                param_convertion_handle!(car_data, ui_car_data, ui_application_state, [<sparam_ $param>], $param: $type);
             })*
         }
     };
@@ -147,20 +147,25 @@ impl UIDataBridge {
         lowbeams_enabled: SBDataParameter,
         right_turn_signal_enabled: SBDataParameter,
         left_turn_signal_enabled: SBDataParameter,
-        handbrake_sw: SBDataParameter
+        handbrake_sw: SBDataParameter,
+        parking_lights_enabled: SBDataParameter,
+        highbeams_enabled: SBDataParameter,
+        reverse_sw: SBDataParameter,
+        driver_seatbelt_warning_enabled: SBDataParameter,
+        passenger_seatbelt_warning_enabled: SBDataParameter,
     }
 
     pub fn handle_unit_system(&self) {
         let window_binding = (*self).main_window.clone().unwrap();
-        let ui_suser_unit = window_binding.global::<SUserUnit>();
+        let ui_application_state = window_binding.global::<ApplicationState>();
 
         let ui_binding = window_binding.as_weak().clone();
 
         let self_clone = self.clone();
-        ui_suser_unit.on_update_user_unit(move |value: SUnitSystem| {
+        ui_application_state.on_update_user_unit(move |value: SUnitSystem| {
             let binding = ui_binding.unwrap();
-            let ui_suser_unit = binding.global::<SUserUnit>();
-            ui_suser_unit.set_user_unit(value);
+            let ui_application_state = binding.global::<ApplicationState>();
+            ui_application_state.set_user_unit(value);
 
             self_clone.update_all();
         });

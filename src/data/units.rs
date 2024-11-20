@@ -11,7 +11,7 @@ pub enum UnitSystem {
     USCS, // US Customary System
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub enum PressureUnit {
     #[default]
     BAR,
@@ -19,7 +19,7 @@ pub enum PressureUnit {
     PSI,
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub enum Unit {
     #[default]
     None,

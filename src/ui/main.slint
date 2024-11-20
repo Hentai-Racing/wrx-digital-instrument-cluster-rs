@@ -2,7 +2,7 @@ import { Button, VerticalBox } from "std-widgets.slint";
 import { InstrumentGauge, GaugeArc } from "components/instrument_gauge.slint";
 import { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter } from "data/data_parameter.slint";
 import { SCarData } from "data/car_data.slint";
-import { SUnitSystem, SUserUnit } from "data/units.slint";
+import { SUnitSystem } from "data/units.slint";
 
 import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Black.ttf";
 import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Bold.ttf";
@@ -16,13 +16,17 @@ import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
 // Export types
 export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, SUnitSystem }
 // Export globals
-export { SCarData, SUserUnit }
+export { SCarData }
 
 export global ApplicationState {
     in property <bool> virtual_cluster: true;
+    callback toggle_simulation();
+
+    in-out property <SUnitSystem> user_unit;
+    callback update_user_unit(SUnitSystem);
 }
 
-export global SymbolColors {
+export global SymbolProperties {
     out property <color> symbol_color_blue: #0000ff;
     out property <color> symbol_color_dark_grey: #4b4b4b;
     out property <color> symbol_color_green: #00e600;
@@ -30,16 +34,37 @@ export global SymbolColors {
     out property <color> symbol_color_red: #ff0000;
     out property <color> symbol_color_white: #ffffff;
     out property <color> symbol_color_yellow: #ffb300;
+    out property <length> size: 75px;
+    out property <length> padding: 5px;
 }
 
 component PrimarySection inherits Rectangle {
     background: transparent;
 }
 
-export component AppWindow inherits Window {
-    callback toggle_simulation();
+component SymbolLight inherits Image {
+    in property <float> scale: 1;
+    width: SymbolProperties.size * scale;
+    height: SymbolProperties.size * scale;
+    padding: SymbolProperties.padding;
+    image-fit: ImageFit.contain;
+    colorize: Colors.blueviolet;
+}
 
-    property <length> icon_size: 75px;
+component GaugeAttachedSymbol inherits SymbolLight {
+    in property <angle> angle: 0deg;
+    in property <length> radius-offset: 25px;
+    in property <length> radius: max(self.width, self.height) / 2;
+
+    in property <length> center-x: 0px;
+    in property <length> center-y: 0px;
+    in property <length> center-radius: 1px;
+
+    x: center-x - self.width / 2 + ((center-radius + radius + radius-offset) * cos(angle));
+    y: center-y - self.height / 2 - ((center-radius + radius + radius-offset) * sin(angle));
+}
+
+export component AppWindow inherits Window {
 
     default-font-family: "Montserrat";
     default-font-weight: 400;
@@ -54,59 +79,27 @@ export component AppWindow inherits Window {
     VerticalLayout {
         top-span := PrimarySection {
             background: transparent;
-            height: max(icon_size, root.height * 1 / 20);
-
-            unit-toggle-button := Button {
-                text: "Toggle Unit System";
-                x: 0;
-
-                clicked => {
-                    SUserUnit.update_user_unit(SUserUnit.user_unit == SUnitSystem.USCS ? SUnitSystem.SI : SUnitSystem.USCS);
-                }
-            }
-
-            if ApplicationState.virtual_cluster: simulation-toggle-button := Button {
-                text: "Toggle Simulation";
-                x: parent.width - self.width;
-
-                clicked => {
-                    toggle_simulation();
-                }
-            }
-
-            Text {
-                text: SUserUnit.user_unit == SUnitSystem.USCS ? "USCS" : "SI";
-                x: unit-toggle-button.x + unit-toggle-button.width + 10px;
-            }
-
-            lowbeam-indicator := Image {
-                height: icon_size;
-                width <=> self.height;
-
-                source: @image-url("../../resources/images/headlight-indicator-light.png");
-                colorize: SymbolColors.symbol_color_green;
-
-                visible: SCarData.lowbeams_enabled.value;
-            }
+            height: max(SymbolProperties.size, root.height * 1 / 20);
         }
 
-        HorizontalLayout {
+        mid-span := HorizontalLayout {
             left-tri := PrimarySection {
                 width: parent.width * 38%;
 
                 tachometer := InstrumentGauge {
-
                     width: self.height;
-                    height: min(parent.height, parent.width * 70%);
+                    height: min(parent.height, parent.width * 90%);
                     range: 75%;
                     start: -50% + 25% / 2;
 
                     inner_radius: self.width / 2px - self.width / 6px;
                     background_inner_radius: self.width / 2px - 2;
 
-                    progress: SCarData.engine_rpm.value / (SCarData.engine_rpm.max != 0 ? SCarData.engine_rpm.max : (SCarData.engine_rpm.value * 2));
+                    property <float> max: SCarData.engine_rpm.max == 0 ? SCarData.engine_rpm.value * 6 : ceil(SCarData.engine_rpm.max / 1000) * 1000; // nearest ceil thousand
 
-                    property <int> ticks: ceil(SCarData.engine_rpm.max / 1000);
+                    progress: SCarData.engine_rpm.value / max;
+
+                    property <int> ticks: ceil(max / 1000);
                     property <int> minor_ticks: 3;
                     property <color> tick_color: #ffffff;
                     property <float> tick_size: 0.175%;
@@ -162,18 +155,12 @@ export component AppWindow inherits Window {
                                 viewbox-height: parent.height / 1px;
 
                                 fill: tachometer.tick_color;
-                                inner_radius: tachometer.inner_radius + tachometer.width / ((minor-tick + 1) == (tachometer.minor_ticks + 1) / 2 ? 9.5px : 8px);
+                                inner_radius: tachometer.inner_radius + tachometer.width / ((minor-tick + 1) == (tachometer.minor_ticks + 1) / 2 ? 8px : 7px);
                                 progress: tachometer.tick_size;
                                 start: parent.start - 0.25 + (tachometer.range / tachometer.ticks);
                                 range: tachometer.range;
                             }
                         }
-                    }
-
-                    mt-gear-label := Text {
-                        text: SCarData.mt_gear.value;
-                        color: white;
-                        font-size: 50px;
                     }
 
                     rpm-unit-label := Text {
@@ -183,37 +170,81 @@ export component AppWindow inherits Window {
                         horizontal-alignment: TextHorizontalAlignment.center;
                         y: parent.height * 27.5%;
                     }
-
-                    parking-brake-warning := Image {
-                        height: icon_size;
-                        width: icon_size * 1.1;
-
-                        y: min(parent.height - self.height, parent.height * 65%);
-
-                        source: @image-url("../../resources/images/brake-warning-indicator-light-letters-only.png");
-                        colorize: SymbolColors.symbol_color_red;
-
-                        visible: SCarData.handbrake_sw.value;
-                    }
                 }
 
-                left-turn-signal := Image {
-                    height <=> right-turn-signal.height;
-                    width <=> right-turn-signal.width;
+                mt-gear-label := Text {
+                    text: SCarData.reverse_sw.value ? "R" : SCarData.mt_gear.value;
+                    color: white;
+                    font-size: 50px;
 
-                    x: tachometer.x + tachometer.width / 2 - self.width / 2 + tachometer.width / 1.5 * cos(45deg);
-                    y: tachometer.y + tachometer.height / 2 - self.height / 2 - tachometer.height / 1.5 * sin(45deg);
+                    x: tachometer.x + tachometer.width / 2 - self.width / 2;
+                    y: tachometer.y + tachometer.height / 2 - self.height / 2;
 
-                    image-fit: ImageFit.contain;
-                    source: right-turn-signal.source;
-                    colorize: SymbolColors.symbol_color_green;
+                    vertical-alignment: TextVerticalAlignment.center;
+                    horizontal-alignment: TextHorizontalAlignment.center;
+                }
+
+                parking-brake-warning := SymbolLight {
+                    // width: SymbolProperties.size * 1.3;
+                    scale: 1.2;
+
+                    y: min(tachometer.height - self.height, tachometer.height * 65%);
+
+                    source: @image-url("../../resources/images/brake-warning-indicator-light-letters-only.png");
+                    colorize: SymbolProperties.symbol_color_red;
+
+                    visible: SCarData.handbrake_sw.value;
+                }
+
+                left-turn-signal := GaugeAttachedSymbol {
+                    height: SymbolProperties.size * 0.8;
+                    width: SymbolProperties.size;
+
+                    center-radius: tachometer.width / 2;
+                    center-x: tachometer.x + tachometer.width / 2;
+                    center-y: tachometer.y + tachometer.height / 2;
+
+                    angle: 40deg;
+
+                    source: @image-url("../../resources/images/turn-signal-arrow.png");
+                    colorize: SymbolProperties.symbol_color_green;
 
                     visible: SCarData.left_turn_signal_enabled.value;
                     rotation-angle: 180deg;
                 }
+
+                highbeam-indicator := GaugeAttachedSymbol {
+                    source: @image-url("../../resources/images/highbeam-indicator-light.png");
+                    colorize: SymbolProperties.symbol_color_blue;
+
+                    angle: 55deg;
+
+                    center-radius: tachometer.width / 2;
+                    center-x: tachometer.x + tachometer.width / 2;
+                    center-y: tachometer.y + tachometer.height / 2;
+                }
+
+                foglight-indicator := GaugeAttachedSymbol {
+                    scale: 0.8;
+                    source: @image-url("../../resources/images/front-fog-indicator-light.png");
+                    colorize: SymbolProperties.symbol_color_green;
+
+                    angle: highbeam-indicator.angle + 13deg;
+
+                    center-radius: tachometer.width / 2;
+                    center-x: tachometer.x + tachometer.width / 2;
+                    center-y: tachometer.y + tachometer.height / 2;
+                }
             }
 
-            mid-tri := PrimarySection { }
+            mid-tri := PrimarySection {
+                padding: 10px;
+
+                Rectangle {
+                    background: purple;
+                    border-radius: 5px;
+                }
+            }
 
             right-tri := PrimarySection {
                 width: left-tri.width;
@@ -229,11 +260,11 @@ export component AppWindow inherits Window {
 
                     progress: SCarData.vehicle_speed.value / (SCarData.vehicle_speed.max != 0 ? SCarData.vehicle_speed.max : (SCarData.vehicle_speed.value * 2));
 
-                    property <int> speed_delim: SUserUnit.user_unit == SUnitSystem.USCS ? 20 : 25;
+                    property <int> speed_delim: ApplicationState.user_unit == SUnitSystem.USCS ? 20 : 20;
                     property <int> final_speed_delim: SCarData.vehicle_speed.max / speed_delim;
 
                     property <int> ticks: final_speed_delim;
-                    property <int> minor_ticks: 1;
+                    property <int> minor_ticks: ApplicationState.user_unit == SUnitSystem.USCS ? 1 : 1;
                     property <color> tick_color: #ffffff;
                     property <float> tick_size: 0.175%;
                     property <float> tick_step: self.range / self.ticks;
@@ -287,7 +318,7 @@ export component AppWindow inherits Window {
                                 viewbox-height: parent.height / 1px;
 
                                 fill: speedometer.tick_color;
-                                inner_radius: speedometer.inner_radius + speedometer.width / ((minor-tick + 1) == (speedometer.minor_ticks + 1) / 2 ? 7.5px : 9px);
+                                inner_radius: speedometer.inner_radius + speedometer.width / ((minor-tick + 1) == (speedometer.minor_ticks + 1) / 2 ? 8px : 7px);
                                 progress: speedometer.tick_size;
                                 start: parent.start - 0.25 + (speedometer.range / speedometer.ticks);
                                 range: 75%;
@@ -313,38 +344,107 @@ export component AppWindow inherits Window {
                     }
                 }
 
-                right-turn-signal := Image {
-                    height: icon_size * 0.8;
-                    width <=> self.height;
+                right-turn-signal := GaugeAttachedSymbol {
+                    height <=> left-turn-signal.height;
+                    width <=> left-turn-signal.width;
 
-                    x: speedometer.x + speedometer.width / 2 - self.width / 2 - speedometer.width / 1.5 * cos(45deg);
-                    y: speedometer.y + speedometer.height / 2 - self.height / 2 - speedometer.height / 1.5 * sin(45deg);
+                    center-radius: speedometer.width / 2;
+                    center-x: speedometer.x + speedometer.width / 2;
+                    center-y: speedometer.y + speedometer.height / 2;
+
+                    angle: 180deg - left-turn-signal.angle;
 
                     source: @image-url("../../resources/images/turn-signal-arrow.png");
-                    colorize: SymbolColors.symbol_color_green;
+                    colorize: SymbolProperties.symbol_color_green;
 
                     visible: SCarData.right_turn_signal_enabled.value;
+                }
+
+                headlight-indicator := GaugeAttachedSymbol {
+                    scale: 1.1;
+                    center-radius: speedometer.width / 2;
+                    center-x: speedometer.x + speedometer.width / 2;
+                    center-y: speedometer.y + speedometer.height / 2;
+
+                    angle: 180deg - highbeam-indicator.angle;
+
+                    source: @image-url("../../resources/images/headlight-indicator-light.png");
+                    colorize: SymbolProperties.symbol_color_green;
+
+                    visible: SCarData.lowbeams_enabled.value || SCarData.parking_lights_enabled.value;
+                }
+
+                driver-seatbelt-indicator := GaugeAttachedSymbol {
+                    scale: 1;
+                    center-radius: speedometer.width / 2;
+                    center-x: speedometer.x + speedometer.width / 2;
+                    center-y: speedometer.y + speedometer.height / 2;
+
+                    angle: 320deg;
+
+                    source: @image-url("../../resources/images/seatbelt-warning-light.png");
+                    colorize: SymbolProperties.symbol_color_red;
+
+                    visible: SCarData.driver_seatbelt_warning_enabled.value;
                 }
             }
         }
 
         bottom-span := PrimarySection {
-            height: odometer-text.height * 110%;
+            height: odometer-text.font-size * 150%;
 
-            odometer-text := Text {
-                color: white;
-                text: round(SCarData.odometer.value);
-                font-size: 30px;
-                vertical-alignment: TextVerticalAlignment.center;
-                horizontal-alignment: TextHorizontalAlignment.center;
+            odometer-text-section := Rectangle {
+                background: transparent;
+                x: parent.x + parent.width / 2 - self.width / 2;
+
+                odometer-text := Text {
+                    color: white;
+                    text: round(SCarData.odometer.value);
+                    font-size: 30px;
+                    vertical-alignment: TextVerticalAlignment.center;
+                    horizontal-alignment: TextHorizontalAlignment.center;
+                    x: parent.x + parent.width / 2 - self.width / 2;
+                }
+
+                odometer-dec-text := Text {
+                    color: odometer-text.color.transparentize(60%);
+                    text: "." + ceil((round(SCarData.odometer.value * 10) / 10 - round(SCarData.odometer.value)) * 10);
+                    font-size: odometer-text.font-size;
+                    horizontal-alignment: TextHorizontalAlignment.left;
+                    vertical-alignment: odometer-text.vertical-alignment;
+                    x: odometer-text.x + odometer-text.width;
+                }
+
+                odometer-unit-text := Text {
+                    color: odometer-text.color.transparentize(70%);
+                    text: SCarData.odometer.unit_str;
+                    font-size: odometer-text.font-size * 70%;
+                    x: odometer-dec-text.x + odometer-dec-text.width;
+                    y: odometer-dec-text.y + odometer-dec-text.height / 2 - self.height / 2;
+                }
             }
 
-            odometer-unit-text := Text {
-                color: gray;
-                text: SCarData.odometer.unit_str;
-                font-size: odometer-text.font-size * 70%;
-                x: odometer-text.x + odometer-text.width;
-                y: odometer-text.y + odometer-text.height / 2 - self.height / 2;
+            unit-toggle-button := Button {
+                text: "Toggle Unit System";
+                x: 0;
+
+                clicked => {
+                    ApplicationState.update_user_unit(ApplicationState.user_unit == SUnitSystem.USCS ? SUnitSystem.SI : SUnitSystem.USCS);
+                }
+            }
+
+            Text {
+                text: ApplicationState.user_unit == SUnitSystem.USCS ? "USCS" : "SI";
+                x: unit-toggle-button.x + unit-toggle-button.width + 10px;
+            }
+
+            if ApplicationState.virtual_cluster: simulation-toggle-button := Button {
+                text: "Toggle Simulation";
+                x: parent.width - self.width;
+
+                clicked => {
+                    ApplicationState.toggle_simulation();
+                }
             }
         }
     }
