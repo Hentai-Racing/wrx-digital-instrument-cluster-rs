@@ -136,6 +136,30 @@ CarData!(
         left_turn_signal_enabled: bool = true,
         right_turn_signal_enabled: bool = true,
     };
+
+    XxxMsg884 => {
+        fog_lights_enabled: bool = true,
+    };
+
+    XxxMsg885 => {
+        headlight_dimmer_enabled: bool = true,
+    };
+
+    DriverRoadAssists => {
+        hill_assist_enabled: bool = true,
+        active_tq_vectoring_enabled: bool = true,
+        traction_control_disabled: bool = true,
+    };
+
+    BsdRcta => {
+        rcta_enabled: bool = true,
+        bsd_left: bool = true,
+        bsd_right: bool = true,
+        rcta_left_adjacent: bool = true,
+        rcta_left_approaching: bool = true,
+        rcta_right_adjacent: bool = true,
+        rcta_right_approaching: bool = true,
+    };
 );
 
 impl CarData {

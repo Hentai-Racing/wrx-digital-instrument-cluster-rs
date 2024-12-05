@@ -56,12 +56,12 @@ pub async fn run_vcan_generator(
                 socket.write_frame(frame).unwrap().await.unwrap();
             }
             let hill_assist_enabled = rand::thread_rng().gen_bool(0.5);
-            let tq_vectoring_enabled = rand::thread_rng().gen_bool(0.5);
-            let traction_control_enabled = rand::thread_rng().gen_bool(0.5);
+            let active_tq_vectoring_enabled = rand::thread_rng().gen_bool(0.5);
+            let traction_control_disabled = rand::thread_rng().gen_bool(0.5);
             let driverroadassists_frame = wrx_2018::DriverRoadAssists::new(
                     hill_assist_enabled,
-                    tq_vectoring_enabled,
-                    traction_control_enabled,
+                    active_tq_vectoring_enabled,
+                    traction_control_disabled,
                 )
                 .expect("Failed to create frame");
             if let Some(frame) = Frame::new(
@@ -140,6 +140,7 @@ pub async fn run_vcan_generator(
                 .gen_range(
                     wrx_2018::EngineStatus::ENGINE_RPM_MIN..=wrx_2018::EngineStatus::ENGINE_RPM_MAX,
                 );
+            let engine_running = rand::thread_rng().gen_bool(0.5);
             let engine_stop = rand::thread_rng().gen_bool(0.5);
             let engine_torque = rand::thread_rng()
                 .gen_range(
@@ -149,16 +150,12 @@ pub async fn run_vcan_generator(
                 .gen_range(
                     wrx_2018::EngineStatus::MT_GEAR_MIN..=wrx_2018::EngineStatus::MT_GEAR_MAX,
                 );
-            let wheel_torque = rand::thread_rng()
-                .gen_range(
-                    wrx_2018::EngineStatus::WHEEL_TORQUE_MIN..=wrx_2018::EngineStatus::WHEEL_TORQUE_MAX,
-                );
             let enginestatus_frame = wrx_2018::EngineStatus::new(
                     engine_rpm,
+                    engine_running,
                     engine_stop,
                     engine_torque,
                     mt_gear,
-                    wheel_torque,
                 )
                 .expect("Failed to create frame");
             if let Some(frame) = Frame::new(
@@ -218,20 +215,20 @@ pub async fn run_vcan_generator(
                 socket.write_frame(frame).unwrap().await.unwrap();
             }
             let rcta_enabled = rand::thread_rng().gen_bool(0.5);
-            let rcta_left = rand::thread_rng().gen_bool(0.5);
-            let rcta_right = rand::thread_rng().gen_bool(0.5);
-            let rtca_left_adjacent = rand::thread_rng().gen_bool(0.5);
-            let rtca_left_approaching = rand::thread_rng().gen_bool(0.5);
-            let rtca_right_adjacent = rand::thread_rng().gen_bool(0.5);
-            let rtca_right_approaching = rand::thread_rng().gen_bool(0.5);
+            let bsd_left = rand::thread_rng().gen_bool(0.5);
+            let bsd_right = rand::thread_rng().gen_bool(0.5);
+            let rcta_left_adjacent = rand::thread_rng().gen_bool(0.5);
+            let rcta_left_approaching = rand::thread_rng().gen_bool(0.5);
+            let rcta_right_adjacent = rand::thread_rng().gen_bool(0.5);
+            let rcta_right_approaching = rand::thread_rng().gen_bool(0.5);
             let bsdrcta_frame = wrx_2018::BsdRcta::new(
                     rcta_enabled,
-                    rcta_left,
-                    rcta_right,
-                    rtca_left_adjacent,
-                    rtca_left_approaching,
-                    rtca_right_adjacent,
-                    rtca_right_approaching,
+                    bsd_left,
+                    bsd_right,
+                    rcta_left_adjacent,
+                    rcta_left_approaching,
+                    rcta_right_adjacent,
+                    rcta_right_approaching,
                 )
                 .expect("Failed to create frame");
             if let Some(frame) = Frame::new(bsdrcta_frame.id(), bsdrcta_frame.data()) {

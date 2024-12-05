@@ -8,7 +8,7 @@
 
 //! Message definitions from file `"WRX_2018.dbc"`
 //!
-//! - Version: `Version("0.3.1")`
+//! - Version: `Version("0.4.3")`
 
 use core::ops::BitOr;
 use bitvec::prelude::*;
@@ -480,10 +480,10 @@ impl embedded_can::Frame for XxxMsg209 {
 /// driver_road_assists
 ///
 /// - Standard ID: 211 (0xd3)
-/// - Size: 8 bytes
+/// - Size: 7 bytes
 #[derive(Clone, Copy)]
 pub struct DriverRoadAssists {
-    raw: [u8; 8],
+    raw: [u8; 7],
 }
 
 impl DriverRoadAssists {
@@ -491,16 +491,16 @@ impl DriverRoadAssists {
     
     
     /// Construct new driver_road_assists from values
-    pub fn new(hill_assist_enabled: bool, tq_vectoring_enabled: bool, traction_control_enabled: bool) -> Result<Self, CanError> {
-        let mut res = Self { raw: [0u8; 8] };
+    pub fn new(hill_assist_enabled: bool, active_tq_vectoring_enabled: bool, traction_control_disabled: bool) -> Result<Self, CanError> {
+        let mut res = Self { raw: [0u8; 7] };
         res.set_hill_assist_enabled(hill_assist_enabled)?;
-        res.set_tq_vectoring_enabled(tq_vectoring_enabled)?;
-        res.set_traction_control_enabled(traction_control_enabled)?;
+        res.set_active_tq_vectoring_enabled(active_tq_vectoring_enabled)?;
+        res.set_traction_control_disabled(traction_control_disabled)?;
         Ok(res)
     }
     
     /// Access message payload raw value
-    pub fn raw(&self) -> &[u8; 8] {
+    pub fn raw(&self) -> &[u8; 7] {
         &self.raw
     }
     
@@ -538,18 +538,18 @@ impl DriverRoadAssists {
         Ok(())
     }
     
-    /// tq_vectoring_enabled
+    /// active_tq_vectoring_enabled
     ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn tq_vectoring_enabled(&self) -> bool {
-        self.tq_vectoring_enabled_raw()
+    pub fn active_tq_vectoring_enabled(&self) -> bool {
+        self.active_tq_vectoring_enabled_raw()
     }
     
-    /// Get raw value of tq_vectoring_enabled
+    /// Get raw value of active_tq_vectoring_enabled
     ///
     /// - Start bit: 3
     /// - Signal size: 1 bits
@@ -558,49 +558,49 @@ impl DriverRoadAssists {
     /// - Byte order: BigEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn tq_vectoring_enabled_raw(&self) -> bool {
+    pub fn active_tq_vectoring_enabled_raw(&self) -> bool {
         let signal = self.raw.view_bits::<Msb0>()[4..5].load_be::<u8>();
         
         signal == 1
     }
     
-    /// Set value of tq_vectoring_enabled
+    /// Set value of active_tq_vectoring_enabled
     #[inline(always)]
-    pub fn set_tq_vectoring_enabled(&mut self, value: bool) -> Result<(), CanError> {
+    pub fn set_active_tq_vectoring_enabled(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Msb0>()[4..5].store_be(value);
         Ok(())
     }
     
-    /// traction_control_enabled
+    /// traction_control_disabled
     ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn traction_control_enabled(&self) -> bool {
-        self.traction_control_enabled_raw()
+    pub fn traction_control_disabled(&self) -> bool {
+        self.traction_control_disabled_raw()
     }
     
-    /// Get raw value of traction_control_enabled
+    /// Get raw value of traction_control_disabled
     ///
     /// - Start bit: 11
     /// - Signal size: 1 bits
-    /// - Factor: -1
-    /// - Offset: 1
+    /// - Factor: 1
+    /// - Offset: 0
     /// - Byte order: BigEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn traction_control_enabled_raw(&self) -> bool {
+    pub fn traction_control_disabled_raw(&self) -> bool {
         let signal = self.raw.view_bits::<Msb0>()[12..13].load_be::<u8>();
         
         signal == 1
     }
     
-    /// Set value of traction_control_enabled
+    /// Set value of traction_control_disabled
     #[inline(always)]
-    pub fn set_traction_control_enabled(&mut self, value: bool) -> Result<(), CanError> {
+    pub fn set_traction_control_disabled(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Msb0>()[12..13].store_be(value);
         Ok(())
@@ -613,9 +613,9 @@ impl core::convert::TryFrom<&[u8]> for DriverRoadAssists {
     
     #[inline(always)]
     fn try_from(payload: &[u8]) -> Result<Self, Self::Error> {
-        if payload.len() != 8 { return Err(CanError::InvalidPayloadSize); }
-        let mut raw = [0u8; 8];
-        raw.copy_from_slice(&payload[..8]);
+        if payload.len() != 7 { return Err(CanError::InvalidPayloadSize); }
+        let mut raw = [0u8; 7];
+        raw.copy_from_slice(&payload[..7]);
         Ok(Self { raw })
     }
 }
@@ -1333,17 +1333,15 @@ impl EngineStatus {
     pub const ENGINE_TORQUE_MAX: u16 = 255_u16;
     pub const MT_GEAR_MIN: u8 = 0_u8;
     pub const MT_GEAR_MAX: u8 = 7_u8;
-    pub const WHEEL_TORQUE_MIN: u16 = 0_u16;
-    pub const WHEEL_TORQUE_MAX: u16 = 4095_u16;
     
     /// Construct new engine_status from values
-    pub fn new(engine_rpm: u16, engine_stop: bool, engine_torque: u16, mt_gear: u8, wheel_torque: u16) -> Result<Self, CanError> {
+    pub fn new(engine_rpm: u16, engine_running: bool, engine_stop: bool, engine_torque: u16, mt_gear: u8) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_engine_rpm(engine_rpm)?;
+        res.set_engine_running(engine_running)?;
         res.set_engine_stop(engine_stop)?;
         res.set_engine_torque(engine_torque)?;
         res.set_mt_gear(mt_gear)?;
-        res.set_wheel_torque(wheel_torque)?;
         Ok(res)
     }
     
@@ -1391,6 +1389,40 @@ impl EngineStatus {
         let value = (value / factor) as u16;
         
         self.raw.view_bits_mut::<Lsb0>()[32..46].store_le(value);
+        Ok(())
+    }
+    
+    /// engine_running
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: ""
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn engine_running(&self) -> bool {
+        self.engine_running_raw()
+    }
+    
+    /// Get raw value of engine_running
+    ///
+    /// - Start bit: 51
+    /// - Signal size: 1 bits
+    /// - Factor: 1
+    /// - Offset: 0
+    /// - Byte order: LittleEndian
+    /// - Value type: Unsigned
+    #[inline(always)]
+    pub fn engine_running_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Lsb0>()[51..52].load_le::<u8>();
+        
+        signal == 1
+    }
+    
+    /// Set value of engine_running
+    #[inline(always)]
+    pub fn set_engine_running(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Lsb0>()[51..52].store_le(value);
         Ok(())
     }
     
@@ -1478,7 +1510,7 @@ impl EngineStatus {
     /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn mt_gear(&self) -> EngineStatusMtGear {
-        let signal = self.raw.view_bits::<Lsb0>()[48..52].load_le::<u8>();
+        let signal = self.raw.view_bits::<Lsb0>()[48..51].load_le::<u8>();
         
         match signal {
             0 => EngineStatusMtGear::Floating,
@@ -1496,14 +1528,14 @@ impl EngineStatus {
     /// Get raw value of mt_gear
     ///
     /// - Start bit: 48
-    /// - Signal size: 4 bits
+    /// - Signal size: 3 bits
     /// - Factor: 1
     /// - Offset: 0
     /// - Byte order: LittleEndian
     /// - Value type: Unsigned
     #[inline(always)]
     pub fn mt_gear_raw(&self) -> u8 {
-        let signal = self.raw.view_bits::<Lsb0>()[48..52].load_le::<u8>();
+        let signal = self.raw.view_bits::<Lsb0>()[48..51].load_le::<u8>();
         
         let factor = 1;
         u8::from(signal).saturating_mul(factor).saturating_add(0)
@@ -1520,49 +1552,7 @@ impl EngineStatus {
             .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus::MESSAGE_ID })?;
         let value = (value / factor) as u8;
         
-        self.raw.view_bits_mut::<Lsb0>()[48..52].store_le(value);
-        Ok(())
-    }
-    
-    /// wheel_torque
-    ///
-    /// - Min: 0
-    /// - Max: 4095
-    /// - Unit: ""
-    /// - Receivers: Vector__XXX
-    #[inline(always)]
-    pub fn wheel_torque(&self) -> u16 {
-        self.wheel_torque_raw()
-    }
-    
-    /// Get raw value of wheel_torque
-    ///
-    /// - Start bit: 16
-    /// - Signal size: 12 bits
-    /// - Factor: 1
-    /// - Offset: 0
-    /// - Byte order: LittleEndian
-    /// - Value type: Unsigned
-    #[inline(always)]
-    pub fn wheel_torque_raw(&self) -> u16 {
-        let signal = self.raw.view_bits::<Lsb0>()[16..28].load_le::<u16>();
-        
-        let factor = 1;
-        u16::from(signal).saturating_mul(factor).saturating_add(0)
-    }
-    
-    /// Set value of wheel_torque
-    #[inline(always)]
-    pub fn set_wheel_torque(&mut self, value: u16) -> Result<(), CanError> {
-        if value < 0_u16 || 4095_u16 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus::MESSAGE_ID });
-        }
-        let factor = 1;
-        let value = value.checked_sub(0)
-            .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus::MESSAGE_ID })?;
-        let value = (value / factor) as u16;
-        
-        self.raw.view_bits_mut::<Lsb0>()[16..28].store_le(value);
+        self.raw.view_bits_mut::<Lsb0>()[48..51].store_le(value);
         Ok(())
     }
     
@@ -2316,15 +2306,15 @@ impl BsdRcta {
     
     
     /// Construct new bsd_rcta from values
-    pub fn new(rcta_enabled: bool, rcta_left: bool, rcta_right: bool, rtca_left_adjacent: bool, rtca_left_approaching: bool, rtca_right_adjacent: bool, rtca_right_approaching: bool) -> Result<Self, CanError> {
+    pub fn new(rcta_enabled: bool, bsd_left: bool, bsd_right: bool, rcta_left_adjacent: bool, rcta_left_approaching: bool, rcta_right_adjacent: bool, rcta_right_approaching: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_rcta_enabled(rcta_enabled)?;
-        res.set_rcta_left(rcta_left)?;
-        res.set_rcta_right(rcta_right)?;
-        res.set_rtca_left_adjacent(rtca_left_adjacent)?;
-        res.set_rtca_left_approaching(rtca_left_approaching)?;
-        res.set_rtca_right_adjacent(rtca_right_adjacent)?;
-        res.set_rtca_right_approaching(rtca_right_approaching)?;
+        res.set_bsd_left(bsd_left)?;
+        res.set_bsd_right(bsd_right)?;
+        res.set_rcta_left_adjacent(rcta_left_adjacent)?;
+        res.set_rcta_left_approaching(rcta_left_approaching)?;
+        res.set_rcta_right_adjacent(rcta_right_adjacent)?;
+        res.set_rcta_right_approaching(rcta_right_approaching)?;
         Ok(res)
     }
     
@@ -2367,18 +2357,18 @@ impl BsdRcta {
         Ok(())
     }
     
-    /// rcta_left
+    /// bsd_left
     ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn rcta_left(&self) -> bool {
-        self.rcta_left_raw()
+    pub fn bsd_left(&self) -> bool {
+        self.bsd_left_raw()
     }
     
-    /// Get raw value of rcta_left
+    /// Get raw value of bsd_left
     ///
     /// - Start bit: 47
     /// - Signal size: 1 bits
@@ -2387,32 +2377,32 @@ impl BsdRcta {
     /// - Byte order: LittleEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn rcta_left_raw(&self) -> bool {
+    pub fn bsd_left_raw(&self) -> bool {
         let signal = self.raw.view_bits::<Lsb0>()[47..48].load_le::<u8>();
         
         signal == 1
     }
     
-    /// Set value of rcta_left
+    /// Set value of bsd_left
     #[inline(always)]
-    pub fn set_rcta_left(&mut self, value: bool) -> Result<(), CanError> {
+    pub fn set_bsd_left(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Lsb0>()[47..48].store_le(value);
         Ok(())
     }
     
-    /// rcta_right
+    /// bsd_right
     ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn rcta_right(&self) -> bool {
-        self.rcta_right_raw()
+    pub fn bsd_right(&self) -> bool {
+        self.bsd_right_raw()
     }
     
-    /// Get raw value of rcta_right
+    /// Get raw value of bsd_right
     ///
     /// - Start bit: 46
     /// - Signal size: 1 bits
@@ -2421,32 +2411,32 @@ impl BsdRcta {
     /// - Byte order: LittleEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn rcta_right_raw(&self) -> bool {
+    pub fn bsd_right_raw(&self) -> bool {
         let signal = self.raw.view_bits::<Lsb0>()[46..47].load_le::<u8>();
         
         signal == 1
     }
     
-    /// Set value of rcta_right
+    /// Set value of bsd_right
     #[inline(always)]
-    pub fn set_rcta_right(&mut self, value: bool) -> Result<(), CanError> {
+    pub fn set_bsd_right(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Lsb0>()[46..47].store_le(value);
         Ok(())
     }
     
-    /// rtca_left_adjacent
+    /// rcta_left_adjacent
     ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn rtca_left_adjacent(&self) -> bool {
-        self.rtca_left_adjacent_raw()
+    pub fn rcta_left_adjacent(&self) -> bool {
+        self.rcta_left_adjacent_raw()
     }
     
-    /// Get raw value of rtca_left_adjacent
+    /// Get raw value of rcta_left_adjacent
     ///
     /// - Start bit: 33
     /// - Signal size: 1 bits
@@ -2455,32 +2445,32 @@ impl BsdRcta {
     /// - Byte order: LittleEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn rtca_left_adjacent_raw(&self) -> bool {
+    pub fn rcta_left_adjacent_raw(&self) -> bool {
         let signal = self.raw.view_bits::<Lsb0>()[33..34].load_le::<u8>();
         
         signal == 1
     }
     
-    /// Set value of rtca_left_adjacent
+    /// Set value of rcta_left_adjacent
     #[inline(always)]
-    pub fn set_rtca_left_adjacent(&mut self, value: bool) -> Result<(), CanError> {
+    pub fn set_rcta_left_adjacent(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Lsb0>()[33..34].store_le(value);
         Ok(())
     }
     
-    /// rtca_left_approaching
+    /// rcta_left_approaching
     ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn rtca_left_approaching(&self) -> bool {
-        self.rtca_left_approaching_raw()
+    pub fn rcta_left_approaching(&self) -> bool {
+        self.rcta_left_approaching_raw()
     }
     
-    /// Get raw value of rtca_left_approaching
+    /// Get raw value of rcta_left_approaching
     ///
     /// - Start bit: 43
     /// - Signal size: 1 bits
@@ -2489,32 +2479,32 @@ impl BsdRcta {
     /// - Byte order: LittleEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn rtca_left_approaching_raw(&self) -> bool {
+    pub fn rcta_left_approaching_raw(&self) -> bool {
         let signal = self.raw.view_bits::<Lsb0>()[43..44].load_le::<u8>();
         
         signal == 1
     }
     
-    /// Set value of rtca_left_approaching
+    /// Set value of rcta_left_approaching
     #[inline(always)]
-    pub fn set_rtca_left_approaching(&mut self, value: bool) -> Result<(), CanError> {
+    pub fn set_rcta_left_approaching(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Lsb0>()[43..44].store_le(value);
         Ok(())
     }
     
-    /// rtca_right_adjacent
+    /// rcta_right_adjacent
     ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn rtca_right_adjacent(&self) -> bool {
-        self.rtca_right_adjacent_raw()
+    pub fn rcta_right_adjacent(&self) -> bool {
+        self.rcta_right_adjacent_raw()
     }
     
-    /// Get raw value of rtca_right_adjacent
+    /// Get raw value of rcta_right_adjacent
     ///
     /// - Start bit: 32
     /// - Signal size: 1 bits
@@ -2523,32 +2513,32 @@ impl BsdRcta {
     /// - Byte order: LittleEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn rtca_right_adjacent_raw(&self) -> bool {
+    pub fn rcta_right_adjacent_raw(&self) -> bool {
         let signal = self.raw.view_bits::<Lsb0>()[32..33].load_le::<u8>();
         
         signal == 1
     }
     
-    /// Set value of rtca_right_adjacent
+    /// Set value of rcta_right_adjacent
     #[inline(always)]
-    pub fn set_rtca_right_adjacent(&mut self, value: bool) -> Result<(), CanError> {
+    pub fn set_rcta_right_adjacent(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Lsb0>()[32..33].store_le(value);
         Ok(())
     }
     
-    /// rtca_right_approaching
+    /// rcta_right_approaching
     ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn rtca_right_approaching(&self) -> bool {
-        self.rtca_right_approaching_raw()
+    pub fn rcta_right_approaching(&self) -> bool {
+        self.rcta_right_approaching_raw()
     }
     
-    /// Get raw value of rtca_right_approaching
+    /// Get raw value of rcta_right_approaching
     ///
     /// - Start bit: 42
     /// - Signal size: 1 bits
@@ -2557,15 +2547,15 @@ impl BsdRcta {
     /// - Byte order: LittleEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn rtca_right_approaching_raw(&self) -> bool {
+    pub fn rcta_right_approaching_raw(&self) -> bool {
         let signal = self.raw.view_bits::<Lsb0>()[42..43].load_le::<u8>();
         
         signal == 1
     }
     
-    /// Set value of rtca_right_approaching
+    /// Set value of rcta_right_approaching
     #[inline(always)]
-    pub fn set_rtca_right_approaching(&mut self, value: bool) -> Result<(), CanError> {
+    pub fn set_rcta_right_approaching(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Lsb0>()[42..43].store_le(value);
         Ok(())
@@ -2636,11 +2626,11 @@ impl XxxMsg640 {
     
     pub const FUEL_LEVEL_MIN: f32 = 0_f32;
     pub const FUEL_LEVEL_MAX: f32 = 100_f32;
-    pub const RAW_FUEL_MIN: u16 = 0_u16;
-    pub const RAW_FUEL_MAX: u16 = 4096_u16;
+    pub const RAW_FUEL_MIN: i16 = 0_i16;
+    pub const RAW_FUEL_MAX: i16 = 4096_i16;
     
     /// Construct new XXXMsg640 from values
-    pub fn new(driver_seatbelt_warning_enabled: bool, fuel_level: f32, left_turn_signal_enabled: bool, passenger_seatbelt_warning_enabled: bool, raw_fuel: u16, right_turn_signal_enabled: bool) -> Result<Self, CanError> {
+    pub fn new(driver_seatbelt_warning_enabled: bool, fuel_level: f32, left_turn_signal_enabled: bool, passenger_seatbelt_warning_enabled: bool, raw_fuel: i16, right_turn_signal_enabled: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_driver_seatbelt_warning_enabled(driver_seatbelt_warning_enabled)?;
         res.set_fuel_level(fuel_level)?;
@@ -2809,7 +2799,7 @@ impl XxxMsg640 {
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn raw_fuel(&self) -> u16 {
+    pub fn raw_fuel(&self) -> i16 {
         self.raw_fuel_raw()
     }
     
@@ -2820,26 +2810,28 @@ impl XxxMsg640 {
     /// - Factor: 1
     /// - Offset: 0
     /// - Byte order: LittleEndian
-    /// - Value type: Unsigned
+    /// - Value type: Signed
     #[inline(always)]
-    pub fn raw_fuel_raw(&self) -> u16 {
-        let signal = self.raw.view_bits::<Lsb0>()[0..12].load_le::<u16>();
+    pub fn raw_fuel_raw(&self) -> i16 {
+        let signal = self.raw.view_bits::<Lsb0>()[0..12].load_le::<i16>();
         
         let factor = 1;
-        u16::from(signal).saturating_mul(factor).saturating_add(0)
+        let signal = signal as i16;
+        i16::from(signal).saturating_mul(factor).saturating_add(0)
     }
     
     /// Set value of raw_fuel
     #[inline(always)]
-    pub fn set_raw_fuel(&mut self, value: u16) -> Result<(), CanError> {
-        if value < 0_u16 || 4096_u16 < value {
+    pub fn set_raw_fuel(&mut self, value: i16) -> Result<(), CanError> {
+        if value < 0_i16 || 4096_i16 < value {
             return Err(CanError::ParameterOutOfRange { message_id: XxxMsg640::MESSAGE_ID });
         }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: XxxMsg640::MESSAGE_ID })?;
-        let value = (value / factor) as u16;
+        let value = (value / factor) as i16;
         
+        let value = u16::from_ne_bytes(value.to_ne_bytes());
         self.raw.view_bits_mut::<Lsb0>()[0..12].store_le(value);
         Ok(())
     }
@@ -3126,13 +3118,13 @@ impl EngineStatus2 {
     pub const CRUISE_CONTROL_SPEED_MIN: u8 = 0_u8;
     pub const CRUISE_CONTROL_SPEED_MAX: u8 = 255_u8;
     pub const ENGINE_BOOST_PRESSURE_MIN: f32 = 0_f32;
-    pub const ENGINE_BOOST_PRESSURE_MAX: f32 = 255_f32;
+    pub const ENGINE_BOOST_PRESSURE_MAX: f32 = 240.9_f32;
     pub const ENGINE_COOLANT_TEMP_MIN: i16 = 0_i16;
-    pub const ENGINE_COOLANT_TEMP_MAX: i16 = 1_i16;
+    pub const ENGINE_COOLANT_TEMP_MAX: i16 = 216_i16;
     pub const ENGINE_FUEL_FLOW_MIN: u8 = 0_u8;
     pub const ENGINE_FUEL_FLOW_MAX: u8 = 255_u8;
     pub const ENGINE_OIL_TEMP_MIN: i16 = 0_i16;
-    pub const ENGINE_OIL_TEMP_MAX: i16 = 1_i16;
+    pub const ENGINE_OIL_TEMP_MAX: i16 = 216_i16;
     
     /// Construct new engine_status_2 from values
     pub fn new(cruise_control_enabled: bool, cruise_control_set_enabled: bool, cruise_control_speed: u8, engine_boost_pressure: f32, engine_coolant_temp: i16, engine_fuel_flow: u8, engine_oil_temp: i16) -> Result<Self, CanError> {
@@ -3269,7 +3261,7 @@ impl EngineStatus2 {
     /// need_to_verify
     ///
     /// - Min: 0
-    /// - Max: 255
+    /// - Max: 240.9
     /// - Unit: "psi"
     /// - Receivers: Vector__XXX
     #[inline(always)]
@@ -3297,7 +3289,7 @@ impl EngineStatus2 {
     /// Set value of engine_boost_pressure
     #[inline(always)]
     pub fn set_engine_boost_pressure(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 255_f32 < value {
+        if value < 0_f32 || 240.9_f32 < value {
             return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
         }
         let factor = 0.3_f32;
@@ -3312,7 +3304,7 @@ impl EngineStatus2 {
     /// engine_coolant_temp
     ///
     /// - Min: 0
-    /// - Max: 1
+    /// - Max: 216
     /// - Unit: "degC"
     /// - Receivers: Vector__XXX
     #[inline(always)]
@@ -3339,7 +3331,7 @@ impl EngineStatus2 {
     /// Set value of engine_coolant_temp
     #[inline(always)]
     pub fn set_engine_coolant_temp(&mut self, value: i16) -> Result<(), CanError> {
-        if value < 0_i16 || 1_i16 < value {
+        if value < 0_i16 || 216_i16 < value {
             return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
         }
         let factor = 1;
@@ -3398,7 +3390,7 @@ impl EngineStatus2 {
     /// engine_oil_temp
     ///
     /// - Min: 0
-    /// - Max: 1
+    /// - Max: 216
     /// - Unit: "degC"
     /// - Receivers: Vector__XXX
     #[inline(always)]
@@ -3425,7 +3417,7 @@ impl EngineStatus2 {
     /// Set value of engine_oil_temp
     #[inline(always)]
     pub fn set_engine_oil_temp(&mut self, value: i16) -> Result<(), CanError> {
-        if value < 0_i16 || 1_i16 < value {
+        if value < 0_i16 || 216_i16 < value {
             return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
         }
         let factor = 1;

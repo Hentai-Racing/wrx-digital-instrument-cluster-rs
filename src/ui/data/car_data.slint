@@ -10,8 +10,8 @@ export global SCarData {
 	in property <SFDataParameter> vehicle_speed: { value: 999.4, unit_str: "?UNIT?" };
 // DriverRoadAssists
 	in property <SBDataParameter> hill_assist_enabled: { value: true };
-	in property <SBDataParameter> tq_vectoring_enabled: { value: true };
-	in property <SBDataParameter> traction_control_enabled: { value: true };
+	in property <SBDataParameter> active_tq_vectoring_enabled: { value: true };
+	in property <SBDataParameter> traction_control_disabled: { value: true };
 // WheelSpeeds
 	in property <SFDataParameter> left_front_wheel_speed: { value: 999.4, unit_str: "?UNIT?" };
 	in property <SFDataParameter> left_rear_wheel_speed: { value: 999.4, unit_str: "?UNIT?" };
@@ -27,10 +27,10 @@ export global SCarData {
 	in property <SFDataParameter> throttle_plate_position: { value: 999.4, unit_str: "?UNIT?" };
 // EngineStatus
 	in property <SIDataParameter> engine_rpm: { value: 999, unit_str: "?UNIT?" };
+	in property <SBDataParameter> engine_running: { value: true };
 	in property <SBDataParameter> engine_stop: { value: true };
 	in property <SIDataParameter> engine_torque: { value: 999, unit_str: "?UNIT?" };
 	in property <SStrDataParameter> mt_gear: { value: "?VAL?" };
-	in property <SIDataParameter> wheel_torque: { value: 999, unit_str: "?UNIT?" };
 // Transmission
 	in property <SIDataParameter> mt_gear_verify: { value: 999, unit_str: "?UNIT?" };
 // StatusSwitches
@@ -48,12 +48,12 @@ export global SCarData {
 	in property <SBDataParameter> any_door_open: { value: true };
 // BsdRcta
 	in property <SBDataParameter> rcta_enabled: { value: true };
-	in property <SBDataParameter> rcta_left: { value: true };
-	in property <SBDataParameter> rcta_right: { value: true };
-	in property <SBDataParameter> rtca_left_adjacent: { value: true };
-	in property <SBDataParameter> rtca_left_approaching: { value: true };
-	in property <SBDataParameter> rtca_right_adjacent: { value: true };
-	in property <SBDataParameter> rtca_right_approaching: { value: true };
+	in property <SBDataParameter> bsd_left: { value: true };
+	in property <SBDataParameter> bsd_right: { value: true };
+	in property <SBDataParameter> rcta_left_adjacent: { value: true };
+	in property <SBDataParameter> rcta_left_approaching: { value: true };
+	in property <SBDataParameter> rcta_right_adjacent: { value: true };
+	in property <SBDataParameter> rcta_right_approaching: { value: true };
 // XxxMsg640
 	in property <SBDataParameter> driver_seatbelt_warning_enabled: { value: true };
 	in property <SFDataParameter> fuel_level: { value: 999.4, unit_str: "?UNIT?" };

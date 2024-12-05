@@ -1,0 +1,107 @@
+import { SCarData } from "../data/car_data.slint";
+import { SymbolProperties } from "../themes/main_symbol_properties.slint";
+
+export component RoadIndicatorWidget inherits Rectangle {
+    background: transparent;
+
+    in property <float> lane-top-y: self.height / 2.3px;
+    in property <float> lane-bottom-y: self.height / 1px - self.height / 20px;
+
+    in property <float> lane-top-width: self.width / 4px;
+    in property <float> lane-bottom-width: self.width / 1.3px;
+    in property <float> lane-thickness: 3.5;
+
+    in property <brush> left-lane-fill: brush-fill-normal;
+    in property <brush> right-lane-fill: brush-fill-normal;
+
+    property <float> top-x: self.width / 2px - lane-top-width / 2;
+    property <float> bottom-x: self.width / 2px - lane-bottom-width / 2;
+
+    in property <color> lane-color: #8a8787;
+
+    property <brush> brush-fill-warn: @linear-gradient(0deg, #00000000 10%, SymbolProperties.symbol_color_yellow 20%, SymbolProperties.symbol_color_yellow 35%, #00000000 50%);
+    property <brush> brush-fill-warn-approach: @linear-gradient(0deg, #00000000 10%, SymbolProperties.symbol_color_yellow 20%, lane-color 25%, #00000000 50%);
+    property <brush> brush-fill-normal: @linear-gradient(0deg, #00000000 10%, lane-color 20%, lane-color 35%, #00000000 50%);
+
+    property <bool> rcta_enabled: SCarData.rcta_enabled.value;
+
+    lane-left := Path {
+        viewbox-height: parent.height / 1px;
+        viewbox-width: parent.width / 1px;
+
+        fill: root.left-lane-fill;
+
+        MoveTo {
+            x: root.bottom-x;
+            y: root.lane-bottom-y;
+        }
+
+        LineTo {
+            x: root.top-x;
+            y: root.lane-top-y;
+        }
+
+        LineTo {
+            x: root.top-x + root.lane-thickness;
+            y: root.lane-top-y;
+        }
+
+        LineTo {
+            x: root.bottom-x + root.lane-thickness;
+            y: root.lane-bottom-y;
+        }
+
+        property <bool> rcta_left_adjacent: SCarData.rcta_left_adjacent.value;
+        property <bool> rcta_left_approaching: SCarData.rcta_left_adjacent.value;
+        property <bool> bsd_left: SCarData.bsd_left.value;
+
+        states [
+            active when rcta_enabled && rcta_left_adjacent: {
+                fill: brush-fill-warn;
+            }
+            active when rcta_enabled && rcta_left_approaching && !rcta_left_adjacent: {
+                fill: brush-fill-warn-approach; // TODO: animate flashing
+            }
+        ]
+    }
+
+    lane-right := Path {
+        viewbox-height: parent.height / 1px;
+        viewbox-width: parent.width / 1px;
+
+        fill: root.right-lane-fill;
+
+        MoveTo {
+            x: parent.viewbox-width - root.bottom-x;
+            y: root.lane-bottom-y;
+        }
+
+        LineTo {
+            x: parent.viewbox-width - root.top-x;
+            y: root.lane-top-y;
+        }
+
+        LineTo {
+            x: parent.viewbox-width - root.top-x - root.lane-thickness;
+            y: root.lane-top-y;
+        }
+
+        LineTo {
+            x: parent.viewbox-width - root.bottom-x - root.lane-thickness;
+            y: root.lane-bottom-y;
+        }
+
+        property <bool> rcta_right_adjacent: SCarData.rcta_right_adjacent.value;
+        property <bool> rcta_right_approaching: SCarData.rcta_right_adjacent.value;
+        property <bool> bsd_right: SCarData.bsd_right.value;
+
+        states [
+            active when rcta_enabled && rcta_right_adjacent: {
+                fill: brush-fill-warn;
+            }
+            active when rcta_enabled && rcta_right_approaching && !rcta_right_adjacent: {
+                fill: brush-fill-warn-approach; // TODO: animate flashing
+            }
+        ]
+    }
+}

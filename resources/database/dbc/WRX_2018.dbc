@@ -1,4 +1,4 @@
-VERSION "0.3.1"
+VERSION "0.4.5"
 
 
 NS_ :
@@ -42,10 +42,10 @@ BO_ 209 XXXMsg209: 4 Vector__XXX
    SG_ brake_pedal_pressure : 16|8@1+ (0.78125,0) [0|100] "%" Vector__XXX
    SG_ vehicle_speed : 0|16@1+ (0.05625,0) [0|290] "KPH" Vector__XXX
 
-BO_ 211 driver_road_assists: 8 Vector__XXX
+BO_ 211 driver_road_assists: 7 Vector__XXX
    SG_ hill_assist_enabled : 15|1@0+ (1,0) [0|1] "" Vector__XXX
-   SG_ tq_vectoring_enabled : 3|1@0+ (1,0) [0|1] "" Vector__XXX
-   SG_ traction_control_enabled : 11|1@0+ (-1,1) [0|1] "" Vector__XXX
+   SG_ active_tq_vectoring_enabled : 3|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ traction_control_disabled : 11|1@0+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 212 wheel_speeds: 8 Vector__XXX
    SG_ left_front_wheel_speed : 0|16@1+ (0.0592,0) [0|255] "KPH" Vector__XXX
@@ -65,10 +65,10 @@ BO_ 320 motor_control: 8 Vector__XXX
 
 BO_ 321 engine_status: 8 Vector__XXX
    SG_ engine_rpm : 32|14@1+ (1,0) [0|8000] "RPM" Vector__XXX
+   SG_ engine_running : 51|1@1+ (1,0) [0|1] "" Vector__XXX
    SG_ engine_stop : 15|1@1+ (1,0) [0|1] "" Vector__XXX
    SG_ engine_torque : 0|15@1+ (1,0) [0|255] "" Vector__XXX
-   SG_ mt_gear : 48|4@1+ (1,0) [0|7] "" Vector__XXX
-   SG_ wheel_torque : 16|12@1+ (1,0) [0|4095] "" Vector__XXX
+   SG_ mt_gear : 48|3@1+ (1,0) [0|7] "" Vector__XXX
 
 BO_ 328 transmission: 8 Vector__XXX
    SG_ mt_gear_VERIFY : 4|4@1+ (1,0) [0|7] "" Vector__XXX
@@ -85,24 +85,24 @@ BO_ 338 status_switches: 8 Vector__XXX
    SG_ running_lights_enabled : 57|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ wiper_moving_sw : 62|1@1+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 340 XXXMsg340: 8 Vector__XXX
+BO_ 340 XXXMsg340: 7 Vector__XXX
    SG_ any_door_open : 48|1@0+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 604 bsd_rcta: 8 Vector__XXX
    SG_ rcta_enabled : 5|1@1+ (1,0) [0|1] "" Vector__XXX
-   SG_ rcta_left : 47|1@1+ (1,0) [0|1] "" Vector__XXX
-   SG_ rcta_right : 46|1@1+ (1,0) [0|1] "" Vector__XXX
-   SG_ rtca_left_adjacent : 33|1@1+ (1,0) [0|1] "" Vector__XXX
-   SG_ rtca_left_approaching : 43|1@1+ (1,0) [0|1] "" Vector__XXX
-   SG_ rtca_right_adjacent : 32|1@1+ (1,0) [0|1] "" Vector__XXX
-   SG_ rtca_right_approaching : 42|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ bsd_left : 47|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ bsd_right : 46|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ rcta_left_adjacent : 33|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ rcta_left_approaching : 43|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ rcta_right_adjacent : 32|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ rcta_right_approaching : 42|1@1+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 642 XXXMsg640: 8 Vector__XXX
    SG_ driver_seatbelt_warning_enabled : 40|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ fuel_level : 0|12@1+ (0.033,0) [0|100] "%" Vector__XXX
    SG_ left_turn_signal_enabled : 44|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ passenger_seatbelt_warning_enabled : 41|1@0+ (1,0) [0|1] "" Vector__XXX
-   SG_ raw_fuel : 0|12@1+ (1,0) [0|4096] "" Vector__XXX
+   SG_ raw_fuel : 0|12@1- (1,0) [0|4096] "" Vector__XXX
    SG_ right_turn_signal_enabled : 45|1@0+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 644 ignition: 8 Vector__XXX
@@ -114,10 +114,10 @@ BO_ 864 engine_status_2: 8 Vector__XXX
    SG_ cruise_control_enabled : 44|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ cruise_control_set_enabled : 45|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ cruise_control_speed : 56|8@1+ (1,0) [0|255] "" Vector__XXX
-   SG_ engine_boost_pressure : 32|8@1- (0.3,-15.1) [0|255] "psi" Vector__XXX
-   SG_ engine_coolant_temp : 24|8@1+ (1,-40) [0|1] "degC" Vector__XXX
+   SG_ engine_boost_pressure : 32|8@1- (0.3,-15.1) [0|240.9] "psi" Vector__XXX
+   SG_ engine_coolant_temp : 24|8@1+ (1,-40) [0|216] "degC" Vector__XXX
    SG_ engine_fuel_flow : 8|8@1+ (1,0) [0|255] "" Vector__XXX
-   SG_ engine_oil_temp : 16|8@1+ (1,-40) [0|1] "degC" Vector__XXX
+   SG_ engine_oil_temp : 16|8@1+ (1,-40) [0|216] "degC" Vector__XXX
 
 BO_ 865 engine_warning_lights: 8 Vector__XXX
    SG_ check_engine_light_enabled : 39|1@0+ (1,0) [0|1] "" Vector__XXX
@@ -139,7 +139,7 @@ BO_ 885 XXXMsg885: 8 Vector__XXX
    SG_ right_rear_door_open : 10|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ trunk_open : 13|1@0+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 886 DimmerAndHood: 8 Vector__XXX
+BO_ 886 DimmerAndHood: 2 Vector__XXX
    SG_ dimmer_dial_value : 0|8@1+ (1,0) [0|250] "" Vector__XXX
    SG_ hood_closed : 8|1@1+ (1,0) [0|1] "" Vector__XXX
 
@@ -169,9 +169,5 @@ CM_ SG_ 1883 left_front_tire_pressure "scale/unit_undetermined";
 CM_ SG_ 1883 left_rear_tire_pressure "scale/unit_undetermined";
 CM_ SG_ 1883 right_front_tire_pressure "scale/unit_undetermined";
 CM_ SG_ 1883 right_rear_tire_pressure "scale/unit_undetermined";
-BA_DEF_ BO_ "GenMsgBackgroundColor" STRING ;
-BA_DEF_ BO_ "GenMsgForegroundColor" STRING ;
-BA_DEF_DEF_ "GenMsgBackgroundColor" "#1b1e20";
-BA_DEF_DEF_ "GenMsgForegroundColor" "#fcfcfc";
 VAL_ 321 mt_gear 0 "FLOATING" 1 "1" 2 "2" 3 "3" 4 "4" 5 "5" 6 "6" 7 "NEUTRAL";
 VAL_ 886 dimmer_dial_value 0 "0" 33 "1" 82 "2" 125 "3" 173 "4" 250 "5";

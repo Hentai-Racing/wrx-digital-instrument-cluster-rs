@@ -70,8 +70,6 @@ macro_rules! param_convertion_handle {
     };
 }
 
-// todo: make a round-robin system to stop higher freqency signals from bullying if that is possible
-// this will involve creating our own "event" system which has a queue
 macro_rules! bridge {
     ($($param:ident: $type:tt),+ $(,)? ) => {
         pub fn run(&mut self) {
@@ -142,17 +140,37 @@ impl UIDataBridge {
     bridge! {
         engine_rpm: SIDataParameter,
         mt_gear: SStrDataParameter,
-        vehicle_speed: SFDataParameter,
+
         odometer: SFDataParameter,
+
+        vehicle_speed: SFDataParameter,
+
         lowbeams_enabled: SBDataParameter,
-        right_turn_signal_enabled: SBDataParameter,
-        left_turn_signal_enabled: SBDataParameter,
         handbrake_sw: SBDataParameter,
         parking_lights_enabled: SBDataParameter,
         highbeams_enabled: SBDataParameter,
         reverse_sw: SBDataParameter,
+
         driver_seatbelt_warning_enabled: SBDataParameter,
         passenger_seatbelt_warning_enabled: SBDataParameter,
+        left_turn_signal_enabled: SBDataParameter,
+        right_turn_signal_enabled: SBDataParameter,
+
+        fog_lights_enabled: SBDataParameter,
+
+        headlight_dimmer_enabled: SBDataParameter,
+
+        hill_assist_enabled: SBDataParameter,
+        active_tq_vectoring_enabled: SBDataParameter,
+        traction_control_disabled: SBDataParameter,
+
+        rcta_enabled: SBDataParameter,
+        bsd_left: SBDataParameter,
+        bsd_right: SBDataParameter,
+        rcta_left_adjacent: SBDataParameter,
+        rcta_left_approaching: SBDataParameter,
+        rcta_right_adjacent: SBDataParameter,
+        rcta_right_approaching: SBDataParameter,
     }
 
     pub fn handle_unit_system(&self) {
