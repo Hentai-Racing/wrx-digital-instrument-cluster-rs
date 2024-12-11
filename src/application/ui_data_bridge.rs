@@ -192,25 +192,25 @@ impl UIDataBridge {
 
 // Special type conversion implementations
 
-use crate::can::messages::wrx_2018::EngineStatusMtGear;
+use crate::can::messages::wrx_2018::EngineMtGear;
 
-impl Into<slint::SharedString> for EngineStatusMtGear {
+impl Into<slint::SharedString> for EngineMtGear {
     fn into(self) -> slint::SharedString {
         match &self {
-            EngineStatusMtGear::Floating => " ".into(),
-            EngineStatusMtGear::Neutral => "N".into(),
-            EngineStatusMtGear::X1 => "1".into(),
-            EngineStatusMtGear::X2 => "2".into(),
-            EngineStatusMtGear::X3 => "3".into(),
-            EngineStatusMtGear::X4 => "4".into(),
-            EngineStatusMtGear::X5 => "5".into(),
-            EngineStatusMtGear::X6 => "6".into(),
+            EngineMtGear::Floating => " ".into(),
+            EngineMtGear::Neutral => "N".into(),
+            EngineMtGear::X1 => "1".into(),
+            EngineMtGear::X2 => "2".into(),
+            EngineMtGear::X3 => "3".into(),
+            EngineMtGear::X4 => "4".into(),
+            EngineMtGear::X5 => "5".into(),
+            EngineMtGear::X6 => "6".into(),
             _ => "?ERR_MT_GEAR".into(),
         }
     }
 }
 
-impl Into<f64> for EngineStatusMtGear {
+impl Into<f64> for EngineMtGear {
     fn into(self) -> f64 {
         u8::from(self) as f64
     }

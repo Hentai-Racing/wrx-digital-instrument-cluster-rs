@@ -1,6 +1,6 @@
 use crate::data::data_parameter::DataParameter;
 use crate::data::units::{Unit, UnitSystem};
-use crate::wrx_2018::{self, EngineStatusMtGear, Messages};
+use crate::wrx_2018::{self, EngineMtGear, Messages};
 use paste::paste;
 use socketcan::tokio::CanSocket;
 
@@ -109,16 +109,16 @@ macro_rules! CarData {
 }
 
 CarData!(
-    EngineStatus => {
+    Engine => {
         engine_rpm: u16,
-        mt_gear: EngineStatusMtGear = EngineStatusMtGear::Neutral
+        mt_gear: EngineMtGear = EngineMtGear::Neutral
     };
 
     Odometer => {
         <Distance> odometer: f32
     };
 
-    XxxMsg209 => {
+    BrakePedal => {
         <Speed> vehicle_speed: f32
     };
 
@@ -130,14 +130,14 @@ CarData!(
         reverse_sw: bool = true
     };
 
-    XxxMsg640 => {
+    Cluster => {
         driver_seatbelt_warning_enabled: bool = true,
         passenger_seatbelt_warning_enabled: bool = true,
         left_turn_signal_enabled: bool = true,
         right_turn_signal_enabled: bool = true,
     };
 
-    XxxMsg884 => {
+    Cluster2 => {
         fog_lights_enabled: bool = true,
     };
 
@@ -180,13 +180,13 @@ impl CarData {
 // EngineStatusMtGear implementations for DataParameter
 //
 
-impl Default for EngineStatusMtGear {
+impl Default for EngineMtGear {
     fn default() -> Self {
-        EngineStatusMtGear::Floating
+        EngineMtGear::Floating
     }
 }
 
-impl PartialOrd for EngineStatusMtGear {
+impl PartialOrd for EngineMtGear {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         let v1 = u8::from(*self);
         let v2 = u8::from(*other);

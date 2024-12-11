@@ -203,6 +203,32 @@ export component AppWindow inherits Window {
 
                     visible: SCarData.fog_lights_enabled.value;
                 }
+
+                check-engine-light := GaugeAttachedSymbol {
+                    center-radius: tachometer.width / 2;
+                    center-x: tachometer.x + tachometer.width / 2;
+                    center-y: tachometer.y + tachometer.height / 2;
+
+                    angle: 360deg - 40deg;
+
+                    source: @image-url("../../resources/images/check-engine-warning-light-icon.png");
+                    colorize: SymbolProperties.symbol-color-yellow;
+
+                    visible: SCarData.check_engine_light_enabled.value;
+                }
+
+                oil-pressure-warning-light := GaugeAttachedSymbol {
+                    center-radius: tachometer.width / 2;
+                    center-x: tachometer.x + tachometer.width / 2;
+                    center-y: tachometer.y + tachometer.height / 2;
+
+                    angle: check-engine-light.angle + SymbolProperties.symbol_angle_padding;
+
+                    source: @image-url("../../resources/images/oil-pressure-warning-light.png");
+                    colorize: SymbolProperties.symbol-color-red;
+
+                    visible: SCarData.oil_pressure_warning_light_enabled.value;
+                }
             }
 
             mid-tri := PrimarySection {
@@ -347,7 +373,7 @@ export component AppWindow inherits Window {
                     center-x: speedometer.x + speedometer.width / 2;
                     center-y: speedometer.y + speedometer.height / 2;
 
-                    angle: 320deg;
+                    angle: 360deg - 40deg;
 
                     source: @image-url("../../resources/images/hillstartassist-warning-light.png");
                     colorize: SymbolProperties.symbol-color-yellow;
