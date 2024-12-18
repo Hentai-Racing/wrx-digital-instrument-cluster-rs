@@ -114,6 +114,19 @@ CarData!(
         mt_gear: EngineMtGear = EngineMtGear::Neutral
     };
 
+    EngineStatus2 => {
+        <Temperature> engine_oil_temp: i16,
+        <Temperature> engine_coolant_temp: i16,
+        cruise_control_enabled: bool,
+        cruise_control_set_enabled: bool,
+        cruise_control_speed: u8,
+    };
+
+    EngineWarningLights => {
+        oil_pressure_warning_light_enabled: bool = true,
+        check_engine_light_enabled: bool = true,
+    };
+
     Odometer => {
         <Distance> odometer: f32
     };
@@ -131,6 +144,7 @@ CarData!(
     };
 
     Cluster => {
+        fuel_level: f32,
         driver_seatbelt_warning_enabled: bool = true,
         passenger_seatbelt_warning_enabled: bool = true,
         left_turn_signal_enabled: bool = true,
@@ -141,8 +155,18 @@ CarData!(
         fog_lights_enabled: bool = true,
     };
 
-    XxxMsg885 => {
+    Cabin => {
+        left_front_door_open: bool = true,
+        right_front_door_open: bool = true,
+        right_rear_door_open: bool = true,
+        left_rear_door_open: bool = true,
+        trunk_open: bool = true,
         headlight_dimmer_enabled: bool = true,
+        dimmer_max_brightness_enabled: bool = true,
+    };
+
+    XxxMsg340 => {
+        any_door_open: bool = true,
     };
 
     DriverRoadAssists => {
@@ -159,6 +183,14 @@ CarData!(
         rcta_left_approaching: bool = true,
         rcta_right_adjacent: bool = true,
         rcta_right_approaching: bool = true,
+    };
+
+    SrsStatus => {
+        srs_warning_light_enabled: bool = true,
+    };
+
+    DimmerAndHood => {
+        hood_closed: bool = false,
     };
 );
 

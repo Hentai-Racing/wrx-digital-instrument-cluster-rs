@@ -141,6 +141,15 @@ impl UIDataBridge {
         engine_rpm: SIDataParameter,
         mt_gear: SStrDataParameter,
 
+        engine_oil_temp: SIDataParameter,
+        engine_coolant_temp: SIDataParameter,
+        cruise_control_enabled: SBDataParameter,
+        cruise_control_set_enabled: SBDataParameter,
+        cruise_control_speed: SIDataParameter,
+
+        oil_pressure_warning_light_enabled: SBDataParameter,
+        check_engine_light_enabled: SBDataParameter,
+
         odometer: SFDataParameter,
 
         vehicle_speed: SFDataParameter,
@@ -151,14 +160,22 @@ impl UIDataBridge {
         highbeams_enabled: SBDataParameter,
         reverse_sw: SBDataParameter,
 
+        fuel_level: SFDataParameter,
         driver_seatbelt_warning_enabled: SBDataParameter,
         passenger_seatbelt_warning_enabled: SBDataParameter,
         left_turn_signal_enabled: SBDataParameter,
         right_turn_signal_enabled: SBDataParameter,
 
         fog_lights_enabled: SBDataParameter,
-
+        left_front_door_open: SBDataParameter,
+        right_front_door_open: SBDataParameter,
+        right_rear_door_open: SBDataParameter,
+        left_rear_door_open: SBDataParameter,
+        trunk_open: SBDataParameter,
         headlight_dimmer_enabled: SBDataParameter,
+        dimmer_max_brightness_enabled: SBDataParameter,
+
+        any_door_open: SBDataParameter,
 
         hill_assist_enabled: SBDataParameter,
         active_tq_vectoring_enabled: SBDataParameter,
@@ -171,6 +188,10 @@ impl UIDataBridge {
         rcta_left_approaching: SBDataParameter,
         rcta_right_adjacent: SBDataParameter,
         rcta_right_approaching: SBDataParameter,
+
+        srs_warning_light_enabled: SBDataParameter,
+
+        hood_closed: SBDataParameter,
     }
 
     pub fn handle_unit_system(&self) {

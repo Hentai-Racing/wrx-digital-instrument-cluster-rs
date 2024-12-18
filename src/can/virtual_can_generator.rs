@@ -350,21 +350,18 @@ pub async fn run_vcan_generator(
             let left_rear_door_open = rand::thread_rng().gen_bool(0.5);
             let trunk_open = rand::thread_rng().gen_bool(0.5);
             let headlight_dimmer_enabled = rand::thread_rng().gen_bool(0.5);
-            let dimmer_max_brightness_enable = rand::thread_rng().gen_bool(0.5);
-            let xxxmsg885_frame = wrx_2018::XxxMsg885::new(
+            let dimmer_max_brightness_enabled = rand::thread_rng().gen_bool(0.5);
+            let cabin_frame = wrx_2018::Cabin::new(
                     left_front_door_open,
                     right_front_door_open,
                     right_rear_door_open,
                     left_rear_door_open,
                     trunk_open,
                     headlight_dimmer_enabled,
-                    dimmer_max_brightness_enable,
+                    dimmer_max_brightness_enabled,
                 )
                 .expect("Failed to create frame");
-            if let Some(frame) = Frame::new(
-                xxxmsg885_frame.id(),
-                xxxmsg885_frame.data(),
-            ) {
+            if let Some(frame) = Frame::new(cabin_frame.id(), cabin_frame.data()) {
                 socket.write_frame(frame).unwrap().await.unwrap();
             }
             let dimmer_dial_value = rand::thread_rng()

@@ -134,14 +134,14 @@ BO_ 884 cluster_2: 8 XXX
    SG_ fog_lights_enabled : 14|1@0+ (1,0) [0|1] "" XXX
    SG_ tpms_warning_light_enabled : 36|1@0+ (1,0) [0|1] "" XXX
 
-BO_ 885 XXXMsg885: 8 XXX
+BO_ 885 cabin: 8 XXX
    SG_ left_front_door_open : 8|1@0+ (1,0) [0|1] "" XXX
    SG_ right_front_door_open : 9|1@0+ (1,0) [0|1] "" XXX
    SG_ right_rear_door_open : 10|1@0+ (1,0) [0|1] "" XXX
    SG_ left_rear_door_open : 11|1@0+ (1,0) [0|1] "" XXX
    SG_ trunk_open : 13|1@0+ (1,0) [0|1] "" XXX
    SG_ headlight_dimmer_enabled : 27|1@0+ (1,0) [0|1] "" XXX
-   SG_ dimmer_max_brightness_enable : 31|1@0+ (1,0) [0|1] "" XXX
+   SG_ dimmer_max_brightness_enabled : 31|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 886 dimmer_and_hood: 2 XXX
    SG_ dimmer_dial_value : 0|8@1+ (1,0) [0|250] "" XXX

@@ -51,8 +51,8 @@ pub enum Messages {
     SrsStatus(SrsStatus),
     /// cluster_2
     Cluster2(Cluster2),
-    /// XXXMsg885
-    XxxMsg885(XxxMsg885),
+    /// cabin
+    Cabin(Cabin),
     /// dimmer_and_hood
     DimmerAndHood(DimmerAndHood),
     /// dash_state2_VERIFY
@@ -86,7 +86,7 @@ impl Messages {
             EngineWarningLights::MESSAGE_ID => Messages::EngineWarningLights(EngineWarningLights::try_from(payload)?),
             SrsStatus::MESSAGE_ID => Messages::SrsStatus(SrsStatus::try_from(payload)?),
             Cluster2::MESSAGE_ID => Messages::Cluster2(Cluster2::try_from(payload)?),
-            XxxMsg885::MESSAGE_ID => Messages::XxxMsg885(XxxMsg885::try_from(payload)?),
+            Cabin::MESSAGE_ID => Messages::Cabin(Cabin::try_from(payload)?),
             DimmerAndHood::MESSAGE_ID => Messages::DimmerAndHood(DimmerAndHood::try_from(payload)?),
             DashState2Verify::MESSAGE_ID => Messages::DashState2Verify(DashState2Verify::try_from(payload)?),
             Odometer::MESSAGE_ID => Messages::Odometer(Odometer::try_from(payload)?),
@@ -3977,22 +3977,22 @@ impl embedded_can::Frame for Cluster2 {
     }
 }
 
-/// XXXMsg885
+/// cabin
 ///
 /// - Standard ID: 885 (0x375)
 /// - Size: 8 bytes
 /// - Transmitter: XXX
 #[derive(Clone, Copy)]
-pub struct XxxMsg885 {
+pub struct Cabin {
     raw: [u8; 8],
 }
 
-impl XxxMsg885 {
+impl Cabin {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x375)});
     
     
-    /// Construct new XXXMsg885 from values
-    pub fn new(left_front_door_open: bool, right_front_door_open: bool, right_rear_door_open: bool, left_rear_door_open: bool, trunk_open: bool, headlight_dimmer_enabled: bool, dimmer_max_brightness_enable: bool) -> Result<Self, CanError> {
+    /// Construct new cabin from values
+    pub fn new(left_front_door_open: bool, right_front_door_open: bool, right_rear_door_open: bool, left_rear_door_open: bool, trunk_open: bool, headlight_dimmer_enabled: bool, dimmer_max_brightness_enabled: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_left_front_door_open(left_front_door_open)?;
         res.set_right_front_door_open(right_front_door_open)?;
@@ -4000,7 +4000,7 @@ impl XxxMsg885 {
         res.set_left_rear_door_open(left_rear_door_open)?;
         res.set_trunk_open(trunk_open)?;
         res.set_headlight_dimmer_enabled(headlight_dimmer_enabled)?;
-        res.set_dimmer_max_brightness_enable(dimmer_max_brightness_enable)?;
+        res.set_dimmer_max_brightness_enabled(dimmer_max_brightness_enabled)?;
         Ok(res)
     }
     
@@ -4213,18 +4213,18 @@ impl XxxMsg885 {
         Ok(())
     }
     
-    /// dimmer_max_brightness_enable
+    /// dimmer_max_brightness_enabled
     ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
     /// - Receivers: XXX
     #[inline(always)]
-    pub fn dimmer_max_brightness_enable(&self) -> bool {
-        self.dimmer_max_brightness_enable_raw()
+    pub fn dimmer_max_brightness_enabled(&self) -> bool {
+        self.dimmer_max_brightness_enabled_raw()
     }
     
-    /// Get raw value of dimmer_max_brightness_enable
+    /// Get raw value of dimmer_max_brightness_enabled
     ///
     /// - Start bit: 31
     /// - Signal size: 1 bits
@@ -4233,15 +4233,15 @@ impl XxxMsg885 {
     /// - Byte order: BigEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn dimmer_max_brightness_enable_raw(&self) -> bool {
+    pub fn dimmer_max_brightness_enabled_raw(&self) -> bool {
         let signal = self.raw.view_bits::<Msb0>()[24..25].load_be::<u8>();
         
         signal == 1
     }
     
-    /// Set value of dimmer_max_brightness_enable
+    /// Set value of dimmer_max_brightness_enabled
     #[inline(always)]
-    pub fn set_dimmer_max_brightness_enable(&mut self, value: bool) -> Result<(), CanError> {
+    pub fn set_dimmer_max_brightness_enabled(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Msb0>()[24..25].store_be(value);
         Ok(())
@@ -4249,7 +4249,7 @@ impl XxxMsg885 {
     
 }
 
-impl core::convert::TryFrom<&[u8]> for XxxMsg885 {
+impl core::convert::TryFrom<&[u8]> for Cabin {
     type Error = CanError;
     
     #[inline(always)]
@@ -4261,7 +4261,7 @@ impl core::convert::TryFrom<&[u8]> for XxxMsg885 {
     }
 }
 
-impl embedded_can::Frame for XxxMsg885 {
+impl embedded_can::Frame for Cabin {
     fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
         if id.into() != Self::MESSAGE_ID {
             None

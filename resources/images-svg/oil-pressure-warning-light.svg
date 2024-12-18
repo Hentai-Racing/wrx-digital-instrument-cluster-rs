@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="100"
+   height="100"
+   viewBox="0 0 100 100"
+   version="1.1"
+   id="svg1"
+   xml:space="preserve"
+   sodipodi:docname="oil-pressure-warning-light.svg"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="7.6428418"
+     inkscape:cx="31.074829"
+     inkscape:cy="54.430016"
+     inkscape:current-layer="layer1"
+     showgrid="true"><inkscape:grid
+       id="grid1"
+       units="px"
+       originx="50"
+       originy="50"
+       spacingx="2"
+       spacingy="2"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="5"
+       enabled="true"
+       visible="true" /></sodipodi:namedview><defs
+     id="defs1" /><g
+     id="layer1"><path
+       style="vector-effect:non-scaling-stroke;fill:#000000;-inkscape-stroke:hairline"
+       d="m 90,58 c 0.55,-2.68 -4,-10 -4,-10 0,0 -4.55,7.32 -4,10 0.55,2.68 2.11,4 4,4 1.89,0 3.45,-1.32 4,-4 z"
+       id="path2"
+       sodipodi:nodetypes="zczaz" /><path
+       id="path1"
+       style="vector-effect:non-scaling-stroke;fill:#000000;-inkscape-stroke:hairline"
+       d="m 8,34 v 14 l 18,10 v 8 H 56 L 74,50 v -6 l 4,-2 h 4 l 2,2 4,-2 -6,-4 H 78 L 56,48 H 54 L 52,46 H 42 v -6 h 6 V 36 H 32 v 4 h 6 v 6 H 28 V 42 L 12,34 Z m 4,4 12,6 v 8 L 12,46 Z m 58,8 v 4 L 54,62 H 30 V 50 h 22 l 2,2 h 2 z"
+       sodipodi:nodetypes="cccccccccccccccccccccccccccccccccccccccccc" /></g></svg>

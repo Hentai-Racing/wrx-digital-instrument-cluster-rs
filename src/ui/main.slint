@@ -1,5 +1,5 @@
 import { Button, VerticalBox } from "std-widgets.slint";
-import { InstrumentGauge, GaugeArc, RadialRect } from "components/instrument_gauge.slint";
+import { InstrumentGauge, GaugeArc } from "components/instrument_gauge.slint";
 import { RoadIndicatorWidget } from "components/road_indicators.slint";
 import { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter } from "data/data_parameter.slint";
 import { SymbolProperties } from "themes/main_symbol_properties.slint";
@@ -76,13 +76,13 @@ export component AppWindow inherits Window {
                 width: parent.width * 38%;
 
                 tachometer := InstrumentGauge {
+                    property <int> max: SCarData.engine_rpm.max != 0 ? SCarData.engine_rpm.max : 8100;
                     property <angle> redline: self.angle-range / 8 * 6.6;
-                    // property <angle> symbol-buffer: cos()
 
                     width: self.height;
                     height: min(parent.height, parent.width * 75%);
 
-                    y: parent.height / 2 - self.height / 2 + parent.height * 8%;
+                    y: parent.height / 2 - self.height / 2 + parent.height * 2%;
 
                     start: 180deg + 45deg;
                     end: -45deg;
@@ -95,7 +95,7 @@ export component AppWindow inherits Window {
                         {
                             start: self.start - 0.75deg,
                             end: self.end,
-                            major-ticks: 9,
+                            major-ticks: ceil(max / 1000),
                             major-tick-inner-radius: self.width / 2 - 40px,
                             major-tick-outer-radius: self.width / 2,
                             major-tick-fill: Colors.white,
@@ -112,7 +112,7 @@ export component AppWindow inherits Window {
                         }
                     ];
 
-                    GaugeArc {
+                    tachometer-redline := GaugeArc {
                         width: 100%;
                         height: 100%;
 
@@ -132,6 +132,91 @@ export component AppWindow inherits Window {
                         font-size: 25px;
                         horizontal-alignment: TextHorizontalAlignment.center;
                         y: parent.height * 27.5%;
+                    }
+
+                    visible: true;
+                }
+
+                coolant-temp-gauge := InstrumentGauge {
+                    width: tachometer.width;
+                    height: tachometer.height;
+
+                    y: tachometer.y;
+                    x: tachometer.x;
+
+                    property <angle> angle_offset: 57.5deg;
+                    property <angle> blueline: self.angle-range / 4;
+                    property <angle> redline: self.angle-range / 4;
+
+                    start: 0deg - angle_offset;
+                    end: -180deg + angle_offset;
+
+                    needle-inner-radius: self.width / 2.4;
+                    needle-thickness: 1deg;
+
+                    progress: SCarData.engine_coolant_temp.value / (SCarData.engine_coolant_temp.max != 0 ? SCarData.engine_coolant_temp.max : (SCarData.engine_coolant_temp.value * 2));
+                    needle-sweep-color: self.progress >= ((self.angle_range - redline) / self.angle-range) ? red : (self.progress <= (blueline / self.angle-range) ? blue : SymbolProperties.symbol_color_white);
+
+                    regions: [
+                        {
+                            start: self.start - 0.4deg,
+                            end: self.start + blueline,
+                            major-ticks: 2,
+                            major-tick-inner-radius: self.width / 2 - 20px,
+                            major-tick-outer-radius: self.width / 2,
+                            major-tick-fill: Colors.white,
+                            major-tick-size: 0.4deg,
+                            label-major-ticks: false,
+                            minor-ticks: 0,
+                            fill-final-tick: true,
+                        },
+                        {
+                            start: self.end - self.redline,
+                            end: self.end,
+                            major-ticks: 2,
+                            major-tick-inner-radius: self.width / 2 - 20px,
+                            major-tick-outer-radius: self.width / 2,
+                            major-tick-fill: Colors.white,
+                            major-tick-size: 0.4deg,
+                            label-major-ticks: false,
+                            minor-ticks: 0,
+                            fill-final-tick: true,
+                        },
+                    ];
+
+                    coolant-temp-gauge-redline := GaugeArc {
+                        width: 100%;
+                        height: 100%;
+
+                        fill: red.darker(30%);
+                        z: -1;
+
+                        inner-radius: parent.regions[0].major-tick-inner-radius + 9px;
+                        outer-radius: parent.regions[0].major-tick-outer-radius - 5px;
+
+                        start: parent.end - parent.redline;
+                        end: parent.end;
+                    }
+
+                    coolant-temp-gauge-blueline := GaugeArc {
+                        width: 100%;
+                        height: 100%;
+
+                        fill: blue;
+                        z: -1;
+
+                        inner-radius: parent.regions[0].major-tick-inner-radius + 9px;
+                        outer-radius: parent.regions[0].major-tick-outer-radius - 5px;
+
+                        start: parent.start;
+                        end: parent.start + parent.blueline;
+                    }
+
+                    coolant-temp-light := SymbolLight {
+                        scale: 60%;
+                        source: @image-url("../../resources/images/coolant-temp-low-high-indicator-light.png");
+                        y: coolant-temp-gauge.height - self.height - 60px;
+                        colorize: coolant-temp-gauge.needle-sweep-color == SymbolProperties.symbol_color_white ? SymbolProperties.symbol_color_white.transparentize(75%) : coolant-temp-gauge.needle-sweep-color;
                     }
                 }
 
@@ -159,16 +244,13 @@ export component AppWindow inherits Window {
                 }
 
                 left-turn-signal := GaugeAttachedSymbol {
-                    height: SymbolProperties.size * 0.8;
-                    width: SymbolProperties.size;
-
                     center-radius: tachometer.width / 2;
                     center-x: tachometer.x + tachometer.width / 2;
                     center-y: tachometer.y + tachometer.height / 2;
 
                     angle: 40deg;
 
-                    source: @image-url("../../resources/images/turn-signal-arrow.png");
+                    source: @image-url("../../resources/images-svg/turn-signal-arrow.svg");
                     colorize: SymbolProperties.symbol_color_green;
 
                     visible: SCarData.left_turn_signal_enabled.value;
@@ -224,10 +306,50 @@ export component AppWindow inherits Window {
 
                     angle: check-engine-light.angle + SymbolProperties.symbol_angle_padding;
 
-                    source: @image-url("../../resources/images/oil-pressure-warning-light.png");
+                    source: @image-url("../../resources/images-svg/oil-pressure-warning-light.svg");
                     colorize: SymbolProperties.symbol-color-red;
 
                     visible: SCarData.oil_pressure_warning_light_enabled.value;
+                }
+
+                door-open-warning-light := GaugeAttachedSymbol {
+                    center-radius: tachometer.width / 2;
+                    center-x: tachometer.x + tachometer.width / 2;
+                    center-y: tachometer.y + tachometer.height / 2;
+
+                    angle: oil-pressure-warning-light.angle + SymbolProperties.symbol_angle_padding;
+
+                    source: @image-url("../../resources/images/dooropen-warning-light.png");
+                    colorize: SymbolProperties.symbol-color-red;
+
+                    visible: SCarData.any_door_open.value || !SCarData.hood_closed.value;
+                }
+
+                rcta-disabled-warning-light := GaugeAttachedSymbol {
+                    center-radius: tachometer.width / 2;
+                    center-x: tachometer.x + tachometer.width / 2;
+                    center-y: tachometer.y + tachometer.height / 2;
+
+                    angle: 180deg + 40deg;
+
+                    source: @image-url("../../resources/images/rcta-warning-light-off.png");
+                    colorize: SymbolProperties.symbol-color-yellow;
+
+                    visible: SCarData.rcta_enabled.value;
+                }
+
+                srs-airbag-system-warning-light := GaugeAttachedSymbol {
+                    scale: 0.9;
+                    center-radius: tachometer.width / 2;
+                    center-x: tachometer.x + tachometer.width / 2;
+                    center-y: tachometer.y + tachometer.height / 2;
+
+                    angle: rcta-disabled-warning-light.angle - SymbolProperties.symbol_angle_padding;
+
+                    source: @image-url("../../resources/images/srs-airbag-system-warning-light.png");
+                    colorize: SymbolProperties.symbol-color-yellow;
+
+                    visible: SCarData.srs_warning_light_enabled.value;
                 }
             }
 
@@ -317,17 +439,123 @@ export component AppWindow inherits Window {
                     }
                 }
 
-                right-turn-signal := GaugeAttachedSymbol {
-                    height <=> left-turn-signal.height;
-                    width <=> left-turn-signal.width;
+                cruise-control-frame := Rectangle {
+                    background: transparent;
 
+                    x: speedometer.x;
+                    y: speedometer.y;
+                    height: speedometer.height;
+                    width: speedometer.width;
+
+                    cruise-control-image := SymbolLight {
+                        colorize: SCarData.cruise_control_set_enabled.value ? SymbolProperties.symbol_color_green : SymbolProperties.symbol_color_white;
+                        source: @image-url("../../resources/images/cruise-control-indicator-light.png");
+
+                        y: speedometer-label.y - self.height - 5px;
+
+                        cruise-control-speed-label := Text {
+                            text: round(SCarData.cruise_control_speed.value);
+                            color: cruise-control-image.colorize;
+                            font-size: 30px;
+
+                            x: parent.width + 5px;
+                            y: parent.height / 2 - self.height / 2 + 6px;
+
+                            vertical-alignment: TextVerticalAlignment.center;
+                            horizontal-alignment: TextHorizontalAlignment.left;
+                        }
+
+                        visible: SCarData.cruise_control_enabled.value;
+                    }
+                }
+
+                fuel-level-gauge := InstrumentGauge {
+                    width: speedometer.width;
+                    height: speedometer.height;
+
+                    y: speedometer.y;
+                    x: speedometer.x;
+
+                    property <angle> blueline: self.angle-range / 10;
+
+                    start: coolant-temp-gauge.start;
+                    end: coolant-temp-gauge.end;
+
+                    needle-inner-radius: coolant-temp-gauge.needle-inner-radius;
+                    needle-thickness: coolant-temp-gauge.needle-thickness;
+
+                    progress: SCarData.fuel_level.value / (SCarData.fuel_level.max != 0 ? SCarData.fuel_level.max : (SCarData.fuel_level.value * 3));
+                    needle-sweep-color: self.progress <= (blueline / self.angle-range) ? SymbolProperties.symbol_color_yellow : SymbolProperties.symbol_color_white;
+
+                    regions: [
+                        {
+                            start: self.start - coolant-temp-gauge.regions[0].major-tick-size,
+                            end: self.end,
+                            major-ticks: 2,
+                            major-tick-inner-radius: coolant-temp-gauge.regions[0].major-tick-inner-radius,
+                            major-tick-outer-radius: coolant-temp-gauge.regions[0].major-tick-outer-radius,
+                            major-tick-fill: Colors.white,
+                            major-tick-size: coolant-temp-gauge.regions[0].major-tick-size,
+                            minor-ticks: 1,
+                            minor-tick-inner-radius: self.width / 2 - 15px,
+                            minor-tick-outer-radius: self.width / 2,
+                            minor-tick-fill: Colors.white,
+                            minor-tick-size: 0.3deg,
+                            label-major-ticks: false,
+                            fill-final-tick: true,
+                        },
+                        {
+                            start: self.start - coolant-temp-gauge.regions[0].major-tick-size,
+                            end: self.start + self.blueline,
+                            major-ticks: 2,
+                            major-tick-inner-radius: coolant-temp-gauge.regions[0].major-tick-inner-radius,
+                            major-tick-outer-radius: coolant-temp-gauge.regions[0].major-tick-outer-radius,
+                            major-tick-fill: Colors.white,
+                            major-tick-size: coolant-temp-gauge.regions[0].major-tick-size,
+                            minor-ticks: 0,
+                            label-major-ticks: false,
+                            fill-final-tick: true,
+                        },
+                    ];
+
+                    fuel-level-gauge-yellowline := GaugeArc {
+                        width: 100%;
+                        height: 100%;
+
+                        fill: SymbolProperties.symbol_color_yellow;
+                        z: -1;
+
+                        inner-radius: parent.regions[0].major-tick-inner-radius + 9px;
+                        outer-radius: parent.regions[0].major-tick-outer-radius - 5px;
+
+                        start: parent.start;
+                        end: parent.start + parent.blueline;
+                    }
+
+                    fuel-level-light := SymbolLight {
+                        scale: 60%;
+                        source: @image-url("../../resources/images/lowfuel-warning-light.png");
+                        y: fuel-level-gauge.height - self.height - 60px;
+                        colorize: fuel-level-gauge.needle-sweep-color == SymbolProperties.symbol_color_white ? SymbolProperties.symbol_color_white.transparentize(75%) : fuel-level-gauge.needle-sweep-color;
+
+                        Text {
+                            color: parent.colorize;
+                            font-size: 30px;
+                            text: "►";
+                            x: parent.width - 10px;
+                            y: parent.height / 2 - self.height / 2 + 3px;
+                        }
+                    }
+                }
+
+                right-turn-signal := GaugeAttachedSymbol {
                     center-radius: speedometer.width / 2;
                     center-x: speedometer.x + speedometer.width / 2;
                     center-y: speedometer.y + speedometer.height / 2;
 
                     angle: 180deg - left-turn-signal.angle;
 
-                    source: @image-url("../../resources/images/turn-signal-arrow.png");
+                    source: left-turn-signal.source;
                     colorize: SymbolProperties.symbol_color_green;
 
                     visible: SCarData.right_turn_signal_enabled.value;
@@ -368,14 +596,13 @@ export component AppWindow inherits Window {
                 }
 
                 hill-assist-enabled-indicator := GaugeAttachedSymbol {
-                    scale: 0.8;
                     center-radius: speedometer.width / 2;
                     center-x: speedometer.x + speedometer.width / 2;
                     center-y: speedometer.y + speedometer.height / 2;
 
                     angle: 360deg - 40deg;
 
-                    source: @image-url("../../resources/images/hillstartassist-warning-light.png");
+                    source: @image-url("../../resources/images-svg/hillstartassist-warning-light.svg");
                     colorize: SymbolProperties.symbol-color-yellow;
 
                     visible: SCarData.hill_assist_enabled.value;
