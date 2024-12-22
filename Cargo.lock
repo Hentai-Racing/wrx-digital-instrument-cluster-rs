@@ -172,7 +172,8 @@ dependencies = [
 [[package]]
 name = "async-compat"
 version = "0.2.4"
-source = "git+https://github.com/smol-rs/async-compat.git#2eaed54bf967ac4ab3e2f362200cc18a7e48431e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7bab94bde396a3f7b4962e396fdad640e241ed797d4d8d77fc8c237d14c58fc0"
 dependencies = [
  "futures-core",
  "futures-io",

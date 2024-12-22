@@ -25,7 +25,7 @@ tokio = { version = "1.42.0", features = [
 	"rt-multi-thread",
 	"macros",
 ], default-features = false }
-async-compat = { git = "https://github.com/smol-rs/async-compat.git" }
+async-compat = "0.2.4"
 paste = "1.0.15"
 
 # required due to dbc-codegen
