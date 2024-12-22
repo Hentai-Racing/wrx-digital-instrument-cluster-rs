@@ -21,6 +21,8 @@ export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, S
 export { SCarData }
 
 export global ApplicationState {
+    in-out property <bool> debug_mode: false;
+
     in property <bool> virtual_cluster: true;
     callback toggle_simulation();
 
@@ -129,7 +131,7 @@ export component AppWindow inherits Window {
                     tachometer-unit-label := Text {
                         text: "×1000";
                         color: tachometer.background-fill.transparentize(85%);
-                        font-size: 25px;
+                        font-size: 30px;
                         horizontal-alignment: TextHorizontalAlignment.center;
                         y: parent.height * 27.5%;
                     }
@@ -223,7 +225,7 @@ export component AppWindow inherits Window {
                 mt-gear-label := Text {
                     text: SCarData.reverse_sw.value ? "R" : SCarData.mt_gear.value;
                     color: white;
-                    font-size: 50px;
+                    font-size: 65px;
 
                     x: tachometer.x + tachometer.width / 2 - self.width / 2;
                     y: tachometer.y + tachometer.height / 2 - self.height / 2;
@@ -357,7 +359,7 @@ export component AppWindow inherits Window {
                 padding: 10px;
 
                 Rectangle {
-                    background: purple;
+                    background: ApplicationState.debug_mode ? purple : transparent;
                     border-radius: 5px;
 
                     property <length> buffer: 2.5px;
@@ -424,7 +426,7 @@ export component AppWindow inherits Window {
                     speedometer-label := Text {
                         text: round(SCarData.vehicle_speed.value);
                         color: white;
-                        font-size: 45px;
+                        font-size: 55px;
 
                         vertical-alignment: TextVerticalAlignment.center;
                         horizontal-alignment: TextHorizontalAlignment.center;
@@ -456,7 +458,7 @@ export component AppWindow inherits Window {
                         cruise-control-speed-label := Text {
                             text: round(SCarData.cruise_control_speed.value);
                             color: cruise-control-image.colorize;
-                            font-size: 30px;
+                            font-size: 35px;
 
                             x: parent.width + 5px;
                             y: parent.height / 2 - self.height / 2 + 6px;
@@ -646,7 +648,7 @@ export component AppWindow inherits Window {
                 odometer-text := Text {
                     color: white;
                     text: floor(SCarData.odometer.value);
-                    font-size: 30px;
+                    font-size: 40px;
                     vertical-alignment: TextVerticalAlignment.center;
                     horizontal-alignment: TextHorizontalAlignment.center;
                     x: parent.x + parent.width / 2 - self.width / 2;
@@ -670,18 +672,22 @@ export component AppWindow inherits Window {
                 }
             }
 
-            unit-toggle-button := Button {
-                text: "Toggle Unit System";
-                x: 0;
+            if ApplicationState.debug_mode: unit-toggle-region := Rectangle {
+                background: transparent;
 
-                clicked => {
-                    ApplicationState.update_user_unit(ApplicationState.user_unit == SUnitSystem.USCS ? SUnitSystem.SI : SUnitSystem.USCS);
+                unit-toggle-button := Button {
+                    text: "Toggle Unit System";
+                    x: 0;
+
+                    clicked => {
+                        ApplicationState.update_user_unit(ApplicationState.user_unit == SUnitSystem.USCS ? SUnitSystem.SI : SUnitSystem.USCS);
+                    }
                 }
-            }
 
-            Text {
-                text: ApplicationState.user_unit == SUnitSystem.USCS ? "USCS" : "SI";
-                x: unit-toggle-button.x + unit-toggle-button.width + 10px;
+                Text {
+                    text: ApplicationState.user_unit == SUnitSystem.USCS ? "USCS" : "SI";
+                    x: unit-toggle-button.x + unit-toggle-button.width + 10px;
+                }
             }
 
             if ApplicationState.virtual_cluster: simulation-toggle-button := Button {

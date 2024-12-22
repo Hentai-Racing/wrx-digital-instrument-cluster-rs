@@ -128,6 +128,9 @@ fn main() -> Result<(), slint::PlatformError> {
                         Ordering::SeqCst,
                     );
                 });
+        } else {
+            #[cfg(debug_assertions)]
+            ui.global::<ApplicationState>().set_debug_mode(true);
         }
 
         ui.run()?
