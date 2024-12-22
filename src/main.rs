@@ -129,8 +129,8 @@ fn main() -> Result<(), slint::PlatformError> {
                     );
                 });
         } else {
-            #[cfg(debug_assertions)]
-            ui.global::<ApplicationState>().set_debug_mode(true);
+            #[cfg(not(debug_assertions))]
+            ui.global::<ApplicationState>().set_debug_mode(false);
         }
 
         ui.run()?

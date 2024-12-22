@@ -117,7 +117,7 @@ BO_ 644 ignition: 8 XXX
 BO_ 864 engine_status_2: 8 XXX
    SG_ engine_fuel_flow : 8|8@1+ (1,0) [0|255] "" XXX
    SG_ engine_oil_temp : 16|8@1+ (1,-40) [0|216] "degC" XXX
-   SG_ engine_coolant_temp : 24|8@1+ (1,-40) [0|216] "degC" XXX
+   SG_ engine_coolant_temp : 24|8@1+ (1,-40) [0|182] "degC" XXX
    SG_ engine_boost_pressure : 32|8@1- (0.3,-15.1) [0|240.9] "psi" XXX
    SG_ cruise_control_enabled : 44|1@0+ (1,0) [0|1] "" XXX
    SG_ cruise_control_set_enabled : 45|1@0+ (1,0) [0|1] "" XXX

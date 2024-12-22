@@ -21,7 +21,7 @@ export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, S
 export { SCarData }
 
 export global ApplicationState {
-    in-out property <bool> debug_mode: false;
+    in-out property <bool> debug_mode: true;
 
     in property <bool> virtual_cluster: true;
     callback toggle_simulation();
@@ -337,7 +337,7 @@ export component AppWindow inherits Window {
                     source: @image-url("../../resources/images/rcta-warning-light-off.png");
                     colorize: SymbolProperties.symbol-color-yellow;
 
-                    visible: SCarData.rcta_enabled.value;
+                    visible: !SCarData.rcta_enabled.value;
                 }
 
                 srs-airbag-system-warning-light := GaugeAttachedSymbol {

@@ -3214,7 +3214,7 @@ impl EngineStatus2 {
     pub const ENGINE_OIL_TEMP_MIN: i16 = 0_i16;
     pub const ENGINE_OIL_TEMP_MAX: i16 = 216_i16;
     pub const ENGINE_COOLANT_TEMP_MIN: i16 = 0_i16;
-    pub const ENGINE_COOLANT_TEMP_MAX: i16 = 216_i16;
+    pub const ENGINE_COOLANT_TEMP_MAX: i16 = 182_i16;
     pub const ENGINE_BOOST_PRESSURE_MIN: f32 = 0_f32;
     pub const ENGINE_BOOST_PRESSURE_MAX: f32 = 240.9_f32;
     pub const CRUISE_CONTROL_SPEED_MIN: u8 = 0_u8;
@@ -3327,7 +3327,7 @@ impl EngineStatus2 {
     /// engine_coolant_temp
     ///
     /// - Min: 0
-    /// - Max: 216
+    /// - Max: 182
     /// - Unit: "degC"
     /// - Receivers: XXX
     #[inline(always)]
@@ -3354,7 +3354,7 @@ impl EngineStatus2 {
     /// Set value of engine_coolant_temp
     #[inline(always)]
     pub fn set_engine_coolant_temp(&mut self, value: i16) -> Result<(), CanError> {
-        if value < 0_i16 || 216_i16 < value {
+        if value < 0_i16 || 182_i16 < value {
             return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
         }
         let factor = 1;
