@@ -13,7 +13,7 @@ readme = "README.md"
 default = ["slint/backend-winit", "slint/renderer-skia"]
 
 [dependencies]
-slint = { version = "1.9.1", default-features = false, features = [
+slint = { version = "=1.8.0", default-features = false, features = [
 	"compat-1-2",
 	"std",
 ] }
@@ -35,7 +35,7 @@ futures = "0.3.31"
 slcan = "0.1.3"        # TODO: implement slcan for development
 
 [build-dependencies]
-slint-build = { version = "1.9.1" }
+slint-build = { version = "=1.8.0" }
 dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }
 syn = "2.0.91"
 prettyplease = "0.2.25"
