@@ -1,4 +1,4 @@
-VERSION "0.4.5"
+VERSION "0.5.2"
 
 
 NS_ :
@@ -32,136 +32,141 @@ NS_ :
     SG_MUL_VAL_
 
 BS_:
+BU_:
 
-BU_: XXX X
+BO_ 208 g_sensor: 8 Vector__XXX
+   SG_ g_sensor_lateral : 16|16@1- (-0.0035,1) [-255|255] "m/s/s" Vector__XXX
+   SG_ g_sensor_longitudinal : 48|16@1- (-0.0035,1) [-255|255] "m/s/s" Vector__XXX
+   SG_ steering_angle : 0|16@1- (0.01,0) [0|1] "deg" Vector__XXX
 
-BO_ 208 g_sensor: 8 XXX
-   SG_ steering_angle : 0|16@1- (0.01,0) [0|1] "deg" XXX
-   SG_ g_sensor_lateral : 16|16@1- (-0.0035,1) [-255|255] "deg" XXX
-   SG_ g_sensor_longitudinal : 48|16@1- (-0.0035,1) [-255|255] "deg" XXX
+BO_ 209 brake_pedal: 4 Vector__XXX
+   SG_ brake_pedal_pressure : 16|8@1+ (0.78125,0) [0|100] "%" Vector__XXX
+   SG_ vehicle_speed : 0|16@1+ (0.05625,0) [0|290] "KPH" Vector__XXX
 
-BO_ 209 brake_pedal: 4 XXX
-   SG_ vehicle_speed : 0|16@1+ (0.05625,0) [0|290] "KPH" XXX
-   SG_ brake_pedal_pressure : 16|8@1+ (0.78125,0) [0|100] "%" XXX
+BO_ 211 driver_road_assists: 7 Vector__XXX
+   SG_ active_tq_vectoring_enabled : 3|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ brake_cruise_on : 42|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ hill_assist_enabled : 15|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ traction_control_disabled : 11|1@0+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 211 driver_road_assists: 7 XXX
-   SG_ active_tq_vectoring_enabled : 3|1@0+ (1,0) [0|1] "" XXX
-   SG_ traction_control_disabled : 11|1@0+ (1,0) [0|1] "" XXX
-   SG_ hill_assist_enabled : 15|1@0+ (1,0) [0|1] "" XXX
-   SG_ brake_cruise_on : 42|1@1+ (1,0) [0|1] "" XXX
+BO_ 212 wheel_speeds: 8 Vector__XXX
+   SG_ left_front_wheel_speed : 0|16@1+ (0.0592,0) [0|255] "KPH" Vector__XXX
+   SG_ left_rear_wheel_speed : 32|16@1+ (0.0592,0) [0|255] "KPH" Vector__XXX
+   SG_ right_front_wheel_speed : 16|16@1+ (0.0592,0) [0|255] "KPH" Vector__XXX
+   SG_ right_rear_wheel_speed : 48|16@1+ (0.0592,0) [0|255] "KPH" Vector__XXX
 
-BO_ 212 wheel_speeds: 8 XXX
-   SG_ left_front_wheel_speed : 0|16@1+ (0.0592,0) [0|255] "KPH" XXX
-   SG_ right_front_wheel_speed : 16|16@1+ (0.0592,0) [0|255] "KPH" XXX
-   SG_ left_rear_wheel_speed : 32|16@1+ (0.0592,0) [0|255] "KPH" XXX
-   SG_ right_rear_wheel_speed : 48|16@1+ (0.0592,0) [0|255] "KPH" XXX
+BO_ 282 steering: 8 Vector__XXX
+   SG_ steering_wheel_angle : 48|16@1- (0.02,0) [0|0] "deg" Vector__XXX
 
-BO_ 282 steering: 8 XXX
-   SG_ steering_wheel_angle : 48|16@1- (0.02,0) [0|0] "deg" XXX
+BO_ 320 motor_control: 8 Vector__XXX
+   SG_ accelerator_combined : 40|8@1+ (0.392157,0) [0|100] "%" Vector__XXX
+   SG_ accelerator_cruise_position : 32|8@1+ (1,0) [0|255] "" Vector__XXX
+   SG_ accelerator_pedal_position : 0|8@1+ (0.392157,0) [0|1] "%" Vector__XXX
+   SG_ mt_clutch_sw : 15|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ n_accelerator_pedal_max_sw : 14|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ throttle_plate_position : 48|8@1+ (0.392157,0) [0|100] "%" Vector__XXX
 
-BO_ 320 motor_control: 8 XXX
-   SG_ accelerator_pedal_position : 0|8@1+ (0.392157,0) [0|1] "%" XXX
-   SG_ n_accelerator_pedal_max_sw : 14|1@1+ (1,0) [0|1] "" XXX
-   SG_ mt_clutch_sw : 15|1@0+ (1,0) [0|1] "" XXX
-   SG_ accelerator_cruise_position : 32|8@1+ (1,0) [0|255] "" XXX
-   SG_ accelerator_combined : 40|8@1+ (0.392157,0) [0|100] "%" XXX
-   SG_ throttle_plate_position : 48|8@1+ (0.392157,0) [0|100] "%" XXX
+BO_ 321 engine: 8 Vector__XXX
+   SG_ engine_rpm : 32|14@1+ (1,0) [0|8000] "RPM" Vector__XXX
+   SG_ engine_running : 51|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ engine_stop : 15|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ mt_gear : 48|3@1+ (1,0) [0|7] "" Vector__XXX
 
-BO_ 321 engine: 8 XXX
-   SG_ engine_torque : 0|15@1+ (1,0) [0|255] "" XXX
-   SG_ engine_stop : 15|1@1+ (1,0) [0|1] "" XXX
-   SG_ engine_rpm : 32|14@1+ (1,0) [0|8000] "RPM" XXX
-   SG_ mt_gear : 48|3@1+ (1,0) [0|7] "" XXX
-   SG_ engine_running : 51|1@1+ (1,0) [0|1] "" XXX
+BO_ 328 transmission: 8 Vector__XXX
+   SG_ mt_gear_VERIFY : 4|4@1+ (1,0) [0|7] "" Vector__XXX
+   SG_ transmission_temp_VERIFY : 8|7@1+ (1,-40) [0|0] "" Vector__XXX
 
-BO_ 328 transmission: 8 XXX
-   SG_ mt_gear_VERIFY : 4|4@1+ (1,0) [0|7] "" XXX
+BO_ 338 status_switches: 8 Vector__XXX
+   SG_ acc_power : 5|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ brake_sw : 52|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ handbrake_sw : 51|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ highbeams_enabled : 60|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ key_on : 6|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ lowbeams_enabled : 59|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ parking_lights_enabled : 58|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ reverse_sw : 50|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ running_lights_enabled : 57|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ wiper_moving_sw : 62|1@1+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 338 status_switches: 8 XXX
-   SG_ acc_power : 5|1@0+ (1,0) [0|1] "" XXX
-   SG_ key_on : 6|1@0+ (1,0) [0|1] "" XXX
-   SG_ reverse_sw : 50|1@0+ (1,0) [0|1] "" XXX
-   SG_ handbrake_sw : 51|1@0+ (1,0) [0|1] "" XXX
-   SG_ brake_sw : 52|1@0+ (1,0) [0|1] "" XXX
-   SG_ running_lights_enabled : 57|1@0+ (1,0) [0|1] "" XXX
-   SG_ parking_lights_enabled : 58|1@0+ (1,0) [0|1] "" XXX
-   SG_ lowbeams_enabled : 59|1@0+ (1,0) [0|1] "" XXX
-   SG_ highbeams_enabled : 60|1@0+ (1,0) [0|1] "" XXX
-   SG_ wiper_moving_sw : 62|1@1+ (1,0) [0|1] "" XXX
+BO_ 340 XXXMsg340: 7 Vector__XXX
+   SG_ any_door_open : 48|1@0+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 340 XXXMsg340: 7 XXX
-   SG_ any_door_open : 48|1@0+ (1,0) [0|1] "" XXX
+BO_ 604 bsd_rcta: 8 Vector__XXX
+   SG_ bsd_left_adjacent : 33|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ bsd_left_approaching : 43|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ bsd_right_adjacent : 32|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ bsd_right_approaching : 42|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ rcta_enabled : 5|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ rcta_left : 47|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ rcta_right : 46|1@1+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 604 bsd_rcta: 8 XXX
-   SG_ rcta_enabled : 5|1@1+ (1,0) [0|1] "" XXX
-   SG_ rcta_right_adjacent : 32|1@1+ (1,0) [0|1] "" XXX
-   SG_ rcta_left_adjacent : 33|1@1+ (1,0) [0|1] "" XXX
-   SG_ rcta_right_approaching : 42|1@1+ (1,0) [0|1] "" XXX
-   SG_ rcta_left_approaching : 43|1@1+ (1,0) [0|1] "" XXX
-   SG_ bsd_right : 46|1@1+ (1,0) [0|1] "" XXX
-   SG_ bsd_left : 47|1@1+ (1,0) [0|1] "" XXX
+BO_ 641 climate_control: 8 Vector__XXX
+   SG_ airflow_distribution_mode : 2|3@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ blower_fan_level : 5|3@1+ (1,0) [0|7] "" Vector__XXX
+   SG_ blend_door : 18|6@1+ (2.95,-13.5) [0|100] "%" Vector__XXX
+   SG_ rear_defrost_enabled : 13|1@1+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 642 cluster: 8 XXX
-   SG_ fuel_level : 0|12@1+ (0.033,0) [0|100] "%" XXX
-   SG_ raw_fuel_testing : 0|12@1- (1,0) [0|4096] "" XXX
-   SG_ driver_seatbelt_warning_enabled : 40|1@0+ (1,0) [0|1] "" XXX
-   SG_ passenger_seatbelt_warning_enabled : 41|1@0+ (1,0) [0|1] "" XXX
-   SG_ left_turn_signal_enabled : 44|1@0+ (1,0) [0|1] "" XXX
-   SG_ right_turn_signal_enabled : 45|1@0+ (1,0) [0|1] "" XXX
+BO_ 642 cluster: 8 Vector__XXX
+   SG_ driver_seatbelt_warning_enabled : 40|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ fuel_level : 0|12@1+ (-0.12,101.58) [0|100] "%" Vector__XXX
+   SG_ left_turn_signal_enabled : 44|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ passenger_seatbelt_warning_enabled : 41|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ raw_fuel_testing : 0|12@1+ (1,0) [0|100] "%" Vector__XXX
+   SG_ right_turn_signal_enabled : 45|1@0+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 644 ignition: 8 XXX
-   SG_ ignition_on : 6|1@0+ (1,0) [0|1] "" XXX
-   SG_ ignition_acc : 25|1@0+ (1,0) [0|1] "" XXX
-   SG_ access_key_detected : 46|1@0+ (-1,0) [0|1] "" XXX
+BO_ 644 ignition: 8 Vector__XXX
+   SG_ access_key_detected : 46|1@0+ (-1,0) [0|1] "" Vector__XXX
+   SG_ ignition_acc : 25|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ ignition_on : 6|1@0+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 864 engine_status_2: 8 XXX
-   SG_ engine_fuel_flow : 8|8@1+ (1,0) [0|255] "" XXX
-   SG_ engine_oil_temp : 16|8@1+ (1,-40) [0|216] "degC" XXX
-   SG_ engine_coolant_temp : 24|8@1+ (1,-40) [0|182] "degC" XXX
-   SG_ engine_boost_pressure : 32|8@1- (0.3,-15.1) [0|240.9] "psi" XXX
-   SG_ cruise_control_enabled : 44|1@0+ (1,0) [0|1] "" XXX
-   SG_ cruise_control_set_enabled : 45|1@0+ (1,0) [0|1] "" XXX
-   SG_ cruise_control_speed : 56|8@1+ (1,0) [0|255] "" XXX
+BO_ 864 engine_status_2: 8 Vector__XXX
+   SG_ cruise_control_enabled : 44|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ cruise_control_set_enabled : 45|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ cruise_control_speed : 56|8@1+ (1,0) [0|255] "" Vector__XXX
+   SG_ engine_boost_pressure : 32|8@1- (0.1,-15) [0|255] "psi" Vector__XXX
+   SG_ engine_coolant_temp : 24|8@1+ (1,-40) [0|200] "degC" Vector__XXX
+   SG_ engine_fuel_flow : 8|8@1+ (1,0) [0|255] "" Vector__XXX
+   SG_ engine_oil_temp : 16|8@1+ (1,-40) [0|216] "degC" Vector__XXX
 
-BO_ 865 engine_warning_lights: 8 XXX
-   SG_ oil_pressure_warning_light_enabled : 12|1@0+ (1,0) [0|1] "" XXX
-   SG_ check_engine_light_enabled : 39|1@0+ (1,0) [0|1] "" XXX
+BO_ 865 engine_warning_lights: 8 Vector__XXX
+   SG_ check_engine_light_enabled : 39|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ oil_pressure_warning_light_enabled : 12|1@0+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 882 srs_status: 8 XXX
-   SG_ srs_warning_light_enabled : 16|1@0+ (1,0) [0|1] "" XXX
+BO_ 882 srs_status: 8 Vector__XXX
+   SG_ srs_warning_light_enabled : 16|1@0+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 884 cluster_2: 8 XXX
-   SG_ fog_lights_enabled : 14|1@0+ (1,0) [0|1] "" XXX
-   SG_ tpms_warning_light_enabled : 36|1@0+ (1,0) [0|1] "" XXX
+BO_ 884 cluster_2: 8 Vector__XXX
+   SG_ fog_lights_enabled : 14|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ tpms_warning_light_enabled : 36|1@0+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 885 cabin: 8 XXX
-   SG_ left_front_door_open : 8|1@0+ (1,0) [0|1] "" XXX
-   SG_ right_front_door_open : 9|1@0+ (1,0) [0|1] "" XXX
-   SG_ right_rear_door_open : 10|1@0+ (1,0) [0|1] "" XXX
-   SG_ left_rear_door_open : 11|1@0+ (1,0) [0|1] "" XXX
-   SG_ trunk_open : 13|1@0+ (1,0) [0|1] "" XXX
-   SG_ headlight_dimmer_enabled : 27|1@0+ (1,0) [0|1] "" XXX
-   SG_ dimmer_max_brightness_enabled : 31|1@0+ (1,0) [0|1] "" XXX
+BO_ 885 cabin: 8 Vector__XXX
+   SG_ dimmer_max_brightness_enabled : 31|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ headlight_dimmer_enabled : 27|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ left_front_door_open : 8|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ left_rear_door_open : 11|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ right_front_door_open : 9|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ right_rear_door_open : 10|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ trunk_open : 13|1@0+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 886 dimmer_and_hood: 2 XXX
-   SG_ dimmer_dial_value : 0|8@1+ (1,0) [0|250] "" XXX
-   SG_ hood_closed : 8|1@1+ (1,0) [0|1] "" XXX
+BO_ 886 dimmer_and_hood: 2 Vector__XXX
+   SG_ dimmer_dial_value : 0|8@1+ (1,0) [0|250] "" Vector__XXX
+   SG_ hood_closed : 8|1@1+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 977 dash_state2_VERIFY: 8 XXX
-   SG_ UNITS : 15|1@1+ (1,0) [0|1] "" XXX
+BO_ 977 dash_state_VERIFY: 8 Vector__XXX
+   SG_ UNITS : 15|1@1+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 1745 odometer: 8 XXX
-   SG_ odometer : 0|32@1+ (0.160934,0) [0|4.29497e+09] "KM" XXX
+BO_ 1745 odometer: 8 Vector__XXX
+   SG_ odometer : 0|32@1+ (0.160934,0) [0|4.29497e+09] "KM" Vector__XXX
 
-BO_ 1883 tpms: 8 XXX
-   SG_ left_front_tire_pressure : 0|8@1+ (1,0) [0|1] "" XXX
-   SG_ right_front_tire_pressure : 8|8@1+ (1,0) [0|1] "" XXX
-   SG_ right_rear_tire_pressure : 16|8@1+ (1,0) [0|1] "" XXX
-   SG_ left_rear_tire_pressure : 24|8@1+ (1,0) [0|1] "" XXX
+BO_ 1883 tpms: 8 Vector__XXX
+   SG_ left_front_tire_pressure : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ left_rear_tire_pressure : 24|8@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ right_front_tire_pressure : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ right_rear_tire_pressure : 16|8@1+ (1,0) [0|1] "" Vector__XXX
 
-CM_ SG_ 208 steering_angle "might_be_actual_wheel_angle_not_steering_wheel";
+CM_ SG_ 642 fuel_level "offset and scale calculated with 14047 samples of OBD2 reported value and raw can value over a period of 10+ hours of highway driving and fuel fill-ups";
+CM_ SG_ 208 steering_angle "might be actual wheel angle not steering wheel";
 CM_ SG_ 320 n_accelerator_pedal_max_sw "is 0 when pressed NOT VERIFIED";
-CM_ SG_ 642 fuel_level "need to verify min/max/scale";
 CM_ SG_ 644 access_key_detected "4:6 bits are set but only check 6";
 CM_ SG_ 864 cruise_control_speed "unit is determined by vehicle region or bit flag";
 CM_ SG_ 864 engine_boost_pressure "need to verify";
@@ -174,6 +179,7 @@ CM_ SG_ 1883 left_rear_tire_pressure "scale/unit undetermined";
 CM_ SG_ 1883 right_front_tire_pressure "scale/unit undetermined";
 CM_ SG_ 1883 right_rear_tire_pressure "scale/unit undetermined";
 
-VAL_ 977 UNITS 0 "SI" 1 "USCS";
 VAL_ 321 mt_gear 0 "FLOATING" 1 "1" 2 "2" 3 "3" 4 "4" 5 "5" 6 "6" 7 "NEUTRAL";
+VAL_ 641 airflow_distribution_mode 1 "panel" 2 "panel,floor" 3 "floor" 4 "floor,defrost" 5 "defrost";
 VAL_ 886 dimmer_dial_value 0 "0" 33 "1" 82 "2" 125 "3" 173 "4" 250 "5";
+VAL_ 977 UNITS 1 "SI" 0 "USCS";

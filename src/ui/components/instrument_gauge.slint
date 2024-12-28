@@ -193,9 +193,9 @@ export component InstrumentGauge inherits Rectangle {
     in property <brush> needle-fill <=> needle.fill;
     in property <brush> needle-sweep-color: needle-fill;
 
-    property <float> gradient-start: (needle_inner_radius * 2) / self.width;
+    property <float> gradient-start: (needle_inner_radius * 2.175) / self.width;
     property <float> gradient-pre-end: (100 - ((100 - gradient-start) / ((100 + gradient-start) / 2))) / 100;
-    in property <brush> needle-sweep-fill: @radial-gradient(circle, #00000000 gradient-start, needle-sweep-color.darker(25%).transparentize(50%) gradient-pre-end);
+    in property <brush> needle-sweep-fill: @radial-gradient(circle, #00000000 gradient-start, needle-sweep-color.darker(25%).transparentize(60%) gradient-pre-end);
 
     in property <[InstrumentGaugeRegion]> regions: [
         {
@@ -254,7 +254,7 @@ export component InstrumentGauge inherits Rectangle {
                 color: region.major-tick-label-fill;
                 text: (starting-count + major-tick) * region.major-tick-label-scale;
 
-                font-size: 25px;
+                font-size: 35px;
 
                 x: (root.width / 2) - (self.width / 2) + (region.major-tick-inner-radius - self.font-size) * cos(-parent.start);
                 y: (root.height / 2) - (self.height / 2) + (region.major-tick-inner-radius - self.font-size) * sin(-parent.start);

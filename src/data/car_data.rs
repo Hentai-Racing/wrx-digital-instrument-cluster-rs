@@ -3,6 +3,7 @@ use crate::data::units::{Unit, UnitSystem};
 use crate::wrx_2018::{self, EngineMtGear, Messages};
 use paste::paste;
 use socketcan::tokio::CanSocket;
+use socketcan::Frame;
 
 macro_rules! param_max_min {
     ($car_data:ident, $msg:path, $param:ident) => {
@@ -11,7 +12,7 @@ macro_rules! param_max_min {
     };
 }
 
-macro_rules! get_param_range {
+macro_rules! handle_param_type {
     ($car_data:ident, $msg:path => $param:ident: f32) => {
         param_max_min!($car_data, $msg, $param)
     };
@@ -63,9 +64,9 @@ macro_rules! HandleSignalProcess {
 /// }
 ///
 /// impl CarData {
-///     fn OverrideSetterFn(&mut self, input: &dyn Any) {
+///     (fn OverrideSetterFn(&mut self, input: &dyn Any) {
 ///         ...
-///     }
+///     })?
 /// }
 ///```
 macro_rules! CarData {
@@ -83,13 +84,14 @@ macro_rules! CarData {
                 $($(
                     $(car_data.$param.set_value($init);)? // allow for optional initial values
                     $(car_data.$param.set_units($unit(UnitSystem::SI));)? // allow for optional unit type
-                    get_param_range!(car_data, wrx_2018::$msg => $param: $type); // set min and max values for number types
+
+                    handle_param_type!(car_data, wrx_2018::$msg => $param: $type); // set min and max values for number types
                 )*)*
 
                 car_data
             }
 
-            fn process_message(&mut self, message: Messages) {
+            fn process_message(&mut self, message: &Messages) {
                 match message {
                     $(
                         Messages::$msg(sig) => {
@@ -151,6 +153,10 @@ CarData!(
         right_turn_signal_enabled: bool = true,
     };
 
+    MotorControl => {
+        mt_clutch_sw: bool,
+    };
+
     Cluster2 => {
         fog_lights_enabled: bool = true,
     };
@@ -177,12 +183,12 @@ CarData!(
 
     BsdRcta => {
         rcta_enabled: bool = true,
-        bsd_left: bool = true,
-        bsd_right: bool = true,
-        rcta_left_adjacent: bool = true,
-        rcta_left_approaching: bool = true,
-        rcta_right_adjacent: bool = true,
-        rcta_right_approaching: bool = true,
+        rcta_left: bool = true,
+        rcta_right: bool = true,
+        bsd_left_adjacent: bool = true,
+        bsd_left_approaching: bool = true,
+        bsd_right_adjacent: bool = true,
+        bsd_right_approaching: bool = true,
     };
 
     SrsStatus => {
@@ -200,9 +206,48 @@ impl CarData {
         use embedded_can::Frame;
         use futures::stream::StreamExt;
 
+        fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
+            let search_len = pattern.ilog2() + 1;
+            let mut current = 0u64;
+
+            for &byte in payload {
+                for b in 0u8..8u8 {
+                    current = (current << 1) | ((byte >> (7 - b)) & 1) as u64;
+                    current &= (1 << search_len) - 1;
+
+                    if current == pattern {
+                        return true;
+                    }
+                }
+            }
+
+            false
+        }
+
         while let Some(Ok(frame)) = can_socket.next().await {
-            if let Ok(message) = Messages::from_can_message(frame.id(), frame.data()) {
-                self.process_message(message)
+            let raw_id = frame.raw_id();
+            let id = frame.id();
+            let payload = frame.data();
+
+            if let Ok(message) = Messages::from_can_message(id, payload) {
+                self.process_message(&message)
+            } else {
+                #[cfg(debug_assertions)]
+                match raw_id {
+                    0x7e0 => {
+                        let test_tpms = search_payload_unaligned(payload, 0x75B);
+                        if test_tpms {
+                            println!("Sent: {:?}", payload);
+                        }
+                    }
+                    0x7e1..=0x7e8 => {
+                        let test_tpms = search_payload_unaligned(payload, 0x75b);
+                        if test_tpms {
+                            println!("Recv: {:?}", payload);
+                        }
+                    }
+                    _ => {}
+                }
             }
         }
     }

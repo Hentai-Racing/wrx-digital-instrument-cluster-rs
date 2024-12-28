@@ -140,6 +140,8 @@ fn generate_vcan_handler() {
             })
             .collect();
 
+        gen_block += "let mut write_futures = Vec::new();";
+
         for (variant, item_impl) in messages_enum.iter().zip(impls.iter()) {
             let signal_path = format!("{}::{}", module_name, variant.ident);
 
@@ -191,7 +193,7 @@ fn generate_vcan_handler() {
                             signal_path,
                             param_names.join(", ")
                         );
-                        let write_frame_expression: String = format!("if let Some(frame) = Frame::new({0}.id(), {0}.data()) {{socket.write_frame(frame).unwrap().await.unwrap();}}",
+                        let write_frame_expression: String = format!("if let Some(frame) = Frame::new({0}.id(), {0}.data()) {{let write_future = socket.write_frame(frame); write_futures.push(write_future);}}",
                             frame_ident
                         );
 
@@ -205,11 +207,14 @@ fn generate_vcan_handler() {
                 }
             }
         }
+
+        gen_block += "future::join_all(write_futures).await;"
     }
 
     gen_output += "/// Generated code from build.rs::generate_vcan_handler()!\n";
     gen_output += "use embedded_can::Frame;";
     gen_output += "use rand::Rng;";
+    gen_output += "use futures::future;";
     gen_output += "use socketcan::tokio::CanSocket;";
     gen_output += "use std::sync::atomic::{AtomicBool, Ordering};";
     gen_output += "use std::sync::Arc;";

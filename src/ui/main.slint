@@ -153,7 +153,7 @@ export component AppWindow inherits Window {
                     start: 0deg - angle_offset;
                     end: -180deg + angle_offset;
 
-                    needle-inner-radius: self.width / 2.4;
+                    needle-inner-radius: self.width / 2.45;
                     needle-thickness: 1deg;
 
                     progress: SCarData.engine_coolant_temp.value / (SCarData.engine_coolant_temp.max != 0 ? SCarData.engine_coolant_temp.max : (SCarData.engine_coolant_temp.value * 2));
@@ -223,7 +223,7 @@ export component AppWindow inherits Window {
                 }
 
                 mt-gear-label := Text {
-                    text: SCarData.reverse_sw.value ? "R" : SCarData.mt_gear.value;
+                    text: SCarData.reverse_sw.value ? "R" : (SCarData.mt_clutch_sw.value ? " " : SCarData.mt_gear.value);
                     color: white;
                     font-size: 65px;
 
@@ -425,6 +425,7 @@ export component AppWindow inherits Window {
 
                     speedometer-label := Text {
                         text: round(SCarData.vehicle_speed.value);
+                        width: parent.width;
                         color: white;
                         font-size: 55px;
 
@@ -465,6 +466,8 @@ export component AppWindow inherits Window {
 
                             vertical-alignment: TextVerticalAlignment.center;
                             horizontal-alignment: TextHorizontalAlignment.left;
+
+                            visible: round(SCarData.cruise_control_speed.value) != 0;
                         }
 
                         visible: SCarData.cruise_control_enabled.value;

@@ -3,69 +3,43 @@ use crate::slint_generatedAppWindow::*;
 use paste::paste;
 use slint::{ComponentHandle, Weak};
 
-macro_rules! stype_number_instantiate {
-    ($car_data:ident, $param:ident: $type:ident) => {
-        $type {
-            name: stringify!($param).into(),
-            value: $car_data.$param().value().into(),
-            unit_str: $car_data.$param().get_unit_short_str().into(),
-            max: $car_data.$param().max().into(),
-            min: $car_data.$param().max().into(),
-            ..Default::default()
-        }
-    };
-}
-
-macro_rules! stype_instantiate {
-    ($car_data:ident, $param:ident: SIDataParameter) => {
-        stype_number_instantiate!($car_data, $param: SIDataParameter)
-    };
-    ($car_data:ident, $param:ident: SFDataParameter) => {
-        stype_number_instantiate!($car_data, $param: SFDataParameter)
-    };
-    ($car_data:ident, $param:ident: $type:tt) => {
-        $type {
-            name: stringify!($param).into(),          // set name
-            value: $car_data.$param().value().into(), // set initial value
-            ..Default::default()
-        }
-    };
-}
+// TODO: find a better way to connect to car_data without using tokio::sync::watch
 
 macro_rules! number_param_convertion_handle {
-    ($car_data:ident, $ui_car_data:ident, $ui_application_state:ident, $sparam:ident, $param:ident: $type:ty) => {
+    ($car_data:ident, $ui_car_data:ident, $ui_application_state:ident, $param:ident: $type:ty) => {
         paste!(
-            let mut sparam_clone = $sparam.clone();
-
             let unit_system: UnitSystem = $ui_application_state.get_user_unit().into();
             let units = $car_data.$param().units();
 
             let new_value: f64 = (*$param.borrow_and_update()).into();
             let units_converted = units.convert_system_to(unit_system);
-            sparam_clone.value = units.convert_value_to(new_value, unit_system) as $type;
-            sparam_clone.unit_str = units_converted.get_short_str().into();
 
-            sparam_clone.min = units.convert_value_to($car_data.$param().min(), unit_system) as $type;
-            sparam_clone.max = units.convert_value_to($car_data.$param().max(), unit_system) as $type;
+            let mut sparam = $ui_car_data.[<get_ $param>]();
 
-            $ui_car_data.[<set_ $param>](sparam_clone);
+            sparam.value = units.convert_value_to(new_value, unit_system) as $type;
+            sparam.unit_str = units_converted.get_short_str().into();
+
+            sparam.min = units.convert_value_to($car_data.$param().min(), unit_system) as $type;
+            sparam.max = units.convert_value_to($car_data.$param().max(), unit_system) as $type;
+
+            $ui_car_data.[<set_ $param>](sparam);
         )
     };
 }
 
 macro_rules! param_convertion_handle {
-    ($car_data:ident, $ui_car_data:ident, $ui_application_state:ident, $sparam:ident, $param:ident: SIDataParameter) => {
-        number_param_convertion_handle!{$car_data, $ui_car_data, $ui_application_state, $sparam, $param: i32}
+    ($car_data:ident, $ui_car_data:ident, $ui_application_state:ident, $param:ident: SIDataParameter) => {
+        number_param_convertion_handle!{$car_data, $ui_car_data, $ui_application_state, $param: i32}
     };
-    ($car_data:ident, $ui_car_data:ident, $ui_application_state:ident, $sparam:ident, $param:ident: SFDataParameter) => {
-        number_param_convertion_handle!{$car_data, $ui_car_data, $ui_application_state, $sparam, $param: f32}
+    ($car_data:ident, $ui_car_data:ident, $ui_application_state:ident, $param:ident: SFDataParameter) => {
+        number_param_convertion_handle!{$car_data, $ui_car_data, $ui_application_state, $param: f32}
     };
-    ($car_data:ident, $ui_car_data:ident, $ui_application_state:ident, $sparam:ident, $param:ident: $type:tt) => {
+    ($car_data:ident, $ui_car_data:ident, $ui_application_state:ident, $param:ident: $type:tt) => {
         paste!(
-            let mut sparam_clone = $sparam.clone();
-            sparam_clone.value = (*$param.borrow_and_update()).into();
+            let mut sparam = $ui_car_data.[<get_ $param>]();
+            sparam.value = (*$param.borrow_and_update()).into();
 
-            $ui_car_data.[<set_ $param>](sparam_clone);
+            $ui_car_data.[<set_ $param>](sparam);
         )
     };
 }
@@ -85,19 +59,13 @@ macro_rules! bridge {
 
                 $(
                     let mut $param = car_data.$param().watch();
-
-                    paste!{
-                        let [<sparam_ $param>] = stype_instantiate!{car_data, $param: $type};
-                        param_convertion_handle!(car_data, ui_car_data, ui_application_state, [<sparam_ $param>], $param: $type);
-                    }
+                    param_convertion_handle!(car_data, ui_car_data, ui_application_state, $param: $type);
                 )*
 
                 loop {
                     tokio::select! {
                         $(_ = $param.changed() => {
-                            paste!{
-                                param_convertion_handle!(car_data, ui_car_data, ui_application_state, [<sparam_ $param>], $param: $type);
-                            }
+                            param_convertion_handle!(car_data, ui_car_data, ui_application_state, $param: $type);
                         },)*
                     }
                 }
@@ -114,22 +82,21 @@ macro_rules! bridge {
             let ui_car_data = window_binding.global::<SCarData>();
             let ui_application_state = window_binding.global::<ApplicationState>();
 
-            $(paste!{
+            $(
                 let mut $param = car_data.$param().watch();
-                let [<sparam_ $param>] = stype_instantiate!{car_data, $param: $type};
-                param_convertion_handle!(car_data, ui_car_data, ui_application_state, [<sparam_ $param>], $param: $type);
-            })*
+                param_convertion_handle!(car_data, ui_car_data, ui_application_state, $param: $type);
+            )*
         }
     };
 }
 
 #[derive(Clone)]
-pub struct UIDataBridge {
+pub struct SCarDataBridge {
     main_window: Weak<AppWindow>,
     car_data: CarData,
 }
 
-impl UIDataBridge {
+impl SCarDataBridge {
     pub fn new(main_window: Weak<AppWindow>, car_data: CarData) -> Self {
         Self {
             main_window,
@@ -166,6 +133,8 @@ impl UIDataBridge {
         left_turn_signal_enabled: SBDataParameter,
         right_turn_signal_enabled: SBDataParameter,
 
+        mt_clutch_sw: SBDataParameter,
+
         fog_lights_enabled: SBDataParameter,
         left_front_door_open: SBDataParameter,
         right_front_door_open: SBDataParameter,
@@ -182,12 +151,12 @@ impl UIDataBridge {
         traction_control_disabled: SBDataParameter,
 
         rcta_enabled: SBDataParameter,
-        bsd_left: SBDataParameter,
-        bsd_right: SBDataParameter,
-        rcta_left_adjacent: SBDataParameter,
-        rcta_left_approaching: SBDataParameter,
-        rcta_right_adjacent: SBDataParameter,
-        rcta_right_approaching: SBDataParameter,
+        rcta_left: SBDataParameter,
+        rcta_right: SBDataParameter,
+        bsd_left_adjacent: SBDataParameter,
+        bsd_left_approaching: SBDataParameter,
+        bsd_right_adjacent: SBDataParameter,
+        bsd_right_approaching: SBDataParameter,
 
         srs_warning_light_enabled: SBDataParameter,
 

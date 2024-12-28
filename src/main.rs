@@ -2,7 +2,7 @@ mod application;
 mod can;
 mod data;
 
-use crate::application::ui_data_bridge::UIDataBridge;
+use crate::application::s_car_data_bridge::SCarDataBridge;
 use crate::can::messages::wrx_2018;
 use crate::can::virtual_can_generator::run_vcan_generator;
 use crate::data::car_data::CarData;
@@ -13,26 +13,23 @@ use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::signal;
-
 slint::include_modules!();
 
 const VCAN_IF_NAME: &str = "vcan0";
 const CAN_IF_NAME: &str = "can0";
+const CAN_BITRATE: u32 = 500000;
 
 fn main() -> Result<(), slint::PlatformError> {
     let tokio_runtime = tokio::runtime::Runtime::new().unwrap();
     let _guard = tokio_runtime.enter();
 
     let mut handles = Vec::<tokio::task::JoinHandle<()>>::new();
-    let mut car_data = CarData::new();
+    let car_data = CarData::new();
 
     let virtual_cluster = env::var("HR_CLUSTER_VIRTUAL").is_ok_and(|val| val == "1");
     let running_simulation = Arc::new(AtomicBool::new(false));
     let running_vcan = Arc::new(AtomicBool::new(false));
     let mut created_interface = false;
-
-    let init_ui = true;
 
     let (can_if_name, can_if_type) = if virtual_cluster {
         (VCAN_IF_NAME, "vcan")
@@ -60,10 +57,18 @@ fn main() -> Result<(), slint::PlatformError> {
                 if details.is_up {
                     true
                 } else {
-                    match can_interface.bring_up() {
-                        Ok(_) => true,
+                    match can_interface.set_bitrate(CAN_BITRATE, None) {
+                        Ok(_) => match can_interface.bring_up() {
+                            Ok(_) => true,
+                            Err(e) => {
+                                eprintln!("Failed to bring up interface {can_if_name}: {e:?}");
+                                false
+                            }
+                        },
                         Err(e) => {
-                            eprintln!("Failed to bring up interface {can_if_name}: {e:?}");
+                            eprintln!(
+                                "Failed to set bitrate of {can_if_name} to {CAN_BITRATE}: {e:?}"
+                            );
                             false
                         }
                     }
@@ -110,13 +115,23 @@ fn main() -> Result<(), slint::PlatformError> {
         handles.push(vcan_handle);
     }
 
-    if init_ui {
+    {
+        #[cfg(debug_assertions)]
+        if env::var("SLINT_DEBUG_PERFORMANCE")
+            .unwrap_or_default()
+            .is_empty()
+        {
+            env::set_var("SLINT_DEBUG_PERFORMANCE", "refresh_full_speed,overlay");
+        }
+
         let ui = AppWindow::new()?;
 
         ui.global::<ApplicationState>()
             .set_virtual_cluster(virtual_cluster);
+        ui.global::<ApplicationState>()
+            .set_debug_mode(!cfg!(debug_assertions));
 
-        let mut ui_data_bridge = UIDataBridge::new(ui.as_weak(), car_data.clone());
+        let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data.clone());
         ui_data_bridge.run();
 
         if virtual_cluster {
@@ -128,33 +143,9 @@ fn main() -> Result<(), slint::PlatformError> {
                         Ordering::SeqCst,
                     );
                 });
-        } else {
-            #[cfg(not(debug_assertions))]
-            ui.global::<ApplicationState>().set_debug_mode(false);
         }
 
-        ui.run()?
-    } else {
-        tokio_runtime.spawn(async move {
-            let mut engine_rpm = car_data.engine_rpm().watch();
-
-            loop {
-                if engine_rpm.changed().await.is_ok() {
-                    println!(
-                        "Engine RPM changed: {}",
-                        engine_rpm.borrow_and_update().clone()
-                    )
-                }
-            }
-        });
-
-        println!("Ctrl+C to stop");
-        tokio_runtime.block_on(async {
-            signal::ctrl_c()
-                .await
-                .expect("Failed to listen for ctrl_c signal");
-        });
-        println!();
+        ui.run()?;
     }
 
     running_vcan.store(false, Ordering::SeqCst);
