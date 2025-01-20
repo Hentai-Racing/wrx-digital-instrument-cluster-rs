@@ -1,6 +1,7 @@
 mod application;
 mod can;
 mod data;
+mod hardware;
 
 use crate::application::s_car_data_bridge::SCarDataBridge;
 use crate::can::messages::wrx_2018;
@@ -57,18 +58,21 @@ fn main() -> Result<(), slint::PlatformError> {
                 if details.is_up {
                     true
                 } else {
-                    match can_interface.set_bitrate(CAN_BITRATE, None) {
-                        Ok(_) => match can_interface.bring_up() {
-                            Ok(_) => true,
+                    if can_if_type != "vcan" {
+                        match can_interface.set_bitrate(CAN_BITRATE, None) {
+                            Ok(_) => {}
                             Err(e) => {
-                                eprintln!("Failed to bring up interface {can_if_name}: {e:?}");
-                                false
+                                eprintln!(
+                                    "Failed to set bitrate of {can_if_name} to {CAN_BITRATE}: {e:?}"
+                                );
                             }
-                        },
+                        };
+                    }
+
+                    match can_interface.bring_up() {
+                        Ok(_) => true,
                         Err(e) => {
-                            eprintln!(
-                                "Failed to set bitrate of {can_if_name} to {CAN_BITRATE}: {e:?}"
-                            );
+                            eprintln!("Failed to bring up interface {can_if_name}: {e:?}");
                             false
                         }
                     }
@@ -115,6 +119,11 @@ fn main() -> Result<(), slint::PlatformError> {
         handles.push(vcan_handle);
     }
 
+    #[cfg(feature = "apalis_imx8")]
+    {
+        println!("Built for Apalis iMX8");
+    }
+
     {
         #[cfg(debug_assertions)]
         if env::var("SLINT_DEBUG_PERFORMANCE")
@@ -124,12 +133,17 @@ fn main() -> Result<(), slint::PlatformError> {
             env::set_var("SLINT_DEBUG_PERFORMANCE", "refresh_full_speed,overlay");
         }
 
+        slint::BackendSelector::new()
+            .require_opengl_es()
+            .select()
+            .expect("Unable to create slint backend with OpenGL ES");
+
         let ui = AppWindow::new()?;
 
         ui.global::<ApplicationState>()
             .set_virtual_cluster(virtual_cluster);
         ui.global::<ApplicationState>()
-            .set_debug_mode(!cfg!(debug_assertions));
+            .set_debug_mode(cfg!(debug_assertions));
 
         let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data.clone());
         ui_data_bridge.run();

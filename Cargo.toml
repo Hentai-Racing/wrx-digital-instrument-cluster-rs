@@ -15,13 +15,13 @@ kms = ["slint/backend-linuxkms", "slint/renderer-skia-opengl"]
 apalis_imx8 = ["kms", "libgpiod"]
 
 [dependencies]
-slint = { version = "1.9.1", default-features = false, features = [
+slint = { version = "1.9.2", default-features = false, features = [
 	"compat-1-2",
 	"std",
 ] }
-socketcan = { version = "3.4.0", features = ["tokio", "smol"] }
+socketcan = { version = "3.5.0", features = ["tokio", "smol"] }
 rand = "0.8.5"
-tokio = { version = "1.42.0", features = [
+tokio = { version = "1.43.0", features = [
 	"sync",
 	"signal",
 	"rt-multi-thread",
@@ -39,8 +39,12 @@ futures = "0.3.31"
 # required for apalis imx8
 libgpiod = { version = "0.2.2", optional = true }
 
+# 3d testing
+# requires opengl
+three-d = "0.18.1"
+
 [build-dependencies]
-slint-build = { version = "1.9.1" }
+slint-build = { version = "1.9.2" }
 dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }
-syn = "2.0.93"
-prettyplease = "0.2.25"
+syn = "2.0.96"
+prettyplease = "0.2.29"

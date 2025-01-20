@@ -6,9 +6,15 @@ use socketcan::tokio::CanSocket;
 use socketcan::Frame;
 
 macro_rules! param_max_min {
+    ($car_data:ident, $msg:path, $param:ident) => {paste!(
+        $car_data.$param().set_min($msg::[<$param:upper _MIN>]);
+        $car_data.$param().set_max($msg::[<$param:upper _MAX>]);
+    )};
+}
+
+macro_rules! bool_default {
     ($car_data:ident, $msg:path, $param:ident) => {
-        $car_data.$param().set_min(paste!($msg::[<$param:upper _MIN>]));
-        $car_data.$param().set_max(paste!($msg::[<$param:upper _MAX>]));
+        $car_data.$param().set_value(true);
     };
 }
 
@@ -43,6 +49,9 @@ macro_rules! handle_param_type {
     ($car_data:ident, $msg:path => $param:ident: i64) => {
         param_max_min!($car_data, $msg, $param)
     };
+    ($car_data:ident, $msg:path => $param:ident: bool) => {
+        bool_default!($car_data, $msg, $param)
+    };
     ($car_data:ident, $msg:path => $param:ident: $type:ty) => {};
 }
 
@@ -69,6 +78,9 @@ macro_rules! HandleSignalProcess {
 ///     })?
 /// }
 ///```
+///
+/// Note: ```bool``` data types default to true unless otherwise stated
+///
 macro_rules! CarData {
     ( $($msg:ident => { $($(<$unit:path>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; ) => {
         #[derive(Clone, Default)]
@@ -79,13 +91,14 @@ macro_rules! CarData {
         impl CarData {
             pub fn new() -> Self {
                 use Unit::*;
-                let mut car_data = Self {..Default::default()};
+                let mut car_data = Self {
+                    ..Default::default()
+                };
 
                 $($(
+                    handle_param_type!(car_data, wrx_2018::$msg => $param: $type); // set min and max values for number types
                     $(car_data.$param.set_value($init);)? // allow for optional initial values
                     $(car_data.$param.set_units($unit(UnitSystem::SI));)? // allow for optional unit type
-
-                    handle_param_type!(car_data, wrx_2018::$msg => $param: $type); // set min and max values for number types
                 )*)*
 
                 car_data
@@ -103,8 +116,9 @@ macro_rules! CarData {
                 }
             }
 
-            $($(pub fn $param(&mut self) -> &mut DataParameter<$type> {
-                &mut self.$param
+            $($(
+                pub fn $param(&mut self) -> &mut DataParameter<$type> {
+                    &mut self.$param
             })*)*
         }
     }
@@ -121,12 +135,12 @@ CarData!(
         <Temperature> engine_coolant_temp: i16,
         cruise_control_enabled: bool,
         cruise_control_set_enabled: bool,
-        cruise_control_speed: u8,
+        /* <Speed> */ cruise_control_speed: u8,
     };
 
     EngineWarningLights => {
-        oil_pressure_warning_light_enabled: bool = true,
-        check_engine_light_enabled: bool = true,
+        oil_pressure_warning_light_enabled: bool,
+        check_engine_light_enabled: bool,
     };
 
     Odometer => {
@@ -138,61 +152,61 @@ CarData!(
     };
 
     StatusSwitches => {
-        lowbeams_enabled: bool = true,
-        handbrake_sw: bool = true,
-        parking_lights_enabled: bool = true,
-        highbeams_enabled: bool = true,
-        reverse_sw: bool = true
+        lowbeams_enabled: bool,
+        handbrake_sw: bool,
+        parking_lights_enabled: bool,
+        highbeams_enabled: bool,
+        reverse_sw: bool
     };
 
     Cluster => {
         fuel_level: f32,
-        driver_seatbelt_warning_enabled: bool = true,
-        passenger_seatbelt_warning_enabled: bool = true,
-        left_turn_signal_enabled: bool = true,
-        right_turn_signal_enabled: bool = true,
+        driver_seatbelt_warning_enabled: bool,
+        passenger_seatbelt_warning_enabled: bool,
+        left_turn_signal_enabled: bool,
+        right_turn_signal_enabled: bool,
     };
 
     MotorControl => {
-        mt_clutch_sw: bool,
+        mt_clutch_sw: bool = false,
     };
 
     Cluster2 => {
-        fog_lights_enabled: bool = true,
+        fog_lights_enabled: bool,
     };
 
     Cabin => {
-        left_front_door_open: bool = true,
-        right_front_door_open: bool = true,
-        right_rear_door_open: bool = true,
-        left_rear_door_open: bool = true,
-        trunk_open: bool = true,
-        headlight_dimmer_enabled: bool = true,
-        dimmer_max_brightness_enabled: bool = true,
+        left_front_door_open: bool,
+        right_front_door_open: bool,
+        right_rear_door_open: bool,
+        left_rear_door_open: bool,
+        trunk_open: bool,
+        headlight_dimmer_enabled: bool,
+        dimmer_max_brightness_enabled: bool,
     };
 
     XxxMsg340 => {
-        any_door_open: bool = true,
+        any_door_open: bool,
     };
 
     DriverRoadAssists => {
-        hill_assist_enabled: bool = true,
-        active_tq_vectoring_enabled: bool = true,
-        traction_control_disabled: bool = true,
+        hill_assist_enabled: bool,
+        active_tq_vectoring_enabled: bool,
+        traction_control_disabled: bool,
     };
 
     BsdRcta => {
-        rcta_enabled: bool = true,
-        rcta_left: bool = true,
-        rcta_right: bool = true,
-        bsd_left_adjacent: bool = true,
-        bsd_left_approaching: bool = true,
-        bsd_right_adjacent: bool = true,
-        bsd_right_approaching: bool = true,
+        rcta_enabled: bool,
+        rcta_left: bool,
+        rcta_right: bool,
+        bsd_left_adjacent: bool,
+        bsd_left_approaching: bool,
+        bsd_right_adjacent: bool,
+        bsd_right_approaching: bool,
     };
 
     SrsStatus => {
-        srs_warning_light_enabled: bool = true,
+        srs_warning_light_enabled: bool,
     };
 
     DimmerAndHood => {
