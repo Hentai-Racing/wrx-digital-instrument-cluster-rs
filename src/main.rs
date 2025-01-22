@@ -136,23 +136,21 @@ fn main() -> Result<(), slint::PlatformError> {
 
         let ui = AppWindow::new()?;
 
-        ui.global::<ApplicationState>()
-            .set_virtual_cluster(virtual_cluster);
-        ui.global::<ApplicationState>()
-            .set_debug_mode(cfg!(debug_assertions));
+        let application_state = ui.global::<ApplicationState>();
+        application_state.set_virtual_cluster(virtual_cluster);
+        application_state.set_debug_mode(cfg!(debug_assertions));
 
         let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data.clone());
         ui_data_bridge.run();
 
         if virtual_cluster {
             let running_simulation_clone = running_simulation.clone();
-            ui.global::<ApplicationState>()
-                .on_toggle_simulation(move || {
-                    running_simulation_clone.store(
-                        !running_simulation_clone.load(Ordering::SeqCst),
-                        Ordering::SeqCst,
-                    );
-                });
+            application_state.on_toggle_simulation(move || {
+                running_simulation_clone.store(
+                    !running_simulation_clone.load(Ordering::SeqCst),
+                    Ordering::SeqCst,
+                );
+            });
         }
 
         ui.run()?;

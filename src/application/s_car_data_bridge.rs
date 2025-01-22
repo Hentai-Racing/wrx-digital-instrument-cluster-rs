@@ -1,10 +1,9 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-
 use crate::data::{car_data::CarData, units::UnitSystem};
 use crate::slint_generatedAppWindow::*;
 use paste::paste;
 use slint::{ComponentHandle, Weak};
+use tokio::select;
+use tokio::sync::watch;
 
 macro_rules! number_param_convertion_handle {
     ($car_data:ident, $ui_car_data:ident, $unit_system:ident, $param:ident: $type:ty = $value:expr) => {paste!(
@@ -30,6 +29,7 @@ macro_rules! param_convertion_handle {
     ($car_data:ident, $ui_car_data:ident, $unit_system:ident, $param:ident: $type:tt = $value:expr) => {paste!(
         let mut sparam = $ui_car_data.[<get_ $param>]();
         sparam.value = $value.into();
+
         $ui_car_data.[<set_ $param>](sparam);
     )};
 }
@@ -42,38 +42,34 @@ macro_rules! bridge {
             $(
                 let main_window = self.main_window.clone();
                 let mut car_data = self.car_data.clone();
-                let unit_system_arc = Arc::clone(&self.unit_system);
+                let mut unit_system_changed = self.unit_system_watch.subscribe();
                 let mut thread_watch = car_data.$param().watch();
 
                 slint::spawn_local(async_compat::Compat::new(async move {
                     if let Some(main_window) = main_window.upgrade() {
                         let ui_car_data = main_window.global::<SCarData>();
+                        let mut _unit_system: UnitSystem = *unit_system_changed.borrow_and_update();
 
-                        loop {
+                        loop { // do-while for initial setting of values, then wait for update events
                             let value = *thread_watch.borrow_and_update();
-                            let _unit_system: UnitSystem = unit_system_arc.load(Ordering::Relaxed).into();
                             param_convertion_handle!(car_data, ui_car_data, _unit_system, $param: $type = value);
 
-                            if thread_watch.changed().await.is_err() {
-                                break;
-                            }
+                            select! {
+                                biased; // always check the unit system first
+                                Ok(_) = unit_system_changed.changed() => {
+                                    _unit_system = *unit_system_changed.borrow_and_update();
+                                },
+                                Ok(_) = thread_watch.changed() => {},
+                                else => {
+                                    // if for any reason one of the watches errors (by being dropped early), break the loop to stop deadlock
+                                    // this should never happen, but we cannot not break the entire application for safety reasons
+                                    break;
+                                },
+                            };
                         }
                     }
                 })).unwrap();
             )*
-        }
-
-        pub fn update_all(&self) {
-            if let Some(window_binding) = self.main_window.clone().upgrade() {
-                let mut car_data = self.car_data.clone();
-                let ui_car_data = window_binding.global::<SCarData>();
-                let unit_system: UnitSystem = self.unit_system.load(Ordering::Relaxed).into();
-
-                $(
-                    let value = *car_data.$param().watch().borrow();
-                    param_convertion_handle!(car_data, ui_car_data, unit_system, $param: $type = value);
-                )*
-            }
         }
     };
 }
@@ -82,24 +78,24 @@ macro_rules! bridge {
 pub struct SCarDataBridge {
     main_window: Weak<AppWindow>,
     car_data: CarData,
-    unit_system: Arc<AtomicBool>,
+    unit_system_watch: watch::Sender<UnitSystem>,
 }
 
 impl SCarDataBridge {
     pub fn new(main_window: Weak<AppWindow>, car_data: CarData) -> Self {
-        // uses an AtomicBool for the unitsystem because for the foreseable future
-        // there are only two unitsystems we care about
+        let (sender, _) = watch::channel(Default::default());
+
         let ret = Self {
             main_window,
             car_data,
-            unit_system: Arc::new(AtomicBool::new(UnitSystem::default().into())),
+            unit_system_watch: sender,
         };
 
         // set the initial unit system to whatever the UI is set to
         if let Some(window_binding) = ret.main_window.clone().upgrade() {
             let ui_application_state = window_binding.global::<ApplicationState>();
             let unit: UnitSystem = ui_application_state.get_user_unit().into();
-            ret.unit_system.store(unit.into(), Ordering::Relaxed);
+            ret.unit_system_watch.send_replace(unit.into());
         }
 
         ret
@@ -109,17 +105,13 @@ impl SCarDataBridge {
         if let Some(window_binding) = self.main_window.clone().upgrade() {
             let ui_application_state = window_binding.global::<ApplicationState>();
             let ui_binding = window_binding.as_weak().clone();
-            let thread_self = self.clone();
+            let unit_system_watch = self.unit_system_watch.clone();
 
             ui_application_state.on_update_user_unit(move |value: SUnitSystem| {
                 if let Some(window_binding) = ui_binding.upgrade() {
                     let ui_application_state = window_binding.global::<ApplicationState>();
                     ui_application_state.set_user_unit(value);
-                    let unit_system: UnitSystem = value.into();
-                    thread_self
-                        .unit_system
-                        .store(unit_system.into(), Ordering::Relaxed);
-                    thread_self.update_all();
+                    unit_system_watch.send_replace(value.into());
                 }
             });
         }
@@ -232,24 +224,6 @@ impl Into<SUnitSystem> for UnitSystem {
         match self {
             Self::USCS => SUnitSystem::USCS,
             Self::SI => SUnitSystem::SI,
-        }
-    }
-}
-
-impl Into<bool> for UnitSystem {
-    fn into(self) -> bool {
-        match self {
-            Self::USCS => false,
-            Self::SI => true,
-        }
-    }
-}
-
-impl Into<UnitSystem> for bool {
-    fn into(self) -> UnitSystem {
-        match self {
-            false => UnitSystem::USCS,
-            true => UnitSystem::SI,
         }
     }
 }
