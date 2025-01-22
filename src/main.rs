@@ -14,6 +14,7 @@ use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+
 slint::include_modules!();
 
 const VCAN_IF_NAME: &str = "vcan0";
@@ -132,11 +133,6 @@ fn main() -> Result<(), slint::PlatformError> {
         {
             env::set_var("SLINT_DEBUG_PERFORMANCE", "refresh_full_speed,overlay");
         }
-
-        slint::BackendSelector::new()
-            .require_opengl_es()
-            .select()
-            .expect("Unable to create slint backend with OpenGL ES");
 
         let ui = AppWindow::new()?;
 

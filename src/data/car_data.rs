@@ -119,7 +119,8 @@ macro_rules! CarData {
             $($(
                 pub fn $param(&mut self) -> &mut DataParameter<$type> {
                     &mut self.$param
-            })*)*
+                }
+            )*)*
         }
     }
 }

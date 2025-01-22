@@ -1,4 +1,4 @@
-use libgpiod;
+use gpio_cdev;
 
 pub struct ApalisIMX8 {}
 
