@@ -2,6 +2,7 @@ mod application;
 mod can;
 mod data;
 mod hardware;
+mod ui;
 
 use crate::application::s_car_data_bridge::SCarDataBridge;
 use crate::can::messages::wrx_2018;
@@ -14,6 +15,7 @@ use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use ui::model_container;
 
 slint::include_modules!();
 
@@ -53,6 +55,7 @@ fn main() -> Result<(), slint::PlatformError> {
             }
         },
     };
+
     let socket_up = if let Some(can_interface) = &can_interface {
         match can_interface.details() {
             Ok(details) => {
@@ -120,11 +123,7 @@ fn main() -> Result<(), slint::PlatformError> {
         handles.push(vcan_handle);
     }
 
-    #[cfg(feature = "apalis_imx8")]
-    {
-        println!("Built for Apalis iMX8");
-    }
-
+    // UI
     {
         #[cfg(debug_assertions)]
         if env::var("SLINT_DEBUG_PERFORMANCE")
@@ -151,6 +150,65 @@ fn main() -> Result<(), slint::PlatformError> {
                     Ordering::SeqCst,
                 );
             });
+        }
+
+        let debug_menu_state = ui.global::<DebugMenuState>();
+
+        #[cfg(feature = "apalis_imx8")]
+        {
+            use crate::hardware::apalis_imx8::ApalisIMX8;
+
+            let device = ApalisIMX8::new();
+
+            debug_menu_state.on_debug_suspend(move || {
+                device.power_suspend();
+            });
+
+            // device.power_suspend();
+        }
+
+        #[cfg(not(feature = "apalis_imx8"))]
+        {
+            debug_menu_state.on_debug_suspend(|| println!("DEBUG: DO SUSPEND"));
+        }
+
+        #[cfg(feature = "enable_three_d")]
+        {
+            use crate::ui::model_container;
+            use slint::{GraphicsAPI, RenderingState};
+
+            let mut gl_context: Option<three_d::Context> = None;
+            let mut running_model_container: Option<model_container::ModelContainer> = None;
+
+            let ui_clone = ui.as_weak();
+            ui.window()
+                .set_rendering_notifier(move |state, graphics_api| match state {
+                    RenderingState::RenderingSetup => match graphics_api {
+                        GraphicsAPI::NativeOpenGL { get_proc_address } => unsafe {
+                            let loaded_context =
+                                three_d::context::Context::from_loader_function_cstr(|s| {
+                                    get_proc_address(s)
+                                });
+
+                            let tmp = Arc::new(loaded_context);
+
+                            gl_context =
+                                Some(three_d::Context::from_gl_context(tmp).expect(
+                                    "Failed to construct three_d context from Slint context",
+                                ));
+
+                            running_model_container = Some(model_container::ModelContainer::new());
+                        },
+                        _ => eprintln!("Must run with OpenGl for three-d"),
+                    },
+                    RenderingState::BeforeRendering => unsafe {
+                        if let (Some(gl_context), Some(ui)) = (&gl_context, ui_clone.upgrade()) {
+                            ui.window().request_redraw();
+                        }
+                    },
+                    _ => {}
+                })
+                .expect("Failed to set up rendering notifier for three-d");
         }
 
         ui.run()?;

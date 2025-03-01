@@ -62,7 +62,7 @@ macro_rules! bridge {
                                 Ok(_) = thread_watch.changed() => {},
                                 else => {
                                     // if for any reason one of the watches errors (by being dropped early), break the loop to stop deadlock
-                                    // this should never happen, but we cannot not break the entire application for safety reasons
+                                    // this should never happen, but we cannot not break the entire application if it does
                                     break;
                                 },
                             };

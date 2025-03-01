@@ -18,6 +18,16 @@ macro_rules! bool_default {
     };
 }
 
+use UnitSystem::*;
+macro_rules! unit_system_type_overload {
+    ($type:expr) => {
+        $type
+    };
+    () => {
+        SI
+    };
+}
+
 macro_rules! handle_param_type {
     ($car_data:ident, $msg:path => $param:ident: f32) => {
         param_max_min!($car_data, $msg, $param)
@@ -68,7 +78,8 @@ macro_rules! HandleSignalProcess {
 ///```
 /// CarData! {
 ///     MessageEnum => {
-///         <Unit>? [OverrideSetterFn]? param_name: type (= default)?,+
+///         <Unit(:UnitSystem)?>? [OverrideSetterFn]? param_name: type (= default)?,+
+///         <Speed:USCS> [SpeedOverride] cruise_speed: u16 = 91,
 ///     };+
 /// }
 ///
@@ -82,7 +93,7 @@ macro_rules! HandleSignalProcess {
 /// Note: ```bool``` data types default to true unless otherwise stated
 ///
 macro_rules! CarData {
-    ( $($msg:ident => { $($(<$unit:path>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; ) => {
+    ( $($msg:ident => { $($(<$unit:path$(:$unit_system:path)?>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; ) => {
         #[derive(Clone, Default)]
         pub struct CarData {
             $($($param: DataParameter<$type>,)*)*
@@ -98,7 +109,7 @@ macro_rules! CarData {
                 $($(
                     handle_param_type!(car_data, wrx_2018::$msg => $param: $type); // set min and max values for number types
                     $(car_data.$param.set_value($init);)? // allow for optional initial values
-                    $(car_data.$param.set_units($unit(UnitSystem::SI));)? // allow for optional unit type
+                    $(car_data.$param.set_units($unit(unit_system_type_overload!($($unit_system)?)));)? // allow for optional unit type
                 )*)*
 
                 car_data
@@ -136,7 +147,7 @@ CarData!(
         <Temperature> engine_coolant_temp: i16,
         cruise_control_enabled: bool,
         cruise_control_set_enabled: bool,
-        /* <Speed> */ cruise_control_speed: u8,
+        /* <Speed:USCS> */ cruise_control_speed: u8,
     };
 
     EngineWarningLights => {
@@ -215,29 +226,29 @@ CarData!(
     };
 );
 
+fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
+    let search_len = pattern.ilog2() + 1;
+    let mut current = 0u64;
+
+    for &byte in payload {
+        for b in 0u8..8u8 {
+            current = (current << 1) | ((byte >> (7 - b)) & 1) as u64;
+            current &= (1 << search_len) - 1;
+
+            if current == pattern {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
 impl CarData {
     pub async fn bridge_socketcan(&mut self, mut can_socket: CanSocket) {
         use crate::wrx_2018::Messages;
         use embedded_can::Frame;
         use futures::stream::StreamExt;
-
-        fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
-            let search_len = pattern.ilog2() + 1;
-            let mut current = 0u64;
-
-            for &byte in payload {
-                for b in 0u8..8u8 {
-                    current = (current << 1) | ((byte >> (7 - b)) & 1) as u64;
-                    current &= (1 << search_len) - 1;
-
-                    if current == pattern {
-                        return true;
-                    }
-                }
-            }
-
-            false
-        }
 
         while let Some(Ok(frame)) = can_socket.next().await {
             let raw_id = frame.raw_id();

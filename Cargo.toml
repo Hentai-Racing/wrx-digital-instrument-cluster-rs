@@ -2,7 +2,7 @@
 name = "wrx-digital-instrument-cluster-rs"
 description = "A digital instrument cluster for the 2018 Subaru WRX"
 repository = "https://github.com/Hentai-Racing/wrx-digital-instrument-cluster-rs"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Bryce Happel Walton <brycewaltonmail@gmail.com>"]
 edition = "2021"
 build = "build.rs"
@@ -10,17 +10,18 @@ license-file = "LICENSE"
 readme = "README.md"
 
 [features]
-default = ["slint/backend-winit", "slint/renderer-skia"]
+default = ["slint/backend-winit", "slint/renderer-skia", "enable_three_d"]
 kms = ["slint/backend-linuxkms", "slint/renderer-skia-opengl"]
-apalis_imx8 = ["kms", "gpio-cdev"]
+apalis_imx8 = ["gpio-cdev"]
+enable_three_d = ["three-d"]
 
 [dependencies]
-slint = { version = "1.9.2", default-features = false, features = [
+slint = { version = "1.10.0", default-features = false, features = [
 	"compat-1-2",
 	"std",
 ] }
-socketcan = { version = "3.5.0", features = ["tokio", "smol"] }
-rand = "0.8.5"
+socketcan = { version = "3.5.0", features = ["tokio"] }
+rand = "0.9.0"
 tokio = { version = "1.43.0", features = [
 	"sync",
 	"signal",
@@ -41,10 +42,10 @@ gpio-cdev = { version = "0.6.0", optional = true, features = ["async-tokio"] }
 
 # 3d testing
 # requires opengl
-three-d = "0.18.1"
+three-d = { version = "0.18.2", optional = true }
 
 [build-dependencies]
-slint-build = { version = "1.9.2" }
+slint-build = { version = "1.10.0" }
 dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }
-syn = "2.0.96"
+syn = "2.0.98"
 prettyplease = "0.2.29"

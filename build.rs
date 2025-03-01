@@ -1,3 +1,5 @@
+const SLINT_PATH: &str = "src/slint-ui"; // path to the directory that contains `main.slint`
+
 /// Generates Rust code from dbc files in resources/database/dbc/
 ///
 /// The generated code is placed in src/can/messages/
@@ -161,20 +163,19 @@ fn generate_vcan_handler() {
                                 };
 
                                 let mut value_expression: String =
-                                    format!("let {} = rand::thread_rng()", param_name);
+                                    format!("let {param_name} = rand::rng()",);
 
                                 if let syn::Type::Path(type_path) = &*pat_type.ty {
                                     if type_path.path.segments.last().unwrap().ident == "bool" {
-                                        value_expression += ".gen_bool(0.5);";
+                                        value_expression += ".random_bool(0.5);";
                                     } else {
                                         let value_ident_path: String = format!(
-                                            "{}::{}",
-                                            signal_path,
+                                            "{signal_path}::{}",
                                             param_name.to_string().to_uppercase()
                                         );
 
                                         value_expression += &format!(
-                                            ".gen_range({0}_MIN..={0}_MAX);",
+                                            ".random_range({0}_MIN..={0}_MAX);",
                                             value_ident_path
                                         )
                                     }
@@ -243,7 +244,7 @@ fn generate_vcan_handler() {
 }
 
 // generates slint car data globals
-fn generate_slint_car_data() {
+fn generate_slint_car_data(slint_path: impl AsRef<std::path::Path>) {
     use std::fs;
     use std::io::{self, Write};
     use std::path;
@@ -404,7 +405,7 @@ fn generate_slint_car_data() {
     gen_output += &gen_block;
     gen_output += "}";
 
-    let rs_out_dir = path::Path::new("src/ui/data/car_data.slint");
+    let rs_out_dir = slint_path.as_ref().join("data/car_data.slint");
     let rs_out_file = fs::File::create(rs_out_dir).expect("Unable to create file");
     let mut mod_writter = io::BufWriter::new(rs_out_file);
 
@@ -414,9 +415,11 @@ fn generate_slint_car_data() {
 }
 
 fn main() {
+    let slint_path = std::path::Path::new(SLINT_PATH);
+
     build_dbc();
     generate_vcan_handler();
-    generate_slint_car_data();
+    generate_slint_car_data(slint_path);
 
-    slint_build::compile("src/ui/main.slint").unwrap();
+    slint_build::compile(slint_path.join("main.slint")).unwrap();
 }
