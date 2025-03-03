@@ -5,6 +5,7 @@ mod hardware;
 mod ui;
 
 use crate::application::s_car_data_bridge::SCarDataBridge;
+use crate::can::device_manager;
 use crate::can::messages::wrx_2018;
 use crate::can::virtual_can_generator::run_vcan_generator;
 use crate::data::car_data::CarData;
@@ -172,7 +173,7 @@ fn main() -> Result<(), slint::PlatformError> {
             debug_menu_state.on_debug_suspend(|| println!("DEBUG: DO SUSPEND"));
         }
 
-        #[cfg(feature = "enable_three_d")]
+        #[cfg(feature = "three_d")]
         {
             use crate::ui::model_container;
             use slint::{GraphicsAPI, RenderingState};

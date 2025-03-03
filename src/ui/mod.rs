@@ -1,2 +1,2 @@
-#[cfg(feature = "enable_three_d")]
+#[cfg(feature = "three_d")]
 pub mod model_container;
