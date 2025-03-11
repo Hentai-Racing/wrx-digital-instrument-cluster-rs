@@ -1,5 +1,5 @@
 use crate::data::{car_data::CarData, units::UnitSystem};
-use crate::slint_generatedAppWindow::*;
+use crate::slint_generatedApp::*;
 use paste::paste;
 use slint::{ComponentHandle, Weak};
 use tokio::select;
@@ -76,13 +76,13 @@ macro_rules! bridge {
 
 #[derive(Clone)]
 pub struct SCarDataBridge {
-    main_window: Weak<AppWindow>,
+    main_window: Weak<App>,
     car_data: CarData,
     unit_system_watch: watch::Sender<UnitSystem>,
 }
 
 impl SCarDataBridge {
-    pub fn new(main_window: Weak<AppWindow>, car_data: CarData) -> Self {
+    pub fn new(main_window: Weak<App>, car_data: CarData) -> Self {
         let (sender, _) = watch::channel(Default::default());
 
         let ret = Self {

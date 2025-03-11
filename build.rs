@@ -1,3 +1,7 @@
+use std::fs::{self, File};
+use std::io::{BufWriter, Write};
+use std::path::Path;
+
 const SLINT_PATH: &str = "src/slint-ui"; // path to the directory that contains `main.slint`
 
 /// Generates Rust code from dbc files in resources/database/dbc/
@@ -5,10 +9,6 @@ const SLINT_PATH: &str = "src/slint-ui"; // path to the directory that contains 
 /// The generated code is placed in src/can/messages/
 fn build_dbc() {
     use dbc_codegen::{self, Config};
-    use std::fs::{self, File};
-    use std::io::BufWriter;
-    use std::io::Write;
-    use std::path::Path;
 
     let dbc_file_dir = Path::new("resources/database/dbc/");
     let rs_messages_out_dir = Path::new("src/can/messages/");
@@ -63,9 +63,6 @@ fn build_dbc() {
 
 /// Generates Rust code for virtual CAN data generation
 fn generate_vcan_handler() {
-    use std::fs;
-    use std::io::{self, Write};
-    use std::path;
     use syn;
 
     // Read the mod.rs file
@@ -231,9 +228,9 @@ fn generate_vcan_handler() {
     gen_output += "sleep(delay);";
     gen_output += "}}}";
 
-    let rs_out_dir = path::Path::new("src/can/virtual_can_generator.rs");
-    let rs_out_file = fs::File::create(rs_out_dir).expect("Unable to create file");
-    let mut mod_writter = io::BufWriter::new(rs_out_file);
+    let rs_out_dir = Path::new("src/can/virtual_can_generator.rs");
+    let rs_out_file = File::create(rs_out_dir).expect("Unable to create file");
+    let mut mod_writter = BufWriter::new(rs_out_file);
 
     let syn_data = syn::parse_file(gen_output.as_str()).expect("Unable to parse generated code!");
     let formatted_data = prettyplease::unparse(&syn_data);
@@ -244,10 +241,7 @@ fn generate_vcan_handler() {
 }
 
 // generates slint car data globals
-fn generate_slint_car_data(slint_path: impl AsRef<std::path::Path>) {
-    use std::fs;
-    use std::io::{self, Write};
-    use std::path;
+fn generate_slint_car_data(slint_path: impl AsRef<Path>) {
     use syn;
 
     // Read the mod.rs file
@@ -406,8 +400,8 @@ fn generate_slint_car_data(slint_path: impl AsRef<std::path::Path>) {
     gen_output += "}";
 
     let rs_out_dir = slint_path.as_ref().join("data/car_data.slint");
-    let rs_out_file = fs::File::create(rs_out_dir).expect("Unable to create file");
-    let mut mod_writter = io::BufWriter::new(rs_out_file);
+    let rs_out_file = File::create(rs_out_dir).expect("Unable to create file");
+    let mut mod_writter = BufWriter::new(rs_out_file);
 
     mod_writter
         .write(gen_output.as_bytes())
@@ -415,7 +409,7 @@ fn generate_slint_car_data(slint_path: impl AsRef<std::path::Path>) {
 }
 
 fn main() {
-    let slint_path = std::path::Path::new(SLINT_PATH);
+    let slint_path = Path::new(SLINT_PATH);
 
     build_dbc();
     generate_vcan_handler();

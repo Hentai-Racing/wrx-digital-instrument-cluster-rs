@@ -57,33 +57,38 @@ component GaugeAttachedSymbol inherits SymbolLight {
     y: center-y - self.height / 2 - ((center-radius + radius + radius-offset) * sin(angle));
 }
 
-export component AppWindow inherits Window {
+export component App inherits Window {
     in property <image> threed-widget-texture <=> threed-container-image.source;
+    out property <length> threed-widget-width: threed-container-image.width;
+    out property <length> threed-widget-height: threed-container-image.height;
+    out property <length> threed-widget-x: threed-container-image.absolute-position.x;
+    out property <length> threed-widget-y: threed-container-image.absolute-position.y;
+    out property <bool> threed-widget-visible: center-widget-container.current-page == 2;
 
     default-font-family: "Montserrat";
     default-font-weight: 400;
 
-    title: "WRX Digital Instrument Cluster";
+    // title: "WRX Digital Instrument Cluster";
 
     preferred-height: 720px;
     preferred-width: 1920px;
 
-    background: black;
+    background: transparent;
+    // background: black;
 
-    FocusScope {
-        key-pressed(event) => {
-            if ((event.text == Key.DownArrow) && (center-widget-container.current-page < center-widget-container.num-widgets - 1)) {
-                center-widget-container.current-page += 1;
-            } else if ((event.text == Key.UpArrow) && (center-widget-container.current-page > 0)) {
-                center-widget-container.current-page -= 1;
-            }
-            accept
-        }
-    }
+    // FocusScope {
+    //     key-pressed(event) => {
+    //         if ((event.text == Key.DownArrow) && (center-widget-container.current-page < center-widget-container.num-widgets - 1)) {
+    //             center-widget-container.current-page += 1;
+    //         } else if ((event.text == Key.UpArrow) && (center-widget-container.current-page > 0)) {
+    //             center-widget-container.current-page -= 1;
+    //         }
+    //         accept
+    //     }
+    // }
 
     VerticalLayout {
         top-span := PrimarySection {
-            background: transparent;
             height: max(SymbolProperties.size, root.height * 1 / 20);
         }
 
@@ -373,7 +378,7 @@ export component AppWindow inherits Window {
                 padding: 10px;
 
                 Rectangle {
-                    background: ApplicationState.debug_mode ? purple : transparent;
+                    // background: ApplicationState.debug_mode ? purple : transparent;
                     border-radius: 5px;
 
                     property <length> buffer: 2.5px;
@@ -386,7 +391,7 @@ export component AppWindow inherits Window {
                             current-page = to-page;
                         }
 
-                        background: black;
+                        background: transparent;
                         border-radius: parent.border-radius;
                         clip: true;
 
@@ -405,6 +410,16 @@ export component AppWindow inherits Window {
                             y: 0;
 
                             property <length> indicator-width: self.height;
+
+                            indicator-highlighter := Rectangle {
+                                background: purple;
+                                width: indicator-width;
+                                x: parent.width / 2 - indicator-layout.width / 2 + current-page * indicator-width;
+                                animate x {
+                                    duration: page-animation-duration;
+                                    easing: ease-in-out;
+                                }
+                            }
 
                             indicator-layout := HorizontalLayout {
                                 x: parent.width / 2 - self.width / 2;
@@ -431,16 +446,6 @@ export component AppWindow inherits Window {
                                     }
                                 }
                             }
-
-                            indicator-highlighter := Rectangle {
-                                background: purple;
-                                width: indicator-width;
-                                x: parent.width / 2 - indicator-layout.width / 2 + current-page * indicator-width;
-                                animate x {
-                                    duration: page-animation-duration;
-                                    easing: ease-in-out;
-                                }
-                            }
                         }
 
                         center-widget-container-inner := Rectangle {
@@ -448,9 +453,12 @@ export component AppWindow inherits Window {
                             height: 90%;
 
                             y: parent.height - self.height;
+                            clip: true;
 
                             center-widget-container-layout := HorizontalLayout {
-                                x: -current-page * center-widget-container.width;
+                                spacing: 10px;
+
+                                x: -current-page * center-widget-container.width - self.spacing * current-page;
                                 animate x {
                                     duration: page-animation-duration;
                                     easing: ease-in-out;
@@ -466,15 +474,11 @@ export component AppWindow inherits Window {
                                     width: 100%;
                                 }
 
-                                Rectangle {
+                                threed-container-image := Image {
+                                    min-height: 1px;
+                                    min-width: 1px;
                                     height: 100%;
                                     width: 100%;
-                                    background: yellow;
-
-                                    threed-container-image := Image {
-                                        height: 100%;
-                                        width: 100%;
-                                    }
                                 }
                             }
                         }

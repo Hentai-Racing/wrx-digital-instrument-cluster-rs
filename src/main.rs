@@ -5,7 +5,6 @@ mod hardware;
 mod ui;
 
 use crate::application::s_car_data_bridge::SCarDataBridge;
-use crate::can::device_manager;
 use crate::can::messages::wrx_2018;
 use crate::can::virtual_can_generator::run_vcan_generator;
 use crate::data::car_data::CarData;
@@ -16,7 +15,6 @@ use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use ui::model_container;
 
 slint::include_modules!();
 
@@ -134,7 +132,7 @@ fn main() -> Result<(), slint::PlatformError> {
             env::set_var("SLINT_DEBUG_PERFORMANCE", "refresh_full_speed,overlay");
         }
 
-        let ui = AppWindow::new()?;
+        let ui = App::new()?;
 
         let application_state = ui.global::<ApplicationState>();
         application_state.set_virtual_cluster(virtual_cluster);
@@ -164,10 +162,7 @@ fn main() -> Result<(), slint::PlatformError> {
             debug_menu_state.on_debug_suspend(move || {
                 device.power_suspend();
             });
-
-            // device.power_suspend();
         }
-
         #[cfg(not(feature = "apalis_imx8"))]
         {
             debug_menu_state.on_debug_suspend(|| println!("DEBUG: DO SUSPEND"));
@@ -175,41 +170,46 @@ fn main() -> Result<(), slint::PlatformError> {
 
         #[cfg(feature = "three_d")]
         {
-            use crate::ui::model_container;
-            use slint::{GraphicsAPI, RenderingState};
+            use crate::ui::three_d_underlay::ModelContainer;
 
-            let mut gl_context: Option<three_d::Context> = None;
-            let mut running_model_container: Option<model_container::ModelContainer> = None;
+            let weak_app = ui.as_weak();
 
-            let ui_clone = ui.as_weak();
+            let mut model_container = None;
+
             ui.window()
                 .set_rendering_notifier(move |state, graphics_api| match state {
-                    RenderingState::RenderingSetup => match graphics_api {
-                        GraphicsAPI::NativeOpenGL { get_proc_address } => unsafe {
-                            let loaded_context =
-                                three_d::context::Context::from_loader_function_cstr(|s| {
-                                    get_proc_address(s)
-                                });
+                    slint::RenderingState::RenderingSetup => {
+                        let gl_context = match graphics_api {
+                            slint::GraphicsAPI::NativeOpenGL { get_proc_address } => unsafe {
+                                three_d::context::Context::from_loader_function_cstr(
+                                    get_proc_address,
+                                )
+                            },
+                            _ => return,
+                        };
 
-                            let tmp = Arc::new(loaded_context);
-
-                            gl_context =
-                                Some(three_d::Context::from_gl_context(tmp).expect(
-                                    "Failed to construct three_d context from Slint context",
-                                ));
-
-                            running_model_container = Some(model_container::ModelContainer::new());
-                        },
-                        _ => eprintln!("Must run with OpenGl for three-d"),
-                    },
-                    RenderingState::BeforeRendering => unsafe {
-                        if let (Some(gl_context), Some(ui)) = (&gl_context, ui_clone.upgrade()) {
-                            ui.window().request_redraw();
+                        if let Ok(context) = three_d::Context::from_gl_context(Arc::new(gl_context))
+                        {
+                            model_container = Some(ModelContainer::new(context));
                         }
-                    },
+                    }
+                    slint::RenderingState::BeforeRendering => {
+                        if let (Some(model_container), Some(app)) =
+                            (&model_container, weak_app.upgrade())
+                        {
+                            if app.get_threed_widget_visible() {
+                                let image = model_container.render(
+                                    app.get_threed_widget_width() as _,
+                                    app.get_threed_widget_height() as _,
+                                );
+                                app.set_threed_widget_texture(image);
+                                app.window().request_redraw();
+                            }
+                        }
+                    }
                     _ => {}
                 })
-                .expect("Failed to set up rendering notifier for three-d");
+                .unwrap();
         }
 
         ui.run()?;
