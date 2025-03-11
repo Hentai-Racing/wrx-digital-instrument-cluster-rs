@@ -68,24 +68,23 @@ export component App inherits Window {
     default-font-family: "Montserrat";
     default-font-weight: 400;
 
-    // title: "WRX Digital Instrument Cluster";
+    title: "WRX Digital Instrument Cluster";
 
     preferred-height: 720px;
     preferred-width: 1920px;
 
-    background: transparent;
-    // background: black;
+    background: black;
 
-    // FocusScope {
-    //     key-pressed(event) => {
-    //         if ((event.text == Key.DownArrow) && (center-widget-container.current-page < center-widget-container.num-widgets - 1)) {
-    //             center-widget-container.current-page += 1;
-    //         } else if ((event.text == Key.UpArrow) && (center-widget-container.current-page > 0)) {
-    //             center-widget-container.current-page -= 1;
-    //         }
-    //         accept
-    //     }
-    // }
+    FocusScope {
+        key-pressed(event) => {
+            if ((event.text == Key.DownArrow) && (center-widget-container.current-page < center-widget-container.num-widgets - 1)) {
+                center-widget-container.current-page += 1;
+            } else if ((event.text == Key.UpArrow) && (center-widget-container.current-page > 0)) {
+                center-widget-container.current-page -= 1;
+            }
+            accept
+        }
+    }
 
     VerticalLayout {
         top-span := PrimarySection {
@@ -474,11 +473,14 @@ export component App inherits Window {
                                     width: 100%;
                                 }
 
-                                threed-container-image := Image {
-                                    min-height: 1px;
-                                    min-width: 1px;
+                                Rectangle {
                                     height: 100%;
                                     width: 100%;
+
+                                    threed-container-image := Image {
+                                        height: 100%;
+                                        width: 100%;
+                                    }
                                 }
                             }
                         }

@@ -168,7 +168,7 @@ fn main() -> Result<(), slint::PlatformError> {
             debug_menu_state.on_debug_suspend(|| println!("DEBUG: DO SUSPEND"));
         }
 
-        #[cfg(feature = "three_d")]
+        #[cfg(feature = "three-d")]
         {
             use crate::ui::three_d_underlay::ModelContainer;
 
@@ -195,7 +195,7 @@ fn main() -> Result<(), slint::PlatformError> {
                     }
                     slint::RenderingState::BeforeRendering => {
                         if let (Some(model_container), Some(app)) =
-                            (&model_container, weak_app.upgrade())
+                            (&mut model_container, weak_app.upgrade())
                         {
                             if app.get_threed_widget_visible() {
                                 let image = model_container.render(

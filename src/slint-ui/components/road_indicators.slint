@@ -4,21 +4,21 @@ import { SymbolProperties } from "../themes/main_symbol_properties.slint";
 export component RoadIndicatorWidget inherits Rectangle {
     background: transparent;
 
-    in property <float> lane-top-y: self.height / 2.4px;
-    in property <float> lane-bottom-y: self.height / 1px - self.height / 20px;
+    in property <float> lane-top-y: self.height / 2.4phx;
+    in property <float> lane-bottom-y: self.height / 1phx - self.height / 20phx;
 
-    property <float> top-gradient: 1 - (lane-top-y / self.height * 1px);
-    property <float> bottom-gradient: 1 - (lane-bottom-y / self.height * 1px);
+    property <float> top-gradient: 1 - (lane-top-y / self.height * 1phx);
+    property <float> bottom-gradient: 1 - (lane-bottom-y / self.height * 1phx);
 
-    in property <float> lane-top-width: self.width / 3.2px;
-    in property <float> lane-bottom-width: self.width / 1.2px;
+    in property <float> lane-top-width: self.width / 3.2phx;
+    in property <float> lane-bottom-width: self.width / 1.2phx;
     in property <float> lane-thickness: 3.5;
 
     in property <brush> left-lane-fill: brush-fill-normal;
     in property <brush> right-lane-fill: brush-fill-normal;
 
-    property <float> top-x: self.width / 2px - lane-top-width / 2;
-    property <float> bottom-x: self.width / 2px - lane-bottom-width / 2;
+    property <float> top-x: self.width / 2phx - lane-top-width / 2;
+    property <float> bottom-x: self.width / 2phx - lane-bottom-width / 2;
 
     in property <color> lane-color: #8a8787;
 
@@ -29,8 +29,8 @@ export component RoadIndicatorWidget inherits Rectangle {
     property <bool> bsd_enabled: SCarData.rcta_enabled.value;
 
     lane-left := Path {
-        viewbox-height: parent.height / 1px;
-        viewbox-width: parent.width / 1px;
+        viewbox-height: parent.height / 1phx;
+        viewbox-width: parent.width / 1phx;
 
         fill: root.left-lane-fill;
 
@@ -73,8 +73,8 @@ export component RoadIndicatorWidget inherits Rectangle {
     }
 
     lane-right := Path {
-        viewbox-height: parent.height / 1px;
-        viewbox-width: parent.width / 1px;
+        viewbox-height: parent.height / 1phx;
+        viewbox-width: parent.width / 1phx;
 
         fill: root.right-lane-fill;
 

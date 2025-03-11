@@ -1,2 +1,2 @@
-#[cfg(feature = "three_d")]
+#[cfg(feature = "three-d")]
 pub mod three_d_underlay;

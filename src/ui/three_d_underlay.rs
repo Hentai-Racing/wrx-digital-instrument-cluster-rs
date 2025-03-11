@@ -1,24 +1,28 @@
+use std::time::Instant;
 use three_d::{
     context::{
         COLOR_ATTACHMENT0, FRAMEBUFFER, LINEAR, RGBA, TEXTURE_2D, TEXTURE_MAG_FILTER,
         TEXTURE_MIN_FILTER, UNSIGNED_BYTE,
     },
-    degrees, vec3, Camera, ClearState, ColorMaterial, CpuMesh, Gm, HasContext, Mesh, Positions,
-    RenderTarget, Srgba,
+    degrees, radians, vec3, Camera, ClearState, ColorMaterial, CpuMesh, Geometry, Gm, HasContext,
+    Mat4, Mesh, Positions, RenderTarget, Srgba,
 };
 
 pub struct ModelContainer {
     context: three_d::Context,
     model: Gm<Mesh, ColorMaterial>,
+    time: Instant,
 }
 
 impl ModelContainer {
     pub fn new(context: three_d::Context) -> Self {
+        let size = 0.25;
+
         let cpu_mesh = CpuMesh {
             positions: Positions::F32(vec![
-                vec3(0.5, -0.5, 0.0),  // bottom right
-                vec3(-0.5, -0.5, 0.0), // bottom left
-                vec3(0.0, 0.5, 0.0),   // top
+                vec3(size, -size, 0.0),  // bottom right
+                vec3(-size, -size, 0.0), // bottom left
+                vec3(0.0, size, 0.0),    // top
             ]),
             colors: Some(vec![
                 Srgba::new(255, 0, 0, 255), // bottom right
@@ -28,12 +32,20 @@ impl ModelContainer {
             ..Default::default()
         };
 
-        let model = Gm::new(Mesh::new(&context, &cpu_mesh), ColorMaterial::default());
+        let mut model = Gm::new(Mesh::new(&context, &cpu_mesh), ColorMaterial::default());
 
-        Self { context, model }
+        model.set_animation(|time| Mat4::from_angle_y(radians(time * 0.005)));
+
+        let time = Instant::now();
+
+        Self {
+            context,
+            model,
+            time,
+        }
     }
 
-    pub fn render(&self, width: u32, height: u32) -> slint::Image {
+    pub fn render(&mut self, width: u32, height: u32) -> slint::Image {
         let context = &self.context;
 
         unsafe {
@@ -42,7 +54,7 @@ impl ModelContainer {
             context.tex_image_2d(
                 TEXTURE_2D,
                 0,
-                RGBA as _,
+                RGBA as _, // !Required in order for Slint to make an image
                 width as _,
                 height as _,
                 0,
@@ -69,13 +81,16 @@ impl ModelContainer {
                 renderer.viewport(),
                 vec3(0.0, 0.0, 2.0),
                 vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 1.0, 0.0),
+                vec3(0.0, -1.0, 0.0), // negative because it is flipped for some reason
                 degrees(45.0),
                 0.1,
                 10.0,
             );
 
-            renderer.clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0));
+            self.model
+                .animate(self.time.elapsed().as_millis() as f32 * 0.5);
+
+            renderer.clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 0.0, 1.0));
             renderer.render(camera, &self.model, &[]);
 
             slint::BorrowedOpenGLTextureBuilder::new_gl_2d_rgba_texture(

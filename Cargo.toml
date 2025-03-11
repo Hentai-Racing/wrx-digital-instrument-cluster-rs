@@ -10,17 +10,14 @@ license-file = "LICENSE"
 readme = "README.md"
 
 [features]
-default = ["slint/backend-winit", "slint/renderer-skia-opengl"]
+default = ["slint/backend-winit", "slint/renderer-femtovg", "three-d"]
 kms = ["slint/backend-linuxkms", "slint/renderer-skia-opengl"]
 apalis_imx8 = ["dep:gpio-cdev"]
-three_d = [
-	"dep:three-d",
-	"slint/renderer-femtovg",
-] # https://github.com/slint-ui/slint/issues/7845
+three-d = ["dep:three-d"]                                              # https://github.com/slint-ui/slint/issues/7845
 slcan = ["dep:slcan"]
 
 [dependencies]
-slint = { git = "https://github.com/slint-ui/slint.git", default-features = false, features = [
+slint = { version = "1.10.0", default-features = false, features = [
 	"compat-1-2",
 	"std",
 ] }
@@ -49,7 +46,7 @@ socketcan = { version = "3.5.0", features = ["tokio"] }
 async-compat = "0.2.4"
 
 [build-dependencies]
-slint-build = { git = "https://github.com/slint-ui/slint.git" }
+slint-build = "1.10.0"
 dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }
 syn = "2.0.100"
 prettyplease = "0.2.30"
