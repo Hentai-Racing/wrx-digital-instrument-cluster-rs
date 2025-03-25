@@ -10,43 +10,45 @@ license-file = "LICENSE"
 readme = "README.md"
 
 [features]
-default = ["slint/backend-winit", "slint/renderer-femtovg", "three-d"]
+default = ["slint/backend-winit", "slint/renderer-skia-opengl"]
 kms = ["slint/backend-linuxkms", "slint/renderer-skia-opengl"]
 apalis_imx8 = ["dep:gpio-cdev"]
-three-d = ["dep:three-d"]                                              # https://github.com/slint-ui/slint/issues/7845
-slcan = ["dep:slcan"]
+three-d = [
+    "dep:three-d",
+] # https://github.com/slint-ui/slint/issues/7845 skia does not work well with opengl context sharing, and femtovg doesn't work well in general
 
 [dependencies]
-slint = { version = "1.10.0", default-features = false, features = [
-	"compat-1-2",
-	"std",
+slint = { git = "https://github.com/slint-ui/slint.git", default-features = false, features = [
+    "compat-1-2",
+    "std",
 ] }
-rand = "0.9.0"
-paste = "1.0.15"
+async-compat = "*"
+rand = "*"
+paste = "*"
+clap = "*"
+serial = "*"
+slcan = { version = "*" }
+embedded-can = "*"
+futures = "*"
 
 # feature deps
-gpio-cdev = { version = "0.6.0", optional = true, features = ["async-tokio"] }
+gpio-cdev = { version = "*", optional = true, features = ["async-tokio"] }
 three-d = { git = "https://github.com/asny/three-d.git", optional = true }
-slcan = { version = "0.1.3", optional = true }
 
 # required due to dbc-codegen
-bitvec = "1.0.1"
-embedded-can = "0.4.1"
-futures = "0.3.31"
-tokio = { version = "1.44.0", features = [
-	"sync",
-	"signal",
-	"rt-multi-thread",
-	"macros",
+bitvec = "*"
+tokio = { version = "*", features = [
+    "sync",
+    "signal",
+    "rt-multi-thread",
+    "macros",
 ], default-features = false }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-socketcan = { version = "3.5.0", features = ["tokio"] }
-
-async-compat = "0.2.4"
+socketcan = { version = "*", features = ["tokio"] }
 
 [build-dependencies]
-slint-build = "1.10.0"
+slint-build = { git = "https://github.com/slint-ui/slint.git" }
 dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }
-syn = "2.0.100"
-prettyplease = "0.2.30"
+syn = "*"
+prettyplease = "*"

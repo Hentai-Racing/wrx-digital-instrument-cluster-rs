@@ -17,9 +17,9 @@ export component RadialRect inherits Rectangle {
 
     in property <brush> fill: white;
     if center-on == RadialCenter.Bottom: Path {
-        viewbox-width: root.width / 1phx;
-        viewbox-height: root.height / 1phx;
-        fill: root.fill;
+        viewbox-width: self.width / 1px;
+        viewbox-height: self.height / 1px;
+        fill: parent.fill;
 
         MoveTo {
             x: (parent.viewbox-width / 2) + cos(rotation) * (parent.viewbox-width / 2);
@@ -32,19 +32,19 @@ export component RadialRect inherits Rectangle {
         }
 
         LineTo {
-            x: (parent.viewbox-width / 2) + cos(rotation - inner-thickness) * (inner-radius / 1phx);
-            y: (parent.viewbox-height / 2) - sin(rotation - inner-thickness) * (inner-radius / 1phx);
+            x: (parent.viewbox-width / 2) + cos(rotation - inner-thickness) * (inner-radius / 1px);
+            y: (parent.viewbox-height / 2) - sin(rotation - inner-thickness) * (inner-radius / 1px);
         }
 
         LineTo {
-            x: (parent.viewbox-width / 2) + cos(rotation) * (inner-radius / 1phx);
-            y: (parent.viewbox-height / 2) - sin(rotation) * (inner-radius / 1phx);
+            x: (parent.viewbox-width / 2) + cos(rotation) * (inner-radius / 1px);
+            y: (parent.viewbox-height / 2) - sin(rotation) * (inner-radius / 1px);
         }
     }
     if center-on == RadialCenter.Top: Path {
-        viewbox-width: root.width / 1phx;
-        viewbox-height: root.height / 1phx;
-        fill: root.fill;
+        viewbox-width: self.width / 1px;
+        viewbox-height: self.height / 1px;
+        fill: parent.fill;
 
         MoveTo {
             x: (parent.viewbox-width / 2) + cos(rotation) * (parent.viewbox-width / 2);
@@ -57,19 +57,19 @@ export component RadialRect inherits Rectangle {
         }
 
         LineTo {
-            x: (parent.viewbox-width / 2) + cos(rotation + inner-thickness) * (inner-radius / 1phx);
-            y: (parent.viewbox-height / 2) - sin(rotation + inner-thickness) * (inner-radius / 1phx);
+            x: (parent.viewbox-width / 2) + cos(rotation + inner-thickness) * (inner-radius / 1px);
+            y: (parent.viewbox-height / 2) - sin(rotation + inner-thickness) * (inner-radius / 1px);
         }
 
         LineTo {
-            x: (parent.viewbox-width / 2) + cos(rotation) * (inner-radius / 1phx);
-            y: (parent.viewbox-height / 2) - sin(rotation) * (inner-radius / 1phx);
+            x: (parent.viewbox-width / 2) + cos(rotation) * (inner-radius / 1px);
+            y: (parent.viewbox-height / 2) - sin(rotation) * (inner-radius / 1px);
         }
     }
     if center-on == RadialCenter.Center: Path {
-        viewbox-width: root.width / 1phx;
-        viewbox-height: root.height / 1phx;
-        fill: root.fill;
+        viewbox-width: self.width / 1px;
+        viewbox-height: self.height / 1px;
+        fill: parent.fill;
 
         MoveTo {
             x: (parent.viewbox-width / 2) + cos(rotation + outer-thickness / 2) * (parent.viewbox-width / 2);
@@ -82,13 +82,13 @@ export component RadialRect inherits Rectangle {
         }
 
         LineTo {
-            x: (parent.viewbox-width / 2) + cos(rotation - inner-thickness / 2) * (inner-radius / 1phx);
-            y: (parent.viewbox-height / 2) - sin(rotation - inner-thickness / 2) * (inner-radius / 1phx);
+            x: (parent.viewbox-width / 2) + cos(rotation - inner-thickness / 2) * (inner-radius / 1px);
+            y: (parent.viewbox-height / 2) - sin(rotation - inner-thickness / 2) * (inner-radius / 1px);
         }
 
         LineTo {
-            x: (parent.viewbox-width / 2) + cos(rotation + inner-thickness / 2) * (inner-radius / 1phx);
-            y: (parent.viewbox-height / 2) - sin(rotation + inner-thickness / 2) * (inner-radius / 1phx);
+            x: (parent.viewbox-width / 2) + cos(rotation + inner-thickness / 2) * (inner-radius / 1px);
+            y: (parent.viewbox-height / 2) - sin(rotation + inner-thickness / 2) * (inner-radius / 1px);
         }
     }
 }
@@ -99,48 +99,48 @@ export component GaugeArc inherits Path {
 
     property <angle> angle-range: end - start;
 
-    in property <length> inner-radius: root.width / 3;
-    in property <length> outer-radius: root.width / 2;
+    in property <length> inner-radius: self.width / 3;
+    in property <length> outer-radius: self.width / 2;
 
-    viewbox-width: root.width / 1phx;
-    viewbox-height: root.height / 1phx;
+    viewbox-width: self.width / 1px;
+    viewbox-height: self.height / 1px;
 
     MoveTo {
-        x: (root.viewbox-width / 2) + cos(start) * (outer-radius / 1phx);
-        y: (root.viewbox-height / 2) - sin(start) * (outer-radius / 1phx);
+        x: (parent.viewbox-width / 2) + cos(start) * (outer-radius / 1px);
+        y: (parent.viewbox-height / 2) - sin(start) * (outer-radius / 1px);
     }
 
     LineTo {
-        x: (root.viewbox-width / 2) + cos(start) * (inner-radius / 1phx);
-        y: (root.viewbox-height / 2) - sin(start) * (inner-radius / 1phx);
+        x: (parent.viewbox-width / 2) + cos(start) * (inner-radius / 1px);
+        y: (parent.viewbox-height / 2) - sin(start) * (inner-radius / 1px);
     }
 
     ArcTo {
-        x: (root.viewbox-width / 2) + cos(end) * (inner-radius / 1phx);
-        y: (root.viewbox-height / 2) - sin(end) * (inner-radius / 1phx);
-        radius-x: inner-radius / 1phx;
-        radius-y: inner-radius / 1phx;
+        x: (parent.viewbox-width / 2) + cos(end) * (inner-radius / 1px);
+        y: (parent.viewbox-height / 2) - sin(end) * (inner-radius / 1px);
+        radius-x: inner-radius / 1px;
+        radius-y: inner-radius / 1px;
         sweep: angle-range < 0deg;
         large-arc: abs(angle-range) > 180deg;
     }
 
     LineTo {
-        x: (root.viewbox-width / 2) + cos(end) * (outer-radius / 1phx);
-        y: (root.viewbox-height / 2) - sin(end) * (outer-radius / 1phx);
+        x: (parent.viewbox-width / 2) + cos(end) * (outer-radius / 1px);
+        y: (parent.viewbox-height / 2) - sin(end) * (outer-radius / 1px);
     }
 
     ArcTo {
-        x: (root.viewbox-width / 2) + cos(start) * (outer-radius / 1phx);
-        y: (root.viewbox-height / 2) - sin(start) * (outer-radius / 1phx);
-        radius-x: outer-radius / 1phx;
-        radius-y: outer-radius / 1phx;
+        x: (parent.viewbox-width / 2) + cos(start) * (outer-radius / 1px);
+        y: (parent.viewbox-height / 2) - sin(start) * (outer-radius / 1px);
+        radius-x: outer-radius / 1px;
+        radius-y: outer-radius / 1px;
         sweep: angle-range > 0deg;
         large-arc: abs(angle-range) > 180deg;
     }
 
     LineTo {
-        x: (root.viewbox-width / 2) + cos(start) * (outer-radius / 1phx);
-        y: (root.viewbox-height / 2) - sin(start) * (outer-radius / 1phx);
+        x: (parent.viewbox-width / 2) + cos(start) * (outer-radius / 1px);
+        y: (parent.viewbox-height / 2) - sin(start) * (outer-radius / 1px);
     }
 }
 
@@ -301,8 +301,8 @@ export component InstrumentGauge inherits Rectangle {
 
         fill: white;
 
-        viewbox-width: root.width / 1px;
-        viewbox-height: root.height / 1px;
+        viewbox-width: self.width / 1px;
+        viewbox-height: self.height / 1px;
 
         MoveTo {
             x: (parent.viewbox-width / 2) + cos(rotation) * (outer-radius / 1px);
@@ -326,15 +326,15 @@ export component InstrumentGauge inherits Rectangle {
     }
 
     background-arc := GaugeArc {
-        width: root.width;
-        height: root.height;
+        width: 100%;
+        height: 100%;
 
         start: root.start;
         end: root.end;
 
         fill: white;
 
-        outer-radius: self.width / 2;
-        inner-radius: self.outer-radius + 2px;
+        outer-radius: self.width / 2 + 3px;
+        inner-radius: self.width / 2;
     }
 }

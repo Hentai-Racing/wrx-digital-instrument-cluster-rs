@@ -115,7 +115,7 @@ export component App inherits Window {
                         {
                             start: self.start - 0.75deg,
                             end: self.end,
-                            major-ticks: ceil(max / 1000),
+                            major-ticks: ceil((max + 1) / 1000),
                             major-tick-inner-radius: self.width / 2 - 40px,
                             major-tick-outer-radius: self.width / 2,
                             major-tick-fill: Colors.white,

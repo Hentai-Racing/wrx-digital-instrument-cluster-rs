@@ -1,9 +1,8 @@
+use crate::can::messages::wrx_2018::{self, EngineMtGear, Messages};
 use crate::data::data_parameter::DataParameter;
 use crate::data::units::{Unit, UnitSystem};
-use crate::wrx_2018::{self, EngineMtGear, Messages};
+
 use paste::paste;
-use socketcan::tokio::CanSocket;
-use socketcan::Frame;
 
 macro_rules! param_max_min {
     ($car_data:ident, $msg:path, $param:ident) => {paste!(
@@ -115,7 +114,7 @@ macro_rules! CarData {
                 car_data
             }
 
-            fn process_message(&mut self, message: &Messages) {
+            pub fn process_message(&mut self, message: &Messages) {
                 match message {
                     $(
                         Messages::$msg(sig) => {
@@ -245,7 +244,8 @@ fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
 }
 
 impl CarData {
-    pub async fn bridge_socketcan(&mut self, mut can_socket: CanSocket) {
+    #[cfg(target_os = "linux")]
+    pub async fn bridge_socketcan(&mut self, mut can_socket: socketcan::tokio::CanSocket) {
         use crate::wrx_2018::Messages;
         use embedded_can::Frame;
         use futures::stream::StreamExt;
