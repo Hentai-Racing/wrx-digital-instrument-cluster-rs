@@ -24,7 +24,7 @@ const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
 const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 
 fn main() -> Result<(), slint::PlatformError> {
-    let matches = clap::Command::new("")
+    let cli = clap::Command::new("")
         .args([
             clap::arg!(-v --virtual "Runs the application in virtual mode for testing")
                 .required(false)
@@ -40,9 +40,9 @@ fn main() -> Result<(), slint::PlatformError> {
         ])
         .get_matches();
 
-    let virtual_cluster = matches.get_flag("virtual");
-    let candev = matches.get_one::<String>("candev");
-    let sldev = matches.get_one::<String>("sldev");
+    let virtual_cluster = cli.get_flag("virtual");
+    let candev = cli.get_one::<String>("candev");
+    let sldev = cli.get_one::<String>("sldev");
 
     #[derive(PartialEq, Eq)]
     enum SelectedInterface {
@@ -54,9 +54,9 @@ fn main() -> Result<(), slint::PlatformError> {
     // check if the user wants to set anything specific, else default
     let selected_interface = if virtual_cluster {
         SelectedInterface::Virtual
-    } else if matches.value_source("candev") == Some(clap::parser::ValueSource::CommandLine) {
+    } else if cli.value_source("candev") == Some(clap::parser::ValueSource::CommandLine) {
         SelectedInterface::Can
-    } else if matches.value_source("sldev") == Some(clap::parser::ValueSource::CommandLine) {
+    } else if cli.value_source("sldev") == Some(clap::parser::ValueSource::CommandLine) {
         SelectedInterface::SerialCan
     } else {
         #[cfg(target_os = "linux")]
