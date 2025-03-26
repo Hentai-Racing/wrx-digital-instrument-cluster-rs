@@ -417,10 +417,10 @@ pub async fn run_vcan_generator(
                 .random_range(
                     wrx_2018::DimmerAndHood::DIMMER_DIAL_VALUE_MIN..=wrx_2018::DimmerAndHood::DIMMER_DIAL_VALUE_MAX,
                 );
-            let hood_closed = rand::rng().random_bool(0.5);
+            let hood_open = rand::rng().random_bool(0.5);
             let dimmerandhood_frame = wrx_2018::DimmerAndHood::new(
                     dimmer_dial_value,
-                    hood_closed,
+                    hood_open,
                 )
                 .expect("Failed to create frame");
             if let Some(frame) = Frame::new(

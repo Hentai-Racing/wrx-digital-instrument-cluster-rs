@@ -332,6 +332,19 @@ export component App inherits Window {
                     visible: SCarData.oil_pressure_warning_light_enabled.value;
                 }
 
+                hood-open-warning-light := GaugeAttachedSymbol {
+                    center-radius: tachometer.width / 2;
+                    center-x: tachometer.x + tachometer.width / 2;
+                    center-y: tachometer.y + tachometer.height / 2;
+
+                    angle: left-turn-signal.angle - SymbolProperties.symbol_angle_padding;
+
+                    source: @image-url("../../resources/images/engine-hood-open-warning-light.png");
+                    colorize: SymbolProperties.symbol-color-red;
+
+                    visible: SCarData.hood_open.value;
+                }
+
                 door-open-warning-light := GaugeAttachedSymbol {
                     center-radius: tachometer.width / 2;
                     center-x: tachometer.x + tachometer.width / 2;
@@ -342,7 +355,7 @@ export component App inherits Window {
                     source: @image-url("../../resources/images/dooropen-warning-light.png");
                     colorize: SymbolProperties.symbol-color-red;
 
-                    visible: SCarData.any_door_open.value || !SCarData.hood_closed.value;
+                    visible: SCarData.any_door_open.value;
                 }
 
                 rcta-disabled-warning-light := GaugeAttachedSymbol {

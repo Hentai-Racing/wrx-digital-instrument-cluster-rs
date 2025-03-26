@@ -8,6 +8,7 @@ use crate::application::s_car_data_bridge::SCarDataBridge;
 use crate::data::car_data::CarData;
 
 use std::env;
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -30,6 +31,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 .exclusive(true),
             clap::arg!(-c --candev <PATH> "Path to the desired CAN device to use")
                 .required(false)
+                .default_value(CAN_IF_NAME)
                 .exclusive(true),
             clap::arg!(-s --sldev <PATH> "Path to the desired serial CAN device to use")
                 .required(false)
@@ -42,10 +44,36 @@ fn main() -> Result<(), slint::PlatformError> {
     let candev = matches.get_one::<String>("candev");
     let sldev = matches.get_one::<String>("sldev");
 
+    #[derive(PartialEq, Eq)]
+    enum SelectedInterface {
+        Virtual,
+        Can,
+        SerialCan,
+    }
+
+    // check if the user wants to set anything specific, else default
+    let selected_interface = if virtual_cluster {
+        SelectedInterface::Virtual
+    } else if matches.value_source("candev") == Some(clap::parser::ValueSource::CommandLine) {
+        SelectedInterface::Can
+    } else if matches.value_source("sldev") == Some(clap::parser::ValueSource::CommandLine) {
+        SelectedInterface::SerialCan
+    } else {
+        #[cfg(target_os = "linux")]
+        {
+            SelectedInterface::Can
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            SelectedInterface::SerialCan
+        }
+    };
+
     let tokio_runtime = tokio::runtime::Runtime::new().unwrap();
     let _guard = tokio_runtime.enter();
 
     let mut handles = Vec::<tokio::task::JoinHandle<()>>::new();
+    let mut runners = Vec::<Arc<AtomicBool>>::new();
 
     let car_data = CarData::new();
 
@@ -53,19 +81,31 @@ fn main() -> Result<(), slint::PlatformError> {
     let running_vcan = Arc::new(AtomicBool::new(false));
     let mut created_interface = false;
 
-    let (can_if_name, can_if_type) = if virtual_cluster {
-        (VCAN_IF_NAME, "vcan")
-    } else {
-        (CAN_IF_NAME, "can")
-    };
+    #[cfg(target_os = "linux")]
+    let mut can_interface = None;
 
     #[cfg(target_os = "linux")]
     {
         use socketcan::tokio::CanSocket;
         use socketcan::{CanInterface, SocketOptions};
 
-        let can_interface = None;
-        if sldev.is_none() {
+        let (can_if_name, can_if_type) = if virtual_cluster {
+            (VCAN_IF_NAME, "vcan")
+        } else {
+            (
+                if let Some(candev) = candev {
+                    candev.as_str()
+                } else {
+                    CAN_IF_NAME
+                },
+                "can",
+            )
+        };
+
+        if matches!(
+            selected_interface,
+            SelectedInterface::Virtual | SelectedInterface::Can
+        ) {
             can_interface = match CanInterface::open(&can_if_name) {
                 Ok(can_interface) => Some(can_interface),
                 _ => match CanInterface::create(&can_if_name, None, can_if_type) {
@@ -164,6 +204,7 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let ui = App::new()?;
 
+    let debug_menu_state = ui.global::<DebugMenuState>();
     let application_state = ui.global::<ApplicationState>();
     application_state.set_virtual_cluster(virtual_cluster);
     application_state.set_debug_mode(cfg!(debug_assertions));
@@ -180,8 +221,6 @@ fn main() -> Result<(), slint::PlatformError> {
             );
         });
     }
-
-    let debug_menu_state = ui.global::<DebugMenuState>();
 
     #[cfg(feature = "apalis_imx8")]
     {
@@ -259,60 +298,45 @@ fn main() -> Result<(), slint::PlatformError> {
     let running_sclan = Arc::new(AtomicBool::new(false));
     let mut slport = None;
 
-    // todo: ensure we are not using a can device or virtual
-    if candev.is_none() && !virtual_cluster {
+    if selected_interface == SelectedInterface::SerialCan {
         if let Some(sldev) = sldev {
-            match serial::SystemPort::open(std::path::Path::new(sldev)) {
-                Ok(t) => slport = Some(t),
+            match serial::SystemPort::open(Path::new(sldev)) {
+                Ok(port) => slport = Some(port),
                 Err(e) => eprintln!("Error opening serial device {sldev}: {e}"),
             }
         }
     }
 
-    async fn run(
-        mut can: slcan::CanSocket<serial::unix::TTYPort>,
-        mut car_data: CarData,
-        running: Arc<AtomicBool>,
-    ) {
-        // todo: move this to car_data to be inline with current implementation of socketcan
-        use crate::can::messages::wrx_2018::Messages;
-        use embedded_can::{Id, StandardId};
-
-        while running.load(Ordering::SeqCst) {
-            match can.read() {
-                Ok(frame) => {
-                    let id = unsafe { Id::from(StandardId::new_unchecked(frame.id as _)) };
-                    if let Ok(message) = Messages::from_can_message(id, &frame.data[..frame.dlc]) {
-                        car_data.process_message(&message);
-                    }
-                }
-                #[cfg(debug_assertions)]
-                Err(e) => eprintln!("Error reading frame: {e:?}"),
-                #[allow(unreachable_patterns)]
-                _ => {}
-            }
-        }
-    }
-
     let running_slcan_clone = running_sclan.clone();
+    let mut car_data_clone = car_data.clone();
     let slport_handle = tokio_runtime.spawn(async move {
         if let Some(slport) = slport {
             running_slcan_clone.store(true, Ordering::SeqCst);
 
-            let mut can = slcan::CanSocket::<serial::SystemPort>::new(slport);
-            can.close().unwrap();
-            can.open(slcan::BitRate::Setup1Mbit).unwrap();
+            let mut can_socket = slcan::CanSocket::<serial::SystemPort>::new(slport);
+            can_socket.close().unwrap();
+            can_socket.open(slcan::BitRate::Setup1Mbit).unwrap();
 
-            run(can, car_data, running_slcan_clone).await;
+            car_data_clone
+                .bridge_slcan(can_socket, running_slcan_clone)
+                .await;
         }
     });
     handles.push(slport_handle);
 
+    runners.push(running_sclan);
+    runners.push(running_vcan);
+    runners.push(running_simulation);
+
+    // main loop
+
     ui.run()?;
 
-    running_sclan.store(false, Ordering::SeqCst);
-    running_vcan.store(false, Ordering::SeqCst);
-    running_simulation.store(false, Ordering::SeqCst);
+    // cleanup
+
+    for runner in runners {
+        runner.store(false, Ordering::SeqCst);
+    }
 
     for handle in handles {
         handle.abort();

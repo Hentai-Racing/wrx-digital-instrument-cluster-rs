@@ -4576,10 +4576,10 @@ impl DimmerAndHood {
     pub const DIMMER_DIAL_VALUE_MAX: u8 = 250_u8;
     
     /// Construct new dimmer_and_hood from values
-    pub fn new(dimmer_dial_value: u8, hood_closed: bool) -> Result<Self, CanError> {
+    pub fn new(dimmer_dial_value: u8, hood_open: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 2] };
         res.set_dimmer_dial_value(dimmer_dial_value)?;
-        res.set_hood_closed(hood_closed)?;
+        res.set_hood_open(hood_open)?;
         Ok(res)
     }
     
@@ -4640,37 +4640,37 @@ impl DimmerAndHood {
         Ok(())
     }
     
-    /// hood_closed
+    /// hood_open
     ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn hood_closed(&self) -> bool {
-        self.hood_closed_raw()
+    pub fn hood_open(&self) -> bool {
+        self.hood_open_raw()
     }
     
-    /// Get raw value of hood_closed
+    /// Get raw value of hood_open
     ///
     /// - Start bit: 8
     /// - Signal size: 1 bits
-    /// - Factor: 1
+    /// - Factor: -1
     /// - Offset: 0
-    /// - Byte order: LittleEndian
+    /// - Byte order: BigEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn hood_closed_raw(&self) -> bool {
-        let signal = self.raw.view_bits::<Lsb0>()[8..9].load_le::<u8>();
+    pub fn hood_open_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[15..16].load_be::<u8>();
         
         signal == 1
     }
     
-    /// Set value of hood_closed
+    /// Set value of hood_open
     #[inline(always)]
-    pub fn set_hood_closed(&mut self, value: bool) -> Result<(), CanError> {
+    pub fn set_hood_open(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
-        self.raw.view_bits_mut::<Lsb0>()[8..9].store_le(value);
+        self.raw.view_bits_mut::<Msb0>()[15..16].store_be(value);
         Ok(())
     }
     

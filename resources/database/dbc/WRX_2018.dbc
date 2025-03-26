@@ -150,7 +150,7 @@ BO_ 885 cabin: 8 Vector__XXX
 
 BO_ 886 dimmer_and_hood: 2 Vector__XXX
    SG_ dimmer_dial_value : 0|8@1+ (1,0) [0|250] "" Vector__XXX
-   SG_ hood_closed : 8|1@1+ (1,0) [0|1] "" Vector__XXX
+   SG_ hood_open : 8|1@0+ (-1,0) [0|1] "" Vector__XXX
 
 BO_ 977 dash_state_VERIFY: 8 Vector__XXX
    SG_ UNITS : 15|1@1+ (1,0) [0|1] "" Vector__XXX

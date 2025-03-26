@@ -173,7 +173,7 @@ impl SCarDataBridge {
 
         srs_warning_light_enabled: SBDataParameter,
 
-        hood_closed: SBDataParameter,
+        hood_open: SBDataParameter,
     }
 }
 

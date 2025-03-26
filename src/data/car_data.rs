@@ -3,6 +3,10 @@ use crate::data::data_parameter::DataParameter;
 use crate::data::units::{Unit, UnitSystem};
 
 use paste::paste;
+use std::sync::{
+    atomic::{AtomicBool, Ordering::SeqCst},
+    Arc,
+};
 
 macro_rules! param_max_min {
     ($car_data:ident, $msg:path, $param:ident) => {paste!(
@@ -221,7 +225,7 @@ CarData!(
     };
 
     DimmerAndHood => {
-        hood_closed: bool = false,
+        hood_open: bool,
     };
 );
 
@@ -246,35 +250,49 @@ fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
 impl CarData {
     #[cfg(target_os = "linux")]
     pub async fn bridge_socketcan(&mut self, mut can_socket: socketcan::tokio::CanSocket) {
-        use crate::wrx_2018::Messages;
         use embedded_can::Frame;
         use futures::stream::StreamExt;
 
         while let Some(Ok(frame)) = can_socket.next().await {
-            let raw_id = frame.raw_id();
-            let id = frame.id();
-            let payload = frame.data();
+            self.handle_frame(frame.id(), frame.data());
+        }
+    }
 
-            if let Ok(message) = Messages::from_can_message(id, payload) {
-                self.process_message(&message)
-            } else {
-                #[cfg(debug_assertions)]
-                match raw_id {
-                    0x7e0 => {
-                        let test_tpms = search_payload_unaligned(payload, 0x75B);
-                        if test_tpms {
-                            println!("Sent: {:?}", payload);
-                        }
-                    }
-                    0x7e1..=0x7e8 => {
-                        let test_tpms = search_payload_unaligned(payload, 0x75b);
-                        if test_tpms {
-                            println!("Recv: {:?}", payload);
-                        }
-                    }
-                    _ => {}
-                }
-            }
+    pub async fn bridge_slcan(
+        &mut self,
+        mut can_socket: slcan::CanSocket<serial::SystemPort>,
+        running: Arc<AtomicBool>,
+    ) {
+        use embedded_can::{Id, StandardId};
+
+        while running.load(SeqCst) {
+            if let Ok(frame) = can_socket.read() {
+                let id = unsafe { Id::from(StandardId::new_unchecked(frame.id as _)) };
+                self.handle_frame(id, &frame.data[..frame.dlc]);
+            };
+        }
+    }
+
+    fn handle_frame(&mut self, id: embedded_can::Id, payload: &[u8]) {
+        if let Ok(message) = Messages::from_can_message(id, payload) {
+            self.process_message(&message)
+        } else {
+            // #[cfg(debug_assertions)]
+            // match raw_id {
+            //     0x7e0 => {
+            //         let test_tpms = search_payload_unaligned(payload, 0x75B);
+            //         if test_tpms {
+            //             println!("Sent: {:?}", payload);
+            //         }
+            //     }
+            //     0x7e1..=0x7e8 => {
+            //         let test_tpms = search_payload_unaligned(payload, 0x75b);
+            //         if test_tpms {
+            //             println!("Recv: {:?}", payload);
+            //         }
+            //     }
+            //     _ => {}
+            // }
         }
     }
 }
