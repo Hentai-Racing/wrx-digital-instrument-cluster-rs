@@ -219,7 +219,7 @@ export component InstrumentGauge inherits Rectangle {
     ];
 
     for region[index] in regions: Rectangle {
-        // todo: make sure to respect the tick size when placing them so as to not allow overhanging ticks
+        // TODO: make sure to respect the tick size when placing them so as to not allow overhanging ticks
         property <angle> angle-range: (region.end - region.start);
         property <angle> major-tick-angle-step: angle-range / (region.major-ticks - 1);
         property <angle> minor-tick-angle-step: major-tick-angle-step / (region.minor-ticks + 1);

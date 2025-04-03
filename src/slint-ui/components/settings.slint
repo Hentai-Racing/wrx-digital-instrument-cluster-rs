@@ -1,0 +1,65 @@
+import { Button } from "std-widgets.slint";
+import { ApplicationState } from "../application/application_state.slint";
+export global UserSettings { } // TODO
+
+export component MenuRectangle inherits Rectangle {
+    // all children of this component should have their relevant brush's alpha match the alpha
+    // of this root's `background` in order for the animation to be effective
+
+    in property <brush> background-color: white;
+    in-out property <bool> open: true;
+    property <duration> open-animation-duration: 60ms;
+
+    background: background-color;
+    width: 70%;
+    height: 90%;
+
+    clip: true;
+    border-radius: 15px;
+
+    visible: self.y <= -self.height ? false : true;
+
+    states [
+        opened when open: {
+            width: 70%;
+            height: 90%;
+            background: background-color;
+            y: (self.height / 90% / 2) - (self.height / 2);
+            in {
+                animate y { duration: 0; }
+            }
+            out {
+                animate width, height, background { duration: open-animation-duration; }
+            }
+        }
+        closed when !open: {
+            width: 65%;
+            height: 85%;
+            background: transparent;
+            y: -self.height; // move offscreen since `visible` can't be animated
+            in {
+                animate y {
+                    delay: open-animation-duration;
+                    duration: 0;
+                }
+            }
+            out {
+                animate width, height, background { duration: open-animation-duration; }
+            }
+        }
+    ]
+}
+
+export component SettingsMenu inherits MenuRectangle {
+    open <=> ApplicationState.settings-menu-visible;
+
+    focus := FocusScope { }
+
+    Button {
+        text: "Exit";
+
+        clicked => {
+            root.open = false;
+        }
+    }
+}

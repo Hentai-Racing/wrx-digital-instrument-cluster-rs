@@ -6,6 +6,7 @@ mod ui;
 
 use crate::application::s_car_data_bridge::SCarDataBridge;
 use crate::data::car_data::CarData;
+use crate::ui::theme_handler;
 
 use std::env;
 use std::path::Path;
@@ -41,8 +42,6 @@ fn main() -> Result<(), slint::PlatformError> {
         .get_matches();
 
     let virtual_cluster = cli.get_flag("virtual");
-    let candev = cli.get_one::<String>("candev");
-    let sldev = cli.get_one::<String>("sldev");
 
     #[derive(PartialEq, Eq)]
     enum SelectedInterface {
@@ -72,16 +71,24 @@ fn main() -> Result<(), slint::PlatformError> {
     let tokio_runtime = tokio::runtime::Runtime::new().unwrap();
     let _guard = tokio_runtime.enter();
 
+    #[cfg(debug_assertions)]
+    if env::var("SLINT_DEBUG_PERFORMANCE")
+        .unwrap_or_default()
+        .is_empty()
+    {
+        env::set_var("SLINT_DEBUG_PERFORMANCE", "refresh_full_speed,overlay");
+    }
+
+    let ui = App::new()?;
+    ui.show()?;
+
     let mut handles = Vec::<tokio::task::JoinHandle<()>>::new();
     let mut runners = Vec::<Arc<AtomicBool>>::new();
 
     let car_data = CarData::new();
 
     let running_simulation = Arc::new(AtomicBool::new(false));
-    let running_vcan = Arc::new(AtomicBool::new(false));
     let mut created_interface = false;
-
-    #[cfg(target_os = "linux")]
     let mut can_interface = None;
 
     #[cfg(target_os = "linux")]
@@ -89,11 +96,13 @@ fn main() -> Result<(), slint::PlatformError> {
         use socketcan::tokio::CanSocket;
         use socketcan::{CanInterface, SocketOptions};
 
+        let running_vcan = Arc::new(AtomicBool::new(false));
+
         let (can_if_name, can_if_type) = if virtual_cluster {
             (VCAN_IF_NAME, "vcan")
         } else {
             (
-                if let Some(candev) = candev {
+                if let Some(candev) = cli.get_one::<String>("candev") {
                     candev.as_str()
                 } else {
                     CAN_IF_NAME
@@ -191,18 +200,40 @@ fn main() -> Result<(), slint::PlatformError> {
                 .await
             });
             handles.push(vcan_handle);
+            runners.push(running_vcan);
         }
     }
-
-    #[cfg(debug_assertions)]
-    if env::var("SLINT_DEBUG_PERFORMANCE")
-        .unwrap_or_default()
-        .is_empty()
+    #[cfg(feature = "slcan")]
     {
-        env::set_var("SLINT_DEBUG_PERFORMANCE", "refresh_full_speed,overlay");
-    }
+        let running_sclan = Arc::new(AtomicBool::new(false));
 
-    let ui = App::new()?;
+        if selected_interface == SelectedInterface::SerialCan {
+            if let Some(sldev) = cli.get_one::<String>("sldev") {
+                match serial::SystemPort::open(Path::new(sldev)) {
+                    Ok(port) => can_interface = Some(port),
+                    Err(e) => eprintln!("Error opening serial device {sldev}: {e}"),
+                }
+            }
+        }
+
+        let running_slcan_clone = running_sclan.clone();
+        let mut car_data_clone = car_data.clone();
+        let slport_handle = tokio_runtime.spawn(async move {
+            if let Some(slport) = can_interface {
+                running_slcan_clone.store(true, Ordering::SeqCst);
+
+                let mut can_socket = slcan::CanSocket::<serial::SystemPort>::new(slport);
+                can_socket.close().unwrap();
+                can_socket.open(slcan::BitRate::Setup1Mbit).unwrap();
+
+                car_data_clone
+                    .bridge_slcan(can_socket, running_slcan_clone)
+                    .await;
+            }
+        });
+        handles.push(slport_handle);
+        runners.push(running_sclan);
+    }
 
     let debug_menu_state = ui.global::<DebugMenuState>();
     let application_state = ui.global::<ApplicationState>();
@@ -259,11 +290,11 @@ fn main() -> Result<(), slint::PlatformError> {
                         weak_app.upgrade(),
                     ) {
                         model_container = Some(ModelContainer::new(
-                            context,
-                            app.get_threed_widget_x() as _,
-                            app.get_threed_widget_y() as _,
-                            app.get_threed_widget_width() as _,
-                            app.get_threed_widget_height() as _,
+                            context, 0, 0, 1,
+                            1, // app.get_threed_widget_x() as _,
+                              // app.get_threed_widget_y() as _,
+                              // app.get_threed_widget_width() as _,
+                              // app.get_threed_widget_height() as _,
                         ));
                     }
                 }
@@ -276,13 +307,14 @@ fn main() -> Result<(), slint::PlatformError> {
                                 (app.window().size().width, app.window().size().height);
 
                             let image = model_container.render(
-                                app.get_threed_widget_x() as _,
-                                app.get_threed_widget_y() as _,
-                                app.get_threed_widget_width() as _,
-                                app.get_threed_widget_height() as _,
+                                0, 0, 1,
+                                1, // app.get_threed_widget_x() as _,
+                                  // app.get_threed_widget_y() as _,
+                                  // app.get_threed_widget_width() as _,
+                                  // app.get_threed_widget_height() as _,
                             );
 
-                            app.set_threed_widget_texture(image);
+                            // app.set_threed_widget_texture(image);
                             app.window().request_redraw();
                         }
                     }
@@ -295,40 +327,15 @@ fn main() -> Result<(), slint::PlatformError> {
         }
     }
 
-    let running_sclan = Arc::new(AtomicBool::new(false));
-    let mut slport = None;
-
-    if selected_interface == SelectedInterface::SerialCan {
-        if let Some(sldev) = sldev {
-            match serial::SystemPort::open(Path::new(sldev)) {
-                Ok(port) => slport = Some(port),
-                Err(e) => eprintln!("Error opening serial device {sldev}: {e}"),
-            }
-        }
-    }
-
-    let running_slcan_clone = running_sclan.clone();
-    let mut car_data_clone = car_data.clone();
-    let slport_handle = tokio_runtime.spawn(async move {
-        if let Some(slport) = slport {
-            running_slcan_clone.store(true, Ordering::SeqCst);
-
-            let mut can_socket = slcan::CanSocket::<serial::SystemPort>::new(slport);
-            can_socket.close().unwrap();
-            can_socket.open(slcan::BitRate::Setup1Mbit).unwrap();
-
-            car_data_clone
-                .bridge_slcan(can_socket, running_slcan_clone)
-                .await;
-        }
-    });
-    handles.push(slport_handle);
-
-    runners.push(running_sclan);
-    runners.push(running_vcan);
     runners.push(running_simulation);
 
+    #[cfg(feature = "network")]
+    let _navmap = crate::ui::navmap::NavMap::new(ui.as_weak());
+
     // main loop
+
+    let weak_ui = ui.as_weak();
+    theme_handler::handle_theme(weak_ui);
 
     ui.run()?;
 

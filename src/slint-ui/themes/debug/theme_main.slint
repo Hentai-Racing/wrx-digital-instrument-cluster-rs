@@ -1,0 +1,24 @@
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Black.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Bold.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-ExtraLight.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Light.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Medium.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Regular.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-SemiBold.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
+
+import { Button } from "std-widgets.slint";
+import { DebugMenuWidget, DebugMenuState } from "../../components/debug.slint";
+import { ThemeSelectorWidget } from "../themes.slint";
+import { WidgetContainer } from "../../components/widget_container.slint";
+
+export component DebugTheme inherits Rectangle {
+    background: transparent;
+    height: 100%;
+    width: 100%;
+
+    WidgetContainer {
+        height: 100%;
+        width: 100%;
+    }
+}

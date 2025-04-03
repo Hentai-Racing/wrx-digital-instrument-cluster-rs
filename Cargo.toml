@@ -2,7 +2,7 @@
 name = "wrx-digital-instrument-cluster-rs"
 description = "A digital instrument cluster for the 2018 Subaru WRX"
 repository = "https://github.com/Hentai-Racing/wrx-digital-instrument-cluster-rs"
-version = "0.5.0"
+version = "0.6.0"                                                                 # Only 1.0.0 when all factory features exist
 authors = ["Bryce Happel Walton <brycewaltonmail@gmail.com>"]
 edition = "2021"
 build = "build.rs"
@@ -10,12 +10,19 @@ license-file = "LICENSE"
 readme = "README.md"
 
 [features]
-default = ["slint/backend-winit", "slint/renderer-skia-opengl"]
+default = [
+    "slint/backend-winit",
+    "slint/renderer-skia-opengl",
+    "slcan",
+    "network",
+]
 kms = ["slint/backend-linuxkms", "slint/renderer-skia-opengl"]
-apalis_imx8 = ["dep:gpio-cdev"]
+apalis_imx8 = ["dep:gpio-cdev", "kms"]
+network = ["dep:reqwest"]
 three-d = [
     "dep:three-d",
 ] # https://github.com/slint-ui/slint/issues/7845 skia does not work well with opengl context sharing, and femtovg doesn't work well in general
+slcan = ["dep:slcan", "dep:serial"]
 
 [dependencies]
 slint = { git = "https://github.com/slint-ui/slint.git", default-features = false, features = [
@@ -26,14 +33,17 @@ async-compat = "*"
 rand = "*"
 paste = "*"
 clap = "*"
-serial = "*"
-slcan = { version = "*" }
 embedded-can = "*"
 futures = "*"
+
+image = "*"
 
 # feature deps
 gpio-cdev = { version = "*", optional = true, features = ["async-tokio"] }
 three-d = { git = "https://github.com/asny/three-d.git", optional = true }
+serial = { version = "*", optional = true }
+slcan = { version = "*", optional = true }
+reqwest = { version = "*", optional = true }
 
 # required due to dbc-codegen
 bitvec = "*"

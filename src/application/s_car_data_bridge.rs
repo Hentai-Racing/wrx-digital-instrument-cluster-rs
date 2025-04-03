@@ -40,14 +40,14 @@ macro_rules! bridge {
             self.handle_unit_system();
 
             $(
-                let main_window = self.main_window.clone();
+                let ui = self.ui.clone();
                 let mut car_data = self.car_data.clone();
                 let mut unit_system_changed = self.unit_system_watch.subscribe();
                 let mut thread_watch = car_data.$param().watch();
 
                 slint::spawn_local(async_compat::Compat::new(async move {
-                    if let Some(main_window) = main_window.upgrade() {
-                        let ui_car_data = main_window.global::<SCarData>();
+                    if let Some(ui) = ui.upgrade() {
+                        let ui_car_data = ui.global::<SCarData>();
                         let mut _unit_system: UnitSystem = *unit_system_changed.borrow_and_update();
 
                         loop { // do-while for initial setting of values, then wait for update events
@@ -76,40 +76,40 @@ macro_rules! bridge {
 
 #[derive(Clone)]
 pub struct SCarDataBridge {
-    main_window: Weak<App>,
+    ui: Weak<App>,
     car_data: CarData,
     unit_system_watch: watch::Sender<UnitSystem>,
 }
 
 impl SCarDataBridge {
-    pub fn new(main_window: Weak<App>, car_data: CarData) -> Self {
+    pub fn new(ui: Weak<App>, car_data: CarData) -> Self {
         let (sender, _) = watch::channel(Default::default());
 
-        let ret = Self {
-            main_window,
+        let this = Self {
+            ui,
             car_data,
             unit_system_watch: sender,
         };
 
         // set the initial unit system to whatever the UI is set to
-        if let Some(window_binding) = ret.main_window.clone().upgrade() {
-            let ui_application_state = window_binding.global::<ApplicationState>();
+        if let Some(ui) = this.ui.clone().upgrade() {
+            let ui_application_state = ui.global::<ApplicationState>();
             let unit: UnitSystem = ui_application_state.get_user_unit().into();
-            ret.unit_system_watch.send_replace(unit.into());
+            this.unit_system_watch.send_replace(unit.into());
         }
 
-        ret
+        this
     }
 
     pub fn handle_unit_system(&self) {
-        if let Some(window_binding) = self.main_window.clone().upgrade() {
-            let ui_application_state = window_binding.global::<ApplicationState>();
-            let ui_binding = window_binding.as_weak().clone();
+        if let Some(ui) = self.ui.upgrade() {
+            let ui_application_state = ui.global::<ApplicationState>();
+            let ui_binding = self.ui.clone();
             let unit_system_watch = self.unit_system_watch.clone();
 
             ui_application_state.on_update_user_unit(move |value: SUnitSystem| {
-                if let Some(window_binding) = ui_binding.upgrade() {
-                    let ui_application_state = window_binding.global::<ApplicationState>();
+                if let Some(ui) = ui_binding.upgrade() {
+                    let ui_application_state = ui.global::<ApplicationState>();
                     ui_application_state.set_user_unit(value);
                     unit_system_watch.send_replace(value.into());
                 }

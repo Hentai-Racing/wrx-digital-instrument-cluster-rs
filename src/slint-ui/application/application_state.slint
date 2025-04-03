@@ -1,0 +1,14 @@
+import { SUnitSystem } from "../data/units.slint";
+
+export global ApplicationState {
+    in-out property <bool> debug-mode: true;
+
+    in property <bool> virtual-cluster: true;
+    callback toggle_simulation();
+
+    in-out property <SUnitSystem> user-unit;
+    callback update_user_unit(SUnitSystem);
+
+    in-out property <bool> settings-menu-visible: false;
+    callback focus_settings_menu();
+}
