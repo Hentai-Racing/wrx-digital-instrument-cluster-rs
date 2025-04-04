@@ -8,6 +8,7 @@ use crate::application::s_car_data_bridge::SCarDataBridge;
 use crate::data::car_data::CarData;
 use crate::ui::theme_handler;
 
+use std::collections::BTreeMap;
 use std::env;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -15,9 +16,9 @@ use std::sync::Arc;
 
 slint::include_modules!();
 
+#[allow(unused)]
 const VCAN_IF_NAME: &str = "vcan0";
 const CAN_IF_NAME: &str = "can0";
-const CAN_BITRATE: u32 = 500000;
 
 #[cfg(target_os = "linux")]
 const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
@@ -58,11 +59,11 @@ fn main() -> Result<(), slint::PlatformError> {
     } else if cli.value_source("sldev") == Some(clap::parser::ValueSource::CommandLine) {
         SelectedInterface::SerialCan
     } else {
-        #[cfg(target_os = "linux")]
+        #[cfg(feature = "apalis_imx8")]
         {
             SelectedInterface::Can
         }
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(not(feature = "apalis_imx8"))]
         {
             SelectedInterface::SerialCan
         }
@@ -88,7 +89,7 @@ fn main() -> Result<(), slint::PlatformError> {
     let car_data = CarData::new();
 
     let running_simulation = Arc::new(AtomicBool::new(false));
-    let mut created_interface = false;
+    let mut _created_interface = false;
     let mut can_interface = None;
 
     #[cfg(target_os = "linux")]
@@ -119,7 +120,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 Ok(can_interface) => Some(can_interface),
                 _ => match CanInterface::create(&can_if_name, None, can_if_type) {
                     Ok(can_interface) => {
-                        created_interface = true;
+                        _created_interface = true;
                         println!("Created CAN interface {can_if_name}");
                         Some(can_interface)
                     }
@@ -131,6 +132,8 @@ fn main() -> Result<(), slint::PlatformError> {
             };
         }
 
+        let can_bitrate = 500000;
+
         let socket_up = if let Some(can_interface) = &can_interface {
             match can_interface.details() {
                 Ok(details) => {
@@ -138,11 +141,11 @@ fn main() -> Result<(), slint::PlatformError> {
                         true
                     } else {
                         if can_if_type != "vcan" {
-                            match can_interface.set_bitrate(CAN_BITRATE, None) {
+                            match can_interface.set_bitrate(can_bitrate, None) {
                                 Ok(_) => {}
                                 Err(e) => {
                                     eprintln!(
-                                    "Failed to set bitrate of {can_if_name} to {CAN_BITRATE}: {e:?}"
+                                    "Failed to set bitrate of {can_if_name} to {can_bitrate}: {e:?}"
                                 );
                                 }
                             };
@@ -350,9 +353,10 @@ fn main() -> Result<(), slint::PlatformError> {
     }
 
     #[cfg(target_os = "linux")]
-    if created_interface {
+    if _created_interface {
         if let Some(can_interface) = can_interface {
             match can_interface.delete() {
+                // TODO: these should be the name of the can interface, not VCAN_IF_NAME
                 Ok(_) => println!("Deleted interface {VCAN_IF_NAME}"),
                 Err(e) => println!("Error deleting interface {VCAN_IF_NAME}: {e:?}"),
             }

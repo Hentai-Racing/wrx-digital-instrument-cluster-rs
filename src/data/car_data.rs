@@ -2,6 +2,7 @@ use crate::can::messages::wrx_2018::{self, EngineMtGear, Messages};
 use crate::data::data_parameter::DataParameter;
 use crate::data::units::{Unit, UnitSystem};
 
+use embedded_can::{ExtendedId, StandardId};
 use paste::paste;
 use std::sync::{
     atomic::{AtomicBool, Ordering::SeqCst},
@@ -229,6 +230,7 @@ CarData!(
     };
 );
 
+#[allow(unused)]
 fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
     let search_len = pattern.ilog2() + 1;
     let mut current = 0u64;
@@ -248,6 +250,8 @@ fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
 }
 
 impl CarData {
+    //TODO: these bridge functions should be elsewhere
+
     #[cfg(target_os = "linux")]
     pub async fn bridge_socketcan(&mut self, mut can_socket: socketcan::tokio::CanSocket) {
         use embedded_can::Frame;
@@ -277,22 +281,26 @@ impl CarData {
         if let Ok(message) = Messages::from_can_message(id, payload) {
             self.process_message(&message)
         } else {
-            // #[cfg(debug_assertions)]
-            // match raw_id {
-            //     0x7e0 => {
-            //         let test_tpms = search_payload_unaligned(payload, 0x75B);
-            //         if test_tpms {
-            //             println!("Sent: {:?}", payload);
-            //         }
-            //     }
-            //     0x7e1..=0x7e8 => {
-            //         let test_tpms = search_payload_unaligned(payload, 0x75b);
-            //         if test_tpms {
-            //             println!("Recv: {:?}", payload);
-            //         }
-            //     }
-            //     _ => {}
-            // }
+            let raw_id = match id {
+                embedded_can::Id::Standard(raw) => raw.as_raw() as u32,
+                embedded_can::Id::Extended(raw) => raw.as_raw() as u32,
+            };
+
+            match raw_id {
+                0x7e0 => {
+                    // let test_tpms = search_payload_unaligned(payload, 0x75B);
+                    // if test_tpms {
+                    //     println!("Sent: {:?}", payload);
+                    // }
+                }
+                0x7e1..=0x7ef => {
+                    // let test_tpms = search_payload_unaligned(payload, 0x75b);
+                    // if test_tpms {
+                    //     println!("Recv: {:?}", payload);
+                    // }
+                }
+                _ => {}
+            }
         }
     }
 }
