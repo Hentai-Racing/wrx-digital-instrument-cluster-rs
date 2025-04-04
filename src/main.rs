@@ -90,6 +90,7 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let running_simulation = Arc::new(AtomicBool::new(false));
     let mut _created_interface = false;
+    #[cfg(target_os = "linux")]
     let mut can_interface = None;
 
     #[cfg(target_os = "linux")]
@@ -170,12 +171,17 @@ fn main() -> Result<(), slint::PlatformError> {
         };
 
         if socket_up {
-            let can_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
+            let mut can_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
 
             let mut car_data_clone = car_data.clone();
 
             let car_data_bridge_handle = tokio_runtime.spawn(async move {
-                car_data_clone.bridge_socketcan(can_socket).await;
+                use embedded_can::Frame;
+                use futures::stream::StreamExt;
+
+                while let Some(Ok(frame)) = can_socket.next().await {
+                    car_data_clone.handle_frame(frame.id(), frame.data());
+                }
             });
             handles.push(car_data_bridge_handle);
         }
@@ -208,12 +214,13 @@ fn main() -> Result<(), slint::PlatformError> {
     }
     #[cfg(feature = "slcan")]
     {
+        let mut slcan_interface = None;
         let running_sclan = Arc::new(AtomicBool::new(false));
 
         if selected_interface == SelectedInterface::SerialCan {
             if let Some(sldev) = cli.get_one::<String>("sldev") {
                 match serial::SystemPort::open(Path::new(sldev)) {
-                    Ok(port) => can_interface = Some(port),
+                    Ok(port) => slcan_interface = Some(port),
                     Err(e) => eprintln!("Error opening serial device {sldev}: {e}"),
                 }
             }
@@ -222,7 +229,7 @@ fn main() -> Result<(), slint::PlatformError> {
         let running_slcan_clone = running_sclan.clone();
         let mut car_data_clone = car_data.clone();
         let slport_handle = tokio_runtime.spawn(async move {
-            if let Some(slport) = can_interface {
+            if let Some(slport) = slcan_interface {
                 running_slcan_clone.store(true, Ordering::SeqCst);
 
                 let mut can_socket = slcan::CanSocket::<serial::SystemPort>::new(slport);

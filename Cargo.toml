@@ -64,3 +64,10 @@ slint-build = { git = "https://github.com/slint-ui/slint.git" }
 dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }
 syn = "*"
 prettyplease = "*"
+
+[profile.apalis_imx8]
+inherits = "release"
+lto = "fat"
+opt-level = "s"
+panic = "abort"
+strip = true

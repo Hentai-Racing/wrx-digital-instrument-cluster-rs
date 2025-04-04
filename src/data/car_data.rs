@@ -252,16 +252,7 @@ fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
 impl CarData {
     //TODO: these bridge functions should be elsewhere
 
-    #[cfg(target_os = "linux")]
-    pub async fn bridge_socketcan(&mut self, mut can_socket: socketcan::tokio::CanSocket) {
-        use embedded_can::Frame;
-        use futures::stream::StreamExt;
-
-        while let Some(Ok(frame)) = can_socket.next().await {
-            self.handle_frame(frame.id(), frame.data());
-        }
-    }
-
+    #[cfg(feature = "slcan")]
     pub async fn bridge_slcan(
         &mut self,
         mut can_socket: slcan::CanSocket<serial::SystemPort>,
@@ -277,7 +268,7 @@ impl CarData {
         }
     }
 
-    fn handle_frame(&mut self, id: embedded_can::Id, payload: &[u8]) {
+    pub fn handle_frame(&mut self, id: embedded_can::Id, payload: &[u8]) {
         if let Ok(message) = Messages::from_can_message(id, payload) {
             self.process_message(&message)
         } else {
