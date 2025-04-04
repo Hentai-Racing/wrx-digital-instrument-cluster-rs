@@ -6,26 +6,34 @@
 import { ComboBox } from "std-widgets.slint";
 
 export global Themes {
-    out property <[string]> themes: ["Default", "Debug"];
-    in-out property <string> current-theme: "Default";
+    out property <[string]> themes: ["Default", "Default-Navmap", "Debug"];
+    in-out property <string> current-theme: themes[1];
     callback theme-changed(string);
 }
 
 export component ThemeSelectorWidget {
-    theme-text := Text {
-        text: "Theme: ";
-    }
+    HorizontalLayout {
+        alignment: center;
+        padding: 2px;
 
-    theme-selection-box := ComboBox {
-        y: theme-text.y + theme-text.height + 2px;
-        model: Themes.themes;
-        current-value: Themes.current-theme;
+        theme-text := Text {
+            vertical-alignment: center;
+            color: white;
+            text: "Theme: ";
+        }
 
-        enabled: Themes.themes.length > 1;
+        theme-selection-box := ComboBox {
+            width: 125px;
 
-        selected(current-value) => {
-            Themes.theme-changed(current-value);
-            Themes.current-theme = current-value;
+            model: Themes.themes;
+            current-value: Themes.current-theme;
+
+            enabled: Themes.themes.length > 1;
+
+            selected(current-value) => {
+                Themes.theme-changed(current-value);
+                Themes.current-theme = current-value;
+            }
         }
     }
 }

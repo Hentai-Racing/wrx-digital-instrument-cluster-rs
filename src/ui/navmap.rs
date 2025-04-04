@@ -124,7 +124,6 @@ impl World {
                                     return None;
                                 }
                             };
-                            println!("Loaded {url}");
                             let image = image
                                 .resize(
                                     TILE_SIZE as u32,

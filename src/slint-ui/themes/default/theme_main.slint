@@ -122,8 +122,6 @@ export component DefaultTheme inherits Rectangle {
                         horizontal-alignment: TextHorizontalAlignment.center;
                         y: parent.height * 27.5%;
                     }
-
-                    visible: true;
                 }
 
                 coolant-temp-gauge := InstrumentGauge {
@@ -630,34 +628,35 @@ export component DefaultTheme inherits Rectangle {
         bottom-span := PrimarySection {
             height: odometer-text.font-size * 150%;
 
-            odometer-text-section := Rectangle {
-                background: transparent;
-                x: parent.x + parent.width / 2 - self.width / 2;
+            HorizontalLayout {
+                alignment: center;
+                odometer-text-section := Rectangle {
+                    background: transparent;
 
-                odometer-text := Text {
-                    color: white;
-                    text: floor(SCarData.odometer.value);
-                    font-size: 40px;
-                    vertical-alignment: TextVerticalAlignment.center;
-                    horizontal-alignment: TextHorizontalAlignment.center;
-                    x: parent.x + parent.width / 2 - self.width / 2;
-                }
+                    odometer-text := Text {
+                        color: white;
+                        text: floor(SCarData.odometer.value);
+                        font-size: 40px;
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                    }
 
-                odometer-dec-text := Text {
-                    color: odometer-text.color.transparentize(60%);
-                    text: "." + (floor(SCarData.odometer.value * 10) / 10 - floor(SCarData.odometer.value)) * 10;
-                    font-size: odometer-text.font-size;
-                    horizontal-alignment: TextHorizontalAlignment.left;
-                    vertical-alignment: odometer-text.vertical-alignment;
-                    x: odometer-text.x + odometer-text.width;
-                }
+                    odometer-dec-text := Text {
+                        color: odometer-text.color.transparentize(60%);
+                        text: "." + (floor(SCarData.odometer.value * 10) / 10 - floor(SCarData.odometer.value)) * 10;
+                        font-size: odometer-text.font-size;
+                        horizontal-alignment: left;
+                        vertical-alignment: odometer-text.vertical-alignment;
+                        x: odometer-text.x + odometer-text.width;
+                    }
 
-                odometer-unit-text := Text {
-                    color: odometer-text.color.transparentize(70%);
-                    text: SCarData.odometer.unit_str;
-                    font-size: odometer-text.font-size * 70%;
-                    x: odometer-dec-text.x + odometer-dec-text.width;
-                    y: odometer-dec-text.y + odometer-dec-text.height / 2 - self.height / 2;
+                    odometer-unit-text := Text {
+                        vertical-alignment: center;
+                        color: odometer-text.color.transparentize(70%);
+                        text: SCarData.odometer.unit_str;
+                        font-size: odometer-text.font-size * 70%;
+                        x: odometer-dec-text.x + odometer-dec-text.width;
+                    }
                 }
             }
 

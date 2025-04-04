@@ -55,6 +55,10 @@ export component SettingsMenu inherits MenuRectangle {
 
     focus := FocusScope { }
 
+    TouchArea {
+        enabled: root.open;
+    }
+
     Button {
         text: "Exit";
 

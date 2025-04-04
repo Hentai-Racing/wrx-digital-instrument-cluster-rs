@@ -405,12 +405,21 @@ fn generate_slint_car_data(slint_path: impl AsRef<Path>) {
         .expect("Failed to write to file");
 }
 
-fn capitalize_first(s: &str) -> String {
-    let mut c = s.chars();
-    match c.next() {
-        None => String::new(),
-        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+fn capitalize_first_words(s: &str) -> String {
+    // let words: Vec<&str> = ;
+    let mut words_capitilized: Vec<String> = vec![];
+
+    for word in s.split('-').collect::<Vec<_>>() {
+        let mut chars = word.chars();
+        match chars.next() {
+            None => {}
+            Some(c) => {
+                words_capitilized.push(c.to_uppercase().collect::<String>() + chars.as_str());
+            }
+        }
     }
+
+    words_capitilized.join("-")
 }
 
 fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std::error::Error>> {
@@ -444,7 +453,7 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
                         && path.extension().is_some_and(|ext| ext == "slint")
                         && path.file_stem().is_some_and(|stem| stem == "theme_main")
                     {
-                        let theme_component = capitalize_first(&parent_dir) + "Theme";
+                        let theme_component = capitalize_first_words(&parent_dir) + "Theme";
                         gen_output += &format!("import {{ {theme_component} }} from \"{parent_dir}/theme_main.slint\";\n");
                         theme_components.push(theme_component);
                     }
@@ -456,10 +465,19 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
     gen_output += "import { Themes } from \"themes.slint\";\n";
     gen_output += "\nexport component ThemeLoader {\n\twidth: 100%;\n\theight: 100%;\n\n";
 
-    for theme_component in theme_components {
+    gen_output += &format!(
+        "\tout property <[string]> themes: [{}];\n\n",
+        theme_components
+            .iter()
+            .map(|val| format!("\"{}\"", val.strip_suffix("Theme").unwrap()))
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+
+    for (i, theme_component) in theme_components.iter().enumerate() {
         gen_output += &format!(
-            "\tif Themes.current-theme == \"{}\": root-{} := {theme_component} {{}}\n",
-            theme_component.strip_suffix("Theme").unwrap(),
+            "\tif Themes.current-theme == {}: root-{} := {theme_component} {{}}\n",
+            format!("root.themes[{i}]"),
             theme_component.to_lowercase()
         );
     }

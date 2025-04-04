@@ -158,6 +158,7 @@ export struct InstrumentGaugeRegion {
     minor-tick-outer-radius: length,
 
     label-major-ticks: bool,
+    major-tick-label-inner-radius-offset: length,
     major-tick-label-scale: float,
     // label-minor-ticks: bool,
 
@@ -256,8 +257,8 @@ export component InstrumentGauge inherits Rectangle {
 
                 font-size: 35px;
 
-                x: (root.width / 2) - (self.width / 2) + (region.major-tick-inner-radius - self.font-size) * cos(-parent.start);
-                y: (root.height / 2) - (self.height / 2) + (region.major-tick-inner-radius - self.font-size) * sin(-parent.start);
+                x: (root.width / 2) - (self.width / 2) + (region.major-tick-inner-radius - self.font-size - region.major-tick-label-inner-radius-offset) * cos(-parent.start);
+                y: (root.height / 2) - (self.height / 2) + (region.major-tick-inner-radius - self.font-size - region.major-tick-label-inner-radius-offset) * sin(-parent.start);
             }
 
             if (major-tick + 1) != region.major-ticks: Rectangle {
