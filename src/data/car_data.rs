@@ -1,13 +1,10 @@
+use crate::can::can_mux_manager::{MuxContext, MuxParseResult};
 use crate::can::messages::wrx_2018::{self, EngineMtGear, Messages};
 use crate::data::data_parameter::DataParameter;
 use crate::data::units::{Unit, UnitSystem};
 
-use embedded_can::{ExtendedId, StandardId};
+use embedded_can::Frame;
 use paste::paste;
-use std::sync::{
-    atomic::{AtomicBool, Ordering::SeqCst},
-    Arc,
-};
 
 macro_rules! param_max_min {
     ($car_data:ident, $msg:path, $param:ident) => {paste!(
@@ -74,13 +71,17 @@ macro_rules! HandleSignalProcess {
         $self.$param().set_value($sig.$param());
     };
     ($self:ident, $sig:ident, $param:ident, $process_override:ident) => {
-        $self.$process_override(&$sig.$param());
+        $self.$process_override(&$sig.$param(), $sig);
     };
 }
 
 /// Example:
 ///```
 /// CarData! {
+///     {
+///         // normal struct stuff here
+///     };
+///
 ///     MessageEnum => {
 ///         <Unit(:UnitSystem)?>? [OverrideSetterFn]? param_name: type (= default)?,+
 ///         <Speed:USCS> [SpeedOverride] cruise_speed: u16 = 91,
@@ -88,7 +89,7 @@ macro_rules! HandleSignalProcess {
 /// }
 ///
 /// impl CarData {
-///     (fn OverrideSetterFn(&mut self, input: &dyn Any) {
+///     (fn OverrideSetterFn(&mut self, input: &dyn Any, param: Message) {
 ///         ...
 ///     })?
 /// }
@@ -97,9 +98,10 @@ macro_rules! HandleSignalProcess {
 /// Note: ```bool``` data types default to true unless otherwise stated
 ///
 macro_rules! CarData {
-    ( $($msg:ident => { $($(<$unit:path$(:$unit_system:path)?>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; ) => {
+    { {$( $visible:vis $struct_param:ident: $struct_param_ty:ty ),+}; $($msg:ident => { $($(<$unit:path$(:$unit_system:path)?>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; } => {
         #[derive(Clone, Default)]
         pub struct CarData {
+            $($visible $struct_param: $struct_param_ty,)+
             $($($param: DataParameter<$type>,)*)*
         }
 
@@ -140,7 +142,13 @@ macro_rules! CarData {
     }
 }
 
-CarData!(
+// TODO: make a hashmap or something so all the parameters can be displayed in slint as a list
+
+CarData! {
+    {
+        pub obd_mux_context: MuxContext
+    };
+
     Engine => {
         engine_rpm: u16,
         mt_gear: EngineMtGear = EngineMtGear::Neutral
@@ -228,70 +236,34 @@ CarData!(
     DimmerAndHood => {
         hood_open: bool,
     };
-);
+}
 
-#[allow(unused)]
-fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
-    let search_len = pattern.ilog2() + 1;
-    let mut current = 0u64;
-
-    for &byte in payload {
-        for b in 0u8..8u8 {
-            current = (current << 1) | ((byte >> (7 - b)) & 1) as u64;
-            current &= (1 << search_len) - 1;
-
-            if current == pattern {
-                return true;
-            }
-        }
-    }
-
-    false
+pub enum ParseResult {
+    Mux(MuxParseResult),
+    Ok,
 }
 
 impl CarData {
-    //TODO: these bridge functions should be elsewhere
-
-    #[cfg(feature = "slcan")]
-    pub async fn bridge_slcan(
+    pub fn parse_frame(
         &mut self,
-        mut can_socket: slcan::CanSocket<serial::SystemPort>,
-        running: Arc<AtomicBool>,
-    ) {
-        use embedded_can::{Id, StandardId};
+        frame: impl Frame,
+    ) -> Result<ParseResult, Box<dyn std::error::Error>> {
+        let data = &frame.data()[..frame.dlc()];
 
-        while running.load(SeqCst) {
-            if let Ok(frame) = can_socket.read() {
-                let id = unsafe { Id::from(StandardId::new_unchecked(frame.id as _)) };
-                self.handle_frame(id, &frame.data[..frame.dlc]);
-            };
-        }
-    }
-
-    pub fn handle_frame(&mut self, id: embedded_can::Id, payload: &[u8]) {
-        if let Ok(message) = Messages::from_can_message(id, payload) {
-            self.process_message(&message)
-        } else {
-            let raw_id = match id {
-                embedded_can::Id::Standard(raw) => raw.as_raw() as u32,
-                embedded_can::Id::Extended(raw) => raw.as_raw() as u32,
-            };
-
-            match raw_id {
-                0x7e0 => {
-                    // let test_tpms = search_payload_unaligned(payload, 0x75B);
-                    // if test_tpms {
-                    //     println!("Sent: {:?}", payload);
-                    // }
-                }
-                0x7e1..=0x7ef => {
-                    // let test_tpms = search_payload_unaligned(payload, 0x75b);
-                    // if test_tpms {
-                    //     println!("Recv: {:?}", payload);
-                    // }
-                }
-                _ => {}
+        match Messages::from_can_message(frame.id(), data) {
+            Ok(message) => {
+                self.process_message(&message);
+                return Ok(ParseResult::Ok);
             }
+            Err(e) => match e {
+                wrx_2018::CanError::UnknownMessageId(_) => {}
+                _ => return Err(e.into()),
+            },
+        };
+
+        match self.obd_mux_context.parse_frame(frame) {
+            Ok(mux_result) => return Ok(ParseResult::Mux(mux_result)),
+            Err(e) => return Err(e.into()),
         }
     }
 }

@@ -5,14 +5,18 @@ mod hardware;
 mod ui;
 
 use crate::application::s_car_data_bridge::SCarDataBridge;
-use crate::data::car_data::CarData;
+use crate::can::can_backend::{CanFrame, SelectedCanInterface};
+use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
+use crate::data::car_data::{CarData, ParseResult};
 use crate::ui::theme_handler;
 
-use std::collections::BTreeMap;
+use embedded_can::Frame;
+
+use std::collections::VecDeque;
 use std::env;
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 slint::include_modules!();
 
@@ -44,28 +48,21 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let virtual_cluster = cli.get_flag("virtual");
 
-    #[derive(PartialEq, Eq)]
-    enum SelectedInterface {
-        Virtual,
-        Can,
-        SerialCan,
-    }
-
     // check if the user wants to set anything specific, else default
     let selected_interface = if virtual_cluster {
-        SelectedInterface::Virtual
+        SelectedCanInterface::VirtualCan
     } else if cli.value_source("candev") == Some(clap::parser::ValueSource::CommandLine) {
-        SelectedInterface::Can
+        SelectedCanInterface::Can
     } else if cli.value_source("sldev") == Some(clap::parser::ValueSource::CommandLine) {
-        SelectedInterface::SerialCan
+        SelectedCanInterface::SerialCan
     } else {
         #[cfg(feature = "apalis_imx8")]
         {
-            SelectedInterface::Can
+            SelectedCanInterface::Can
         }
         #[cfg(not(feature = "apalis_imx8"))]
         {
-            SelectedInterface::SerialCan
+            SelectedCanInterface::SerialCan
         }
     };
 
@@ -77,7 +74,9 @@ fn main() -> Result<(), slint::PlatformError> {
         .unwrap_or_default()
         .is_empty()
     {
-        env::set_var("SLINT_DEBUG_PERFORMANCE", "refresh_full_speed,overlay");
+        unsafe {
+            env::set_var("SLINT_DEBUG_PERFORMANCE", "refresh_full_speed,overlay");
+        }
     }
 
     let ui = App::new()?;
@@ -92,6 +91,24 @@ fn main() -> Result<(), slint::PlatformError> {
     let mut _created_interface = false;
     #[cfg(target_os = "linux")]
     let mut can_interface = None;
+
+    let interface_path = match &selected_interface {
+        SelectedCanInterface::SerialCan => {
+            if let Some(sldev) = cli.get_one::<String>("sldev") {
+                sldev.as_str()
+            } else {
+                DEFAULT_SL_DEV
+            }
+        }
+        SelectedCanInterface::VirtualCan => VCAN_IF_NAME,
+        SelectedCanInterface::Can => {
+            if let Some(candev) = cli.get_one::<String>("candev") {
+                candev.as_str()
+            } else {
+                CAN_IF_NAME
+            }
+        }
+    };
 
     #[cfg(target_os = "linux")]
     {
@@ -115,7 +132,7 @@ fn main() -> Result<(), slint::PlatformError> {
 
         if matches!(
             selected_interface,
-            SelectedInterface::Virtual | SelectedInterface::Can
+            SelectedCanInterface::VirtualCan | SelectedCanInterface::Can
         ) {
             can_interface = match CanInterface::open(&can_if_name) {
                 Ok(can_interface) => Some(can_interface),
@@ -146,8 +163,8 @@ fn main() -> Result<(), slint::PlatformError> {
                                 Ok(_) => {}
                                 Err(e) => {
                                     eprintln!(
-                                    "Failed to set bitrate of {can_if_name} to {can_bitrate}: {e:?}"
-                                );
+                                        "Failed to set bitrate of {can_if_name} to {can_bitrate}: {e:?}"
+                                    );
                                 }
                             };
                         }
@@ -174,7 +191,6 @@ fn main() -> Result<(), slint::PlatformError> {
             let mut can_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
 
             let mut car_data_clone = car_data.clone();
-
             let car_data_bridge_handle = tokio_runtime.spawn(async move {
                 use embedded_can::Frame;
                 use futures::stream::StreamExt;
@@ -212,17 +228,16 @@ fn main() -> Result<(), slint::PlatformError> {
             runners.push(running_vcan);
         }
     }
+
     #[cfg(feature = "slcan")]
     {
         let mut slcan_interface = None;
         let running_sclan = Arc::new(AtomicBool::new(false));
 
-        if selected_interface == SelectedInterface::SerialCan {
-            if let Some(sldev) = cli.get_one::<String>("sldev") {
-                match serial::SystemPort::open(Path::new(sldev)) {
-                    Ok(port) => slcan_interface = Some(port),
-                    Err(e) => eprintln!("Error opening serial device {sldev}: {e}"),
-                }
+        if selected_interface == SelectedCanInterface::SerialCan {
+            match serial::SystemPort::open(Path::new(interface_path)) {
+                Ok(port) => slcan_interface = Some(port),
+                Err(e) => eprintln!("Error opening serial device {interface_path}: {e}"),
             }
         }
 
@@ -234,11 +249,61 @@ fn main() -> Result<(), slint::PlatformError> {
 
                 let mut can_socket = slcan::CanSocket::<serial::SystemPort>::new(slport);
                 can_socket.close().unwrap();
-                can_socket.open(slcan::BitRate::Setup1Mbit).unwrap();
+                can_socket.open(slcan::BitRate::Setup500Kbit).unwrap();
 
-                car_data_clone
-                    .bridge_slcan(can_socket, running_slcan_clone)
-                    .await;
+                let obd_id = unsafe {
+                    embedded_can::Id::from(embedded_can::StandardId::new_unchecked(0x7E0))
+                };
+
+                // TESTING
+                let mut queue = VecDeque::from(vec![
+                    CanFrame::new(obd_id, 8, &[0x02, OBD2Service::CurrentData.into(), 0x0c]),
+                    CanFrame::new(
+                        obd_id,
+                        8,
+                        &[0x02, OBD2Service::VehicleInformation.into(), 0x00],
+                    ),
+                    CanFrame::new(
+                        obd_id,
+                        8,
+                        &[0x02, OBD2Service::VehicleInformation.into(), 0x02],
+                    ),
+                ]);
+
+                car_data_clone.obd_mux_context.waiting_for_responce = false;
+
+                while running_slcan_clone.load(Ordering::SeqCst) {
+                    if let Ok(frame) = can_socket.read() {
+                        match car_data_clone.parse_frame(frame) {
+                            Ok(result) => match result {
+                                ParseResult::Mux(result) => match result {
+                                    MuxParseResult::AwaitingBroadcastAck => {
+                                        let ack = ISOTPAckFrame::new(obd_id);
+                                        queue.push_front(CanFrame::from_frame(ack));
+                                    }
+                                    _ => {}
+                                },
+                                _ => {}
+                            },
+                            Err(e) => println!("Failed to parse frame: {e:?}"),
+                        }
+                    };
+
+                    if !car_data_clone.obd_mux_context.waiting_for_responce {
+                        if let Some(frame) = queue.pop_front() {
+                            match can_socket.write(frame.id(), frame.data()) {
+                                Ok(_written_bytes) => {
+                                    car_data_clone.obd_mux_context.waiting_for_responce = true;
+                                }
+                                Err(e) => {
+                                    eprintln!("Failed to write to can_socket: {e:?}");
+                                }
+                            }
+                        }
+                    }
+                }
+
+                can_socket.close().unwrap();
             }
         });
         handles.push(slport_handle);
@@ -247,8 +312,11 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let debug_menu_state = ui.global::<DebugMenuState>();
     let application_state = ui.global::<ApplicationState>();
+
     application_state.set_virtual_cluster(virtual_cluster);
     application_state.set_debug_mode(cfg!(debug_assertions));
+    application_state.set_cfg_network(cfg!(feature = "network"));
+    application_state.set_cfg_three_d(cfg!(feature = "three-d"));
 
     let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data.clone());
     ui_data_bridge.run();

@@ -164,9 +164,6 @@ impl GSensor {
     /// Set value of g_sensor_lateral
     #[inline(always)]
     pub fn set_g_sensor_lateral(&mut self, value: f32) -> Result<(), CanError> {
-        if value < -255_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: GSensor::MESSAGE_ID });
-        }
         let factor = -0.0035_f32;
         let offset = 1_f32;
         let value = ((value - offset) / factor) as i16;
@@ -207,9 +204,6 @@ impl GSensor {
     /// Set value of g_sensor_longitudinal
     #[inline(always)]
     pub fn set_g_sensor_longitudinal(&mut self, value: f32) -> Result<(), CanError> {
-        if value < -255_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: GSensor::MESSAGE_ID });
-        }
         let factor = -0.0035_f32;
         let offset = 1_f32;
         let value = ((value - offset) / factor) as i16;
@@ -252,9 +246,6 @@ impl GSensor {
     /// Set value of steering_angle
     #[inline(always)]
     pub fn set_steering_angle(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 1_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: GSensor::MESSAGE_ID });
-        }
         let factor = 0.01_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as i16;
@@ -376,9 +367,6 @@ impl BrakePedal {
     /// Set value of brake_pedal_pressure
     #[inline(always)]
     pub fn set_brake_pedal_pressure(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 100_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: BrakePedal::MESSAGE_ID });
-        }
         let factor = 0.78125_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as u8;
@@ -418,9 +406,6 @@ impl BrakePedal {
     /// Set value of vehicle_speed
     #[inline(always)]
     pub fn set_vehicle_speed(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 290_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: BrakePedal::MESSAGE_ID });
-        }
         let factor = 0.05625_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as u16;
@@ -762,9 +747,6 @@ impl WheelSpeeds {
     /// Set value of left_front_wheel_speed
     #[inline(always)]
     pub fn set_left_front_wheel_speed(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: WheelSpeeds::MESSAGE_ID });
-        }
         let factor = 0.0592_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as u16;
@@ -804,9 +786,6 @@ impl WheelSpeeds {
     /// Set value of left_rear_wheel_speed
     #[inline(always)]
     pub fn set_left_rear_wheel_speed(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: WheelSpeeds::MESSAGE_ID });
-        }
         let factor = 0.0592_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as u16;
@@ -846,9 +825,6 @@ impl WheelSpeeds {
     /// Set value of right_front_wheel_speed
     #[inline(always)]
     pub fn set_right_front_wheel_speed(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: WheelSpeeds::MESSAGE_ID });
-        }
         let factor = 0.0592_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as u16;
@@ -888,9 +864,6 @@ impl WheelSpeeds {
     /// Set value of right_rear_wheel_speed
     #[inline(always)]
     pub fn set_right_rear_wheel_speed(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: WheelSpeeds::MESSAGE_ID });
-        }
         let factor = 0.0592_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as u16;
@@ -1008,9 +981,6 @@ impl Steering {
     /// Set value of steering_wheel_angle
     #[inline(always)]
     pub fn set_steering_wheel_angle(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 0_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: Steering::MESSAGE_ID });
-        }
         let factor = 0.02_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as i16;
@@ -1140,9 +1110,6 @@ impl MotorControl {
     /// Set value of accelerator_combined
     #[inline(always)]
     pub fn set_accelerator_combined(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 100_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: MotorControl::MESSAGE_ID });
-        }
         let factor = 0.392157_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as u8;
@@ -1181,9 +1148,6 @@ impl MotorControl {
     /// Set value of accelerator_cruise_position
     #[inline(always)]
     pub fn set_accelerator_cruise_position(&mut self, value: u8) -> Result<(), CanError> {
-        if value < 0_u8 || 255_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: MotorControl::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: MotorControl::MESSAGE_ID })?;
@@ -1224,9 +1188,6 @@ impl MotorControl {
     /// Set value of accelerator_pedal_position
     #[inline(always)]
     pub fn set_accelerator_pedal_position(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 1_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: MotorControl::MESSAGE_ID });
-        }
         let factor = 0.392157_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as u8;
@@ -1336,9 +1297,6 @@ impl MotorControl {
     /// Set value of throttle_plate_position
     #[inline(always)]
     pub fn set_throttle_plate_position(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 100_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: MotorControl::MESSAGE_ID });
-        }
         let factor = 0.392157_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as u8;
@@ -1460,9 +1418,6 @@ impl Engine {
     /// Set value of engine_rpm
     #[inline(always)]
     pub fn set_engine_rpm(&mut self, value: u16) -> Result<(), CanError> {
-        if value < 0_u16 || 8000_u16 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: Engine::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: Engine::MESSAGE_ID })?;
@@ -1582,9 +1537,6 @@ impl Engine {
     /// Set value of mt_gear
     #[inline(always)]
     pub fn set_mt_gear(&mut self, value: u8) -> Result<(), CanError> {
-        if value < 0_u8 || 7_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: Engine::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: Engine::MESSAGE_ID })?;
@@ -1735,9 +1687,6 @@ impl Transmission {
     /// Set value of mt_gear_VERIFY
     #[inline(always)]
     pub fn set_mt_gear_verify(&mut self, value: u8) -> Result<(), CanError> {
-        if value < 0_u8 || 7_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: Transmission::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: Transmission::MESSAGE_ID })?;
@@ -1778,9 +1727,6 @@ impl Transmission {
     /// Set value of transmission_temp_VERIFY
     #[inline(always)]
     pub fn set_transmission_temp_verify(&mut self, value: i8) -> Result<(), CanError> {
-        if value < 0_i8 || 0_i8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: Transmission::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_add(40)
             .ok_or(CanError::ParameterOutOfRange { message_id: Transmission::MESSAGE_ID })?;
@@ -2769,9 +2715,6 @@ impl ClimateControl {
     /// Set value of airflow_distribution_mode
     #[inline(always)]
     pub fn set_airflow_distribution_mode(&mut self, value: u8) -> Result<(), CanError> {
-        if value < 0_u8 || 1_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: ClimateControl::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: ClimateControl::MESSAGE_ID })?;
@@ -2811,9 +2754,6 @@ impl ClimateControl {
     /// Set value of blower_fan_level
     #[inline(always)]
     pub fn set_blower_fan_level(&mut self, value: u8) -> Result<(), CanError> {
-        if value < 0_u8 || 7_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: ClimateControl::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: ClimateControl::MESSAGE_ID })?;
@@ -2854,9 +2794,6 @@ impl ClimateControl {
     /// Set value of blend_door
     #[inline(always)]
     pub fn set_blend_door(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 100_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: ClimateControl::MESSAGE_ID });
-        }
         let factor = 2.95_f32;
         let offset = -13.5_f32;
         let value = ((value - offset) / factor) as u8;
@@ -3075,9 +3012,6 @@ impl Cluster {
     /// Set value of fuel_level
     #[inline(always)]
     pub fn set_fuel_level(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 100_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: Cluster::MESSAGE_ID });
-        }
         let factor = -0.12_f32;
         let offset = 101.58_f32;
         let value = ((value - offset) / factor) as u16;
@@ -3184,9 +3118,6 @@ impl Cluster {
     /// Set value of raw_fuel_testing
     #[inline(always)]
     pub fn set_raw_fuel_testing(&mut self, value: u16) -> Result<(), CanError> {
-        if value < 0_u16 || 100_u16 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: Cluster::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: Cluster::MESSAGE_ID })?;
@@ -3604,9 +3535,6 @@ impl EngineStatus2 {
     /// Set value of cruise_control_speed
     #[inline(always)]
     pub fn set_cruise_control_speed(&mut self, value: u8) -> Result<(), CanError> {
-        if value < 0_u8 || 255_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID })?;
@@ -3649,9 +3577,6 @@ impl EngineStatus2 {
     /// Set value of engine_boost_pressure
     #[inline(always)]
     pub fn set_engine_boost_pressure(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 255_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
-        }
         let factor = 0.1_f32;
         let offset = -15_f32;
         let value = ((value - offset) / factor) as i8;
@@ -3691,9 +3616,6 @@ impl EngineStatus2 {
     /// Set value of engine_coolant_temp
     #[inline(always)]
     pub fn set_engine_coolant_temp(&mut self, value: i16) -> Result<(), CanError> {
-        if value < 0_i16 || 200_i16 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_add(40)
             .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID })?;
@@ -3735,9 +3657,6 @@ impl EngineStatus2 {
     /// Set value of engine_fuel_flow
     #[inline(always)]
     pub fn set_engine_fuel_flow(&mut self, value: u8) -> Result<(), CanError> {
-        if value < 0_u8 || 255_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID })?;
@@ -3777,9 +3696,6 @@ impl EngineStatus2 {
     /// Set value of engine_oil_temp
     #[inline(always)]
     pub fn set_engine_oil_temp(&mut self, value: i16) -> Result<(), CanError> {
-        if value < 0_i16 || 216_i16 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_add(40)
             .ok_or(CanError::ParameterOutOfRange { message_id: EngineStatus2::MESSAGE_ID })?;
@@ -4628,9 +4544,6 @@ impl DimmerAndHood {
     /// Set value of dimmer_dial_value
     #[inline(always)]
     pub fn set_dimmer_dial_value(&mut self, value: u8) -> Result<(), CanError> {
-        if value < 0_u8 || 250_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: DimmerAndHood::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: DimmerAndHood::MESSAGE_ID })?;
@@ -4656,21 +4569,21 @@ impl DimmerAndHood {
     /// - Start bit: 8
     /// - Signal size: 1 bits
     /// - Factor: -1
-    /// - Offset: 0
-    /// - Byte order: BigEndian
+    /// - Offset: 1
+    /// - Byte order: LittleEndian
     /// - Value type: Unsigned
     #[inline(always)]
     pub fn hood_open_raw(&self) -> bool {
-        let signal = self.raw.view_bits::<Msb0>()[15..16].load_be::<u8>();
+        let signal = self.raw.view_bits::<Lsb0>()[8..9].load_le::<u8>();
         
-        signal == 1
+        signal == 0
     }
     
     /// Set value of hood_open
     #[inline(always)]
     pub fn set_hood_open(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
-        self.raw.view_bits_mut::<Msb0>()[15..16].store_be(value);
+        self.raw.view_bits_mut::<Lsb0>()[8..9].store_le(value);
         Ok(())
     }
     
@@ -4947,9 +4860,6 @@ impl Odometer {
     /// Set value of odometer
     #[inline(always)]
     pub fn set_odometer(&mut self, value: f32) -> Result<(), CanError> {
-        if value < 0_f32 || 4294970000_f32 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: Odometer::MESSAGE_ID });
-        }
         let factor = 0.160934_f32;
         let offset = 0_f32;
         let value = ((value - offset) / factor) as u32;
@@ -5079,9 +4989,6 @@ impl Tpms {
     /// Set value of left_front_tire_pressure
     #[inline(always)]
     pub fn set_left_front_tire_pressure(&mut self, value: u8) -> Result<(), CanError> {
-        if value < 0_u8 || 1_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID })?;
@@ -5123,9 +5030,6 @@ impl Tpms {
     /// Set value of left_rear_tire_pressure
     #[inline(always)]
     pub fn set_left_rear_tire_pressure(&mut self, value: u8) -> Result<(), CanError> {
-        if value < 0_u8 || 1_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID })?;
@@ -5167,9 +5071,6 @@ impl Tpms {
     /// Set value of right_front_tire_pressure
     #[inline(always)]
     pub fn set_right_front_tire_pressure(&mut self, value: u8) -> Result<(), CanError> {
-        if value < 0_u8 || 1_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID })?;
@@ -5211,9 +5112,6 @@ impl Tpms {
     /// Set value of right_rear_tire_pressure
     #[inline(always)]
     pub fn set_right_rear_tire_pressure(&mut self, value: u8) -> Result<(), CanError> {
-        if value < 0_u8 || 1_u8 < value {
-            return Err(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID });
-        }
         let factor = 1;
         let value = value.checked_sub(0)
             .ok_or(CanError::ParameterOutOfRange { message_id: Tpms::MESSAGE_ID })?;
@@ -5303,4 +5201,5 @@ impl core::fmt::Display for CanError {
         write!(f, "{:?}", self)
     }
 }
+impl std::error::Error for CanError {}
 

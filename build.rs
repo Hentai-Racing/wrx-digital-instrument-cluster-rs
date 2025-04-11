@@ -50,6 +50,8 @@ fn build_dbc() {
                 .dbc_name(dbc_name)
                 .dbc_content(&dbc_file)
                 .allow_dead_code(true)
+                .check_ranges(dbc_codegen::FeatureConfig::Never)
+                .impl_error(dbc_codegen::FeatureConfig::Always)
                 .build();
 
             dbc_codegen::codegen(config, &mut BufWriter::new(out_file))
@@ -191,7 +193,8 @@ fn generate_vcan_handler() {
                             signal_path,
                             param_names.join(", ")
                         );
-                        let write_frame_expression: String = format!("if let Some(frame) = Frame::new({0}.id(), {0}.data()) {{let write_future = socket.write_frame(frame); write_futures.push(write_future);}}",
+                        let write_frame_expression: String = format!(
+                            "if let Some(frame) = Frame::new({0}.id(), {0}.data()) {{let write_future = socket.write_frame(frame); write_futures.push(write_future);}}",
                             frame_ident
                         );
 
@@ -219,8 +222,7 @@ fn generate_vcan_handler() {
     gen_output += "use std::thread::sleep;";
     gen_output += &imports.join("\n");
 
-    gen_output +=
-        "pub async fn run_vcan_generator(socket: &mut CanSocket, running: Arc<AtomicBool>, simulating: Arc<AtomicBool>, delay: Duration) {";
+    gen_output += "pub async fn run_vcan_generator(socket: &mut CanSocket, running: Arc<AtomicBool>, simulating: Arc<AtomicBool>, delay: Duration) {";
     gen_output +=
         "    while running.load(Ordering::SeqCst) {while simulating.load(Ordering::SeqCst) {";
     gen_output += &gen_block;
@@ -454,7 +456,9 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
                         && path.file_stem().is_some_and(|stem| stem == "theme_main")
                     {
                         let theme_component = capitalize_first_words(&parent_dir) + "Theme";
-                        gen_output += &format!("import {{ {theme_component} }} from \"{parent_dir}/theme_main.slint\";\n");
+                        gen_output += &format!(
+                            "import {{ {theme_component} }} from \"{parent_dir}/theme_main.slint\";\n"
+                        );
                         theme_components.push(theme_component);
                     }
                 }

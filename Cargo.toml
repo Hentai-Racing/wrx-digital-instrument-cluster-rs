@@ -2,9 +2,9 @@
 name = "wrx-digital-instrument-cluster-rs"
 description = "A digital instrument cluster for the 2018 Subaru WRX"
 repository = "https://github.com/Hentai-Racing/wrx-digital-instrument-cluster-rs"
-version = "0.6.0"                                                                 # Only 1.0.0 when all factory features exist
+version = "0.7.1"                                                                 # Only 1.0.0 when all factory features exist
 authors = ["Bryce Happel Walton <brycewaltonmail@gmail.com>"]
-edition = "2021"
+edition = "2024"
 build = "build.rs"
 license-file = "LICENSE"
 readme = "README.md"
@@ -14,7 +14,6 @@ default = [
     "slint/backend-winit",
     "slint/renderer-skia-opengl",
     "slcan",
-    "network",
 ]
 kms = ["slint/backend-linuxkms", "slint/renderer-skia-opengl"]
 apalis_imx8 = ["dep:gpio-cdev", "kms"]
@@ -35,6 +34,7 @@ paste = "*"
 clap = "*"
 embedded-can = "*"
 futures = "*"
+bitvec = "*"
 
 image = "*"
 
@@ -44,11 +44,10 @@ three-d = { git = "https://github.com/asny/three-d.git", optional = true }
 serial = { version = "*", optional = true }
 
 # feature deps network
-slcan = { version = "*", optional = true }
+slcan = { git = "https://github.com/bryce-happel-walton/slcan.git", optional = true }
 reqwest = { version = "*", optional = true }
 
 # required due to dbc-codegen
-bitvec = "*"
 tokio = { version = "*", features = [
     "sync",
     "signal",
@@ -57,11 +56,15 @@ tokio = { version = "*", features = [
 ], default-features = false }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-socketcan = { version = "*", features = ["tokio"] }
+socketcan = { version = "*", features = [
+    "tokio",
+] } # TODO: remove all socketcan tokio support, just use a seperate thread
 
 [build-dependencies]
 slint-build = { git = "https://github.com/slint-ui/slint.git" }
-dbc-codegen = { git = "https://github.com/technocreatives/dbc-codegen.git", rev = "af7cbf3" }
+dbc-codegen = { git = "https://github.com/bryce-happel-walton/dbc-codegen.git", branch = "feature/inverted-bit-signals", features = [
+    "std",
+] } #* https://github.com/technocreatives/dbc-codegen/pull/97
 syn = "*"
 prettyplease = "*"
 

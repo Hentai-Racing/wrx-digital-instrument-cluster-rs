@@ -1,5 +1,6 @@
 use crate::data::{car_data::CarData, units::UnitSystem};
 use crate::slint_generatedApp::*;
+
 use paste::paste;
 use slint::{ComponentHandle, Weak};
 use tokio::select;
@@ -101,7 +102,7 @@ impl SCarDataBridge {
         this
     }
 
-    pub fn handle_unit_system(&self) {
+    fn handle_unit_system(&self) {
         if let Some(ui) = self.ui.upgrade() {
             let ui_application_state = ui.global::<ApplicationState>();
             let ui_binding = self.ui.clone();
@@ -117,6 +118,7 @@ impl SCarDataBridge {
         }
     }
 
+    // TODO: auto generate this somewhere else, maybe in CarData itself
     bridge! {
         engine_rpm: SIDataParameter,
         mt_gear: SStrDataParameter,
