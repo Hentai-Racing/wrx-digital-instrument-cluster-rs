@@ -156,7 +156,7 @@ BO_ 977 dash_state_VERIFY: 8 Vector__XXX
    SG_ UNITS : 15|1@1+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 1745 odometer: 8 Vector__XXX
-   SG_ odometer : 0|32@1+ (0.160934,0) [0|4.29497e+09] "KM" Vector__XXX
+   SG_ odometer : 0|32@1+ (0.160934,0) [0|1e+9] "KM" Vector__XXX
 
 BO_ 1883 tpms: 8 Vector__XXX
    SG_ left_front_tire_pressure : 0|8@1+ (1,0) [0|1] "" Vector__XXX

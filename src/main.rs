@@ -5,16 +5,13 @@ mod hardware;
 mod ui;
 
 use crate::application::s_car_data_bridge::SCarDataBridge;
-use crate::can::can_backend::{CanFrame, SelectedCanInterface};
+use crate::can::can_backend::{CanBackend, CanFrame, SelectedCanInterface};
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
 use crate::data::car_data::{CarData, ParseResult};
 use crate::ui::theme_handler;
 
-use embedded_can::Frame;
-
 use std::collections::VecDeque;
 use std::env;
-use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -29,7 +26,7 @@ const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
 #[cfg(target_vendor = "apple")]
 const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 
-fn main() -> Result<(), slint::PlatformError> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = clap::Command::new("")
         .args([
             clap::arg!(-v --virtual "Runs the application in virtual mode for testing")
@@ -89,8 +86,6 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let running_simulation = Arc::new(AtomicBool::new(false));
     let mut _created_interface = false;
-    #[cfg(target_os = "linux")]
-    let mut can_interface = None;
 
     let interface_path = match &selected_interface {
         SelectedCanInterface::SerialCan => {
@@ -110,204 +105,95 @@ fn main() -> Result<(), slint::PlatformError> {
         }
     };
 
-    #[cfg(target_os = "linux")]
+    let mut can_backend = CanBackend::new(selected_interface, interface_path)?;
+    let running_can = Arc::new(AtomicBool::new(false));
+
     {
-        use socketcan::tokio::CanSocket;
-        use socketcan::{CanInterface, SocketOptions};
+        let mut car_data = car_data.clone();
+        let running_can = running_can.clone();
+        let can_backend_read_handle = tokio_runtime.spawn(async move {
+            running_can.store(true, Ordering::SeqCst);
+
+            let obd_id =
+                unsafe { embedded_can::Id::from(embedded_can::StandardId::new_unchecked(0x7E0)) };
+
+            // TESTING
+            let mut queue = VecDeque::from(vec![
+                CanFrame::new(obd_id, 8, &[0x02, OBD2Service::CurrentData.into(), 0x0c]),
+                CanFrame::new(
+                    obd_id,
+                    8,
+                    &[0x02, OBD2Service::VehicleInformation.into(), 0x00],
+                ),
+                CanFrame::new(
+                    obd_id,
+                    8,
+                    &[0x02, OBD2Service::VehicleInformation.into(), 0x02],
+                ),
+            ]);
+
+            while running_can.load(Ordering::SeqCst) {
+                if let Some(frame) = can_backend.read_frame() {
+                    match car_data.parse_frame(frame) {
+                        Ok(result) => match result {
+                            ParseResult::Mux(result) => match result {
+                                MuxParseResult::AwaitingBroadcastAck => {
+                                    let ack = ISOTPAckFrame::new(obd_id);
+                                    queue.push_front(CanFrame::from_frame(ack));
+                                }
+                                _ => {}
+                            },
+                            _ => {}
+                        },
+                        Err(e) => println!("Failed to parse frame: {e:?}"),
+                    }
+                };
+
+                if !car_data.obd_mux_context.waiting_for_responce {
+                    if let Some(frame) = queue.pop_front() {
+                        match can_backend.write_frame(frame) {
+                            Ok(_written_bytes) => {
+                                car_data.obd_mux_context.waiting_for_responce = true;
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to write to can_socket: {e:?}");
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        handles.push(can_backend_read_handle);
+    }
+    runners.push(running_can);
+
+    #[cfg(target_os = "linux")]
+    if virtual_cluster {
+        use socketcan::{CanSocket, Socket, SocketOptions};
+
+        use crate::can::virtual_can_generator::run_vcan_generator;
+        use std::time::Duration;
 
         let running_vcan = Arc::new(AtomicBool::new(false));
 
-        let (can_if_name, can_if_type) = if virtual_cluster {
-            (VCAN_IF_NAME, "vcan")
-        } else {
-            (
-                if let Some(candev) = cli.get_one::<String>("candev") {
-                    candev.as_str()
-                } else {
-                    CAN_IF_NAME
-                },
-                "can",
+        let mut virtual_socket = CanSocket::open(VCAN_IF_NAME).expect("Failed to open can socket");
+        let _ = virtual_socket.set_loopback(true);
+
+        running_simulation.store(true, Ordering::SeqCst);
+        running_vcan.store(true, Ordering::SeqCst);
+
+        let running_simulation_clone = running_simulation.clone();
+        let running_vcan_clone = running_vcan.clone();
+        let vcan_handle = tokio_runtime.spawn(async move {
+            run_vcan_generator(
+                &mut virtual_socket,
+                running_vcan_clone,
+                running_simulation_clone,
+                Duration::from_millis(1),
             )
-        };
-
-        if matches!(
-            selected_interface,
-            SelectedCanInterface::VirtualCan | SelectedCanInterface::Can
-        ) {
-            can_interface = match CanInterface::open(&can_if_name) {
-                Ok(can_interface) => Some(can_interface),
-                _ => match CanInterface::create(&can_if_name, None, can_if_type) {
-                    Ok(can_interface) => {
-                        _created_interface = true;
-                        println!("Created CAN interface {can_if_name}");
-                        Some(can_interface)
-                    }
-                    Err(e) => {
-                        eprintln!("Failed to create CAN interface {can_if_name}: {e}");
-                        None
-                    }
-                },
-            };
-        }
-
-        let can_bitrate = 500000;
-
-        let socket_up = if let Some(can_interface) = &can_interface {
-            match can_interface.details() {
-                Ok(details) => {
-                    if details.is_up {
-                        true
-                    } else {
-                        if can_if_type != "vcan" {
-                            match can_interface.set_bitrate(can_bitrate, None) {
-                                Ok(_) => {}
-                                Err(e) => {
-                                    eprintln!(
-                                        "Failed to set bitrate of {can_if_name} to {can_bitrate}: {e:?}"
-                                    );
-                                }
-                            };
-                        }
-
-                        match can_interface.bring_up() {
-                            Ok(_) => true,
-                            Err(e) => {
-                                eprintln!("Failed to bring up interface {can_if_name}: {e:?}");
-                                false
-                            }
-                        }
-                    }
-                }
-                Err(e) => {
-                    eprintln!("Failed to get details from interface {can_if_name}: {e:?}");
-                    false
-                }
-            }
-        } else {
-            false
-        };
-
-        if socket_up {
-            let mut can_socket = CanSocket::open(can_if_name).expect("Failed to open can socket");
-
-            let mut car_data_clone = car_data.clone();
-            let car_data_bridge_handle = tokio_runtime.spawn(async move {
-                use embedded_can::Frame;
-                use futures::stream::StreamExt;
-
-                while let Some(Ok(frame)) = can_socket.next().await {
-                    car_data_clone.handle_frame(frame.id(), frame.data());
-                }
-            });
-            handles.push(car_data_bridge_handle);
-        }
-
-        if virtual_cluster {
-            use crate::can::virtual_can_generator::run_vcan_generator;
-            use std::time::Duration;
-
-            let mut virtual_socket =
-                CanSocket::open(can_if_name).expect("Failed to open can socket");
-            let _ = virtual_socket.set_loopback(true);
-
-            running_simulation.store(true, Ordering::SeqCst);
-            running_vcan.store(true, Ordering::SeqCst);
-
-            let running_simulation_clone = running_simulation.clone();
-            let running_vcan_clone = running_vcan.clone();
-            let vcan_handle = tokio_runtime.spawn(async move {
-                run_vcan_generator(
-                    &mut virtual_socket,
-                    running_vcan_clone,
-                    running_simulation_clone,
-                    Duration::from_millis(1),
-                )
-                .await
-            });
-            handles.push(vcan_handle);
-            runners.push(running_vcan);
-        }
-    }
-
-    #[cfg(feature = "slcan")]
-    {
-        let mut slcan_interface = None;
-        let running_sclan = Arc::new(AtomicBool::new(false));
-
-        if selected_interface == SelectedCanInterface::SerialCan {
-            match serial::SystemPort::open(Path::new(interface_path)) {
-                Ok(port) => slcan_interface = Some(port),
-                Err(e) => eprintln!("Error opening serial device {interface_path}: {e}"),
-            }
-        }
-
-        let running_slcan_clone = running_sclan.clone();
-        let mut car_data_clone = car_data.clone();
-        let slport_handle = tokio_runtime.spawn(async move {
-            if let Some(slport) = slcan_interface {
-                running_slcan_clone.store(true, Ordering::SeqCst);
-
-                let mut can_socket = slcan::CanSocket::<serial::SystemPort>::new(slport);
-                can_socket.close().unwrap();
-                can_socket.open(slcan::BitRate::Setup500Kbit).unwrap();
-
-                let obd_id = unsafe {
-                    embedded_can::Id::from(embedded_can::StandardId::new_unchecked(0x7E0))
-                };
-
-                // TESTING
-                let mut queue = VecDeque::from(vec![
-                    CanFrame::new(obd_id, 8, &[0x02, OBD2Service::CurrentData.into(), 0x0c]),
-                    CanFrame::new(
-                        obd_id,
-                        8,
-                        &[0x02, OBD2Service::VehicleInformation.into(), 0x00],
-                    ),
-                    CanFrame::new(
-                        obd_id,
-                        8,
-                        &[0x02, OBD2Service::VehicleInformation.into(), 0x02],
-                    ),
-                ]);
-
-                car_data_clone.obd_mux_context.waiting_for_responce = false;
-
-                while running_slcan_clone.load(Ordering::SeqCst) {
-                    if let Ok(frame) = can_socket.read() {
-                        match car_data_clone.parse_frame(frame) {
-                            Ok(result) => match result {
-                                ParseResult::Mux(result) => match result {
-                                    MuxParseResult::AwaitingBroadcastAck => {
-                                        let ack = ISOTPAckFrame::new(obd_id);
-                                        queue.push_front(CanFrame::from_frame(ack));
-                                    }
-                                    _ => {}
-                                },
-                                _ => {}
-                            },
-                            Err(e) => println!("Failed to parse frame: {e:?}"),
-                        }
-                    };
-
-                    if !car_data_clone.obd_mux_context.waiting_for_responce {
-                        if let Some(frame) = queue.pop_front() {
-                            match can_socket.write(frame.id(), frame.data()) {
-                                Ok(_written_bytes) => {
-                                    car_data_clone.obd_mux_context.waiting_for_responce = true;
-                                }
-                                Err(e) => {
-                                    eprintln!("Failed to write to can_socket: {e:?}");
-                                }
-                            }
-                        }
-                    }
-                }
-
-                can_socket.close().unwrap();
-            }
         });
-        handles.push(slport_handle);
-        runners.push(running_sclan);
+        handles.push(vcan_handle);
+        runners.push(running_vcan);
     }
 
     let debug_menu_state = ui.global::<DebugMenuState>();
@@ -427,16 +313,19 @@ fn main() -> Result<(), slint::PlatformError> {
         handle.abort();
     }
 
-    #[cfg(target_os = "linux")]
-    if _created_interface {
-        if let Some(can_interface) = can_interface {
-            match can_interface.delete() {
-                // TODO: these should be the name of the can interface, not VCAN_IF_NAME
-                Ok(_) => println!("Deleted interface {VCAN_IF_NAME}"),
-                Err(e) => println!("Error deleting interface {VCAN_IF_NAME}: {e:?}"),
-            }
-        }
-    }
+    // TODO: figure out why we aren't cleaning up properly
+
+    // tokio_runtime.block_on(async {
+    //     join_all(handles).await;
+    // });
+
+    // if can_backend.created_interface() {
+    //     match can_backend.delete() {
+    //         // TODO: these should be the name of the can interface, not VCAN_IF_NAME
+    //         Ok(_) => println!("Deleted interface {VCAN_IF_NAME}"),
+    //         Err(e) => println!("Error deleting interface {VCAN_IF_NAME}: {e:?}"),
+    //     }
+    // }
 
     Ok(())
 }

@@ -1,6 +1,7 @@
 #![allow(unused)] // temporary while this is being implemented
 
 use embedded_can::{Frame, Id};
+use socketcan::Socket;
 use std::error::Error;
 use std::path::Path;
 
@@ -84,8 +85,7 @@ impl Frame for CanFrame {
 }
 
 pub struct CanBackend {
-    interface: CanInterface,
-    socket: Option<CanSocket>,
+    socket: CanSocket,
 }
 
 impl CanBackend {
@@ -93,78 +93,132 @@ impl CanBackend {
         interface_type: SelectedCanInterface,
         interface_path: &str,
     ) -> Result<Self, Box<dyn Error>> {
-        let interface: Option<CanInterface> = match interface_type {
+        let socket: Option<CanSocket> = match interface_type {
             #[cfg(target_os = "linux")]
-            SelectedCanInterface::VirtualCan => {}
-            #[cfg(target_os = "linux")]
-            SelectedCanInterface::Can => {}
+            SelectedCanInterface::VirtualCan | SelectedCanInterface::Can => {
+                let mut created_interface = false;
+                let can_if_type = if interface_type == SelectedCanInterface::VirtualCan {
+                    "vcan"
+                } else {
+                    "can"
+                };
+
+                println!("Interface name: {interface_path}; Type: {can_if_type}");
+
+                let interface = match socketcan::CanInterface::open(&interface_path) {
+                    Ok(can_interface) => Some(can_interface),
+                    _ => {
+                        match socketcan::CanInterface::create(&interface_path, None, can_if_type) {
+                            Ok(can_interface) => {
+                                created_interface = true;
+                                println!("Created CAN interface {interface_path}");
+                                Some(can_interface)
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to create CAN interface {interface_path}: {e}");
+                                None
+                            }
+                        }
+                    }
+                };
+
+                if let Some(interface) = interface {
+                    let can_bitrate = 500000;
+                    let details = interface.details()?;
+
+                    let is_up = if (&details).is_up {
+                        true
+                    } else {
+                        interface.set_bitrate(can_bitrate, None)?;
+                        match interface.bring_up() {
+                            Ok(_) => true,
+                            Err(e) => {
+                                eprintln!(
+                                    "Failed to bring up interface {}: {e:?}",
+                                    details.name.unwrap()
+                                );
+                                false
+                            }
+                        }
+                    };
+
+                    if is_up {
+                        let socket = socketcan::CanSocket::open_iface(details.index)?;
+
+                        Some(CanSocket::SocketCan(socket))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
             #[cfg(feature = "slcan")]
             SelectedCanInterface::SerialCan => {
                 match serial::SystemPort::open(Path::new(interface_path)) {
-                    Ok(port) => Some(CanInterface::Serial(port)),
+                    Ok(port) => {
+                        let mut socket = slcan::CanSocket::<serial::SystemPort>::new(port);
+
+                        socket.close()?;
+                        socket.open(slcan::BitRate::Setup500Kbit)?;
+
+                        Some(CanSocket::Serial(socket))
+                    }
                     Err(e) => {
                         eprintln!("Error opening serial device {interface_path}: {e}");
                         None
                     }
                 }
             }
+
             _ => return Err("Interface unsupported".into()),
         };
 
-        if let Some(interface) = interface {
-            Ok(Self {
-                interface,
-                socket: None,
-            })
+        if let Some(socket) = socket {
+            Ok(Self { socket })
         } else {
-            Err("No interface".into())
+            Err("No socket".into())
         }
     }
 
-    pub fn initialize_hardware(&self) -> Result<(), Box<dyn Error>> {
-        match &self.interface {
+    pub fn read_frame(&mut self) -> Option<CanFrame> {
+        match self.socket {
             #[cfg(target_os = "linux")]
-            CanInterface::Can(interface) => {}
+            CanSocket::SocketCan(ref socket) => {
+                if let Ok(frame) = socket.read_frame() {
+                    return Some(CanFrame::from_frame(frame));
+                }
+            }
             #[cfg(feature = "slcan")]
-            CanInterface::Serial(_interface) => Ok(()),
-        }
-    }
-
-    pub fn initialize_socket(mut self) -> Result<(), Box<dyn Error>> {
-        match self.interface {
-            #[cfg(target_os = "linux")]
-            CanInterface::Can(interface) => {}
-            #[cfg(feature = "slcan")]
-            CanInterface::Serial(interface) => {
-                let mut socket = slcan::CanSocket::<serial::SystemPort>::new(interface);
-
-                match socket.close() {
-                    Ok(_) => match socket.open(slcan::BitRate::Setup500Kbit) {
-                        Ok(_) => {
-                            self.socket = Some(CanSocket::Serial(socket));
-                            Ok(())
-                        }
-                        Err(e) => Err(e.into()),
-                    },
-                    Err(e) => Err(e.into()),
+            CanSocket::Serial(ref mut socket) => {
+                if let Ok(frame) = socket.read() {
+                    return Some(CanFrame::from_frame(frame));
                 }
             }
         }
+
+        None
     }
 
-    // pub fn read_frame(self) -> Result<CanFrame, Box<dyn Error>> {
-    //     if let Some(socket) = self.socket {
-    //         match socket {
-    //             #[cfg(target_os = "linux")]
-    //             CanSocket::SocketCan(_) => {}
-    //             #[cfg(feature = "slcan")]
-    //             CanSocket::Serial(mut socket) => match socket.receive() {
-    //                 Ok(frame) => Ok(CanFrame::from_frame(frame)),
-    //                 Err(e) => Err(format!("Failed to read frame {e:?}").into()),
-    //             },
-    //         }
-    //     } else {
-    //         Err("No socket configured".into())
-    //     }
-    // }
+    pub fn write_frame(&mut self, frame: impl Frame) -> Result<(), Box<dyn std::error::Error>> {
+        match self.socket {
+            #[cfg(target_os = "linux")]
+            CanSocket::SocketCan(ref socket) => {
+                let socketcan_frame = socketcan::CanFrame::new(frame.id(), frame.data());
+                if let Some(frame) = socketcan_frame {
+                    match socket.write_frame(&frame) {
+                        Ok(_) => Ok(()),
+                        Err(e) => Err(e.into()),
+                    }
+                } else {
+                    Err("Failed to create socketcan frame".into())
+                }
+            }
+            #[cfg(feature = "slcan")]
+            CanSocket::Serial(ref mut socket) => match socket.write(frame.id(), &frame.data()) {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.into()),
+            },
+        }
+    }
 }

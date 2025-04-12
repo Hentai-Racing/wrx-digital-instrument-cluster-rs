@@ -156,7 +156,7 @@ impl MuxContext {
                     }
                 }
                 ISOTPFrameType::ConsecutiveFrame => {
-                    println!("received consecutive frame");
+                    println!("Received consecutive frame");
                     let frame_num = payload[0] & 0xF;
 
                     if let Some((mux_id, mux_payload)) = self.mux_data.iter_mut().next_back() {

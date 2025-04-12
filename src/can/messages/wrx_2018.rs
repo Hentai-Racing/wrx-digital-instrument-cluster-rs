@@ -4813,7 +4813,7 @@ impl Odometer {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x6d1)});
     
     pub const ODOMETER_MIN: f32 = 0_f32;
-    pub const ODOMETER_MAX: f32 = 4294970000_f32;
+    pub const ODOMETER_MAX: f32 = 1000000000_f32;
     
     /// Construct new odometer from values
     pub fn new(odometer: f32) -> Result<Self, CanError> {
@@ -4832,7 +4832,7 @@ impl Odometer {
     /// USCS converted
     ///
     /// - Min: 0
-    /// - Max: 4294970000
+    /// - Max: 1000000000
     /// - Unit: "KM"
     /// - Receivers: Vector__XXX
     #[inline(always)]

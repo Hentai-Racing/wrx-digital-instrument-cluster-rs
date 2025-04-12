@@ -1,6 +1,7 @@
 use std::fs::{self, File};
 use std::io::{BufWriter, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use syn;
 
 const SLINT_PATH: &str = "src/slint-ui"; // path to the directory that contains `main.slint`
@@ -8,7 +9,7 @@ const SLINT_PATH: &str = "src/slint-ui"; // path to the directory that contains 
 /// Generates Rust code from dbc files in resources/database/dbc/
 ///
 /// The generated code is placed in src/can/messages/
-fn build_dbc() {
+fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
     use dbc_codegen::{self, Config};
 
     let dbc_file_dir = Path::new("resources/database/dbc/");
@@ -16,15 +17,14 @@ fn build_dbc() {
     let rs_messages_mod_dir = Path::new("src/can/messages/mod.rs");
 
     if rs_messages_out_dir.exists() {
-        fs::remove_dir_all(rs_messages_out_dir).unwrap();
+        fs::remove_dir_all(rs_messages_out_dir)?;
     }
-    fs::create_dir_all(rs_messages_out_dir).unwrap();
+    fs::create_dir_all(rs_messages_out_dir)?;
 
-    let mod_file = File::create(rs_messages_mod_dir).unwrap();
-    let mut mod_writter = BufWriter::new(mod_file);
+    let mut mod_file = File::create(rs_messages_mod_dir)?;
 
-    for entry in fs::read_dir(dbc_file_dir).unwrap() {
-        let entry = entry.unwrap();
+    for entry in fs::read_dir(dbc_file_dir)? {
+        let entry = entry?;
         let file_name = entry.file_name();
         let dbc_name = file_name.as_os_str().to_str().unwrap();
         let entry_path = entry.path();
@@ -43,8 +43,8 @@ fn build_dbc() {
                 .to_lowercase();
 
             let out_file_path = rs_messages_out_dir.join(format!("{stem}.rs"));
-            let out_file = File::create(out_file_path.clone()).unwrap();
-            let dbc_file = fs::read(entry_path).unwrap();
+            let out_file = File::create(out_file_path.clone())?;
+            let dbc_file = fs::read(entry_path)?;
 
             let config = Config::builder()
                 .dbc_name(dbc_name)
@@ -54,22 +54,24 @@ fn build_dbc() {
                 .impl_error(dbc_codegen::FeatureConfig::Always)
                 .build();
 
-            dbc_codegen::codegen(config, &mut BufWriter::new(out_file))
-                .expect("Failed to generate dbc code");
+            dbc_codegen::codegen(config, &mut BufWriter::new(out_file))?;
+            // Command::new("rustfmt")
+            //     .arg("--edition=2024")
+            //     .arg(out_file_path)
+            //     .status()?;
 
-            mod_writter
-                .write(format!("pub mod {stem};\n").as_bytes())
-                .unwrap();
+            mod_file.write_all(format!("pub mod {stem};\n").as_bytes())?;
         }
     }
+
+    Ok(())
 }
 
 /// Generates Rust code for virtual CAN data generation
-fn generate_vcan_handler() {
+fn generate_vcan_handler() -> Result<(), Box<dyn std::error::Error>> {
     // Read the mod.rs file
-    let mod_rs_content =
-        fs::read_to_string("src/can/messages/mod.rs").expect("Unable to read mod.rs");
-    let mod_rs: syn::File = syn::parse_str(&mod_rs_content).expect("Unable to parse mod.rs");
+    let mod_rs_content = fs::read_to_string("src/can/messages/mod.rs")?;
+    let mod_rs: syn::File = syn::parse_str(&mod_rs_content)?;
 
     // Extract module names
     let module_names: Vec<String> = mod_rs
@@ -85,7 +87,7 @@ fn generate_vcan_handler() {
         .collect();
 
     let mut gen_output =
-        String::from("/// Generated code from build.rs::generate_vcan_handler()!\n"); // full file contents
+        String::from("//! Generated code from build.rs::generate_vcan_handler()!\n\n"); // full file contents
     let mut gen_block = String::new(); // generated code
     let mut imports: Vec<String> = Vec::new(); // imported can message modules
 
@@ -94,9 +96,8 @@ fn generate_vcan_handler() {
         let module_path = format!("src/can/messages/{}.rs", module_name);
         imports.push(format!("use crate::can::messages::{};", module_name));
 
-        let module_content = fs::read_to_string(&module_path).expect("Unable to read module file");
-        let module_file: syn::File =
-            syn::parse_str(&module_content).expect("Unable to parse module file");
+        let module_content = fs::read_to_string(&module_path)?;
+        let module_file: syn::File = syn::parse_str(&module_content)?;
 
         // Find the Messages enum
         let messages_enum = module_file
@@ -141,10 +142,8 @@ fn generate_vcan_handler() {
             })
             .collect();
 
-        gen_block += "let mut write_futures = Vec::new();";
-
         for (variant, item_impl) in messages_enum.iter().zip(impls.iter()) {
-            let signal_path = format!("{}::{}", module_name, variant.ident);
+            let signal_path = format!("{module_name}::{}", variant.ident);
 
             for impl_item in &item_impl.items {
                 if let syn::ImplItem::Fn(func) = impl_item {
@@ -188,65 +187,69 @@ fn generate_vcan_handler() {
                         let frame_ident =
                             format!("{}_frame", variant.ident.to_string().to_lowercase());
                         let frame_constructor_expression: String = format!(
-                            "let {} = {}::new({}).expect(\"Failed to create frame\");",
-                            frame_ident,
-                            signal_path,
+                            "let {frame_ident} = {signal_path}::new({}).expect(\"Failed to create frame\");",
                             param_names.join(", ")
                         );
                         let write_frame_expression: String = format!(
-                            "if let Some(frame) = Frame::new({0}.id(), {0}.data()) {{let write_future = socket.write_frame(frame); write_futures.push(write_future);}}",
+                            "if let Some(frame) = CanFrame::new({0}.id(), {0}.data()) {{socket.write_frame(&frame).expect(\"Failed to write frame\");}}",
                             frame_ident
                         );
 
                         gen_block += &format!(
-                            "{}\n{}\n{}\n",
+                            "{}\n{frame_constructor_expression}\n{write_frame_expression}\n",
                             value_expressions.join("\n"),
-                            frame_constructor_expression,
-                            write_frame_expression
                         );
                     }
                 }
             }
         }
-
-        gen_block += "future::join_all(write_futures).await;"
     }
 
-    gen_output += "use embedded_can::Frame;";
-    gen_output += "use rand::Rng;";
-    gen_output += "use futures::future;";
-    gen_output += "use socketcan::tokio::CanSocket;";
-    gen_output += "use std::sync::atomic::{AtomicBool, Ordering};";
-    gen_output += "use std::sync::Arc;";
-    gen_output += "use std::time::Duration;";
-    gen_output += "use std::thread::sleep;";
-    gen_output += &imports.join("\n");
+    gen_output += &format!(
+        r#"use embedded_can::Frame;
+        use rand::Rng;
+        use socketcan::{{CanSocket, CanFrame, Socket}};
+        use std::sync::atomic::{{AtomicBool, Ordering}};
+        use std::sync::Arc;
+        use std::time::Duration;
+        use std::thread::sleep;
+        {}
 
-    gen_output += "pub async fn run_vcan_generator(socket: &mut CanSocket, running: Arc<AtomicBool>, simulating: Arc<AtomicBool>, delay: Duration) {";
-    gen_output +=
-        "    while running.load(Ordering::SeqCst) {while simulating.load(Ordering::SeqCst) {";
-    gen_output += &gen_block;
-    gen_output += "sleep(delay);";
-    gen_output += "}}}";
+        pub fn run_vcan_generator(socket: &mut CanSocket, running: Arc<AtomicBool>, simulating: Arc<AtomicBool>, delay: Duration) {{
+            while running.load(Ordering::SeqCst) {{
+                while simulating.load(Ordering::SeqCst) {{
+                    {gen_block}
+
+                    sleep(delay);
+                }}
+            }}
+        }}
+        "#,
+        &imports.join("\n")
+    );
 
     let rs_out_dir = Path::new("src/can/virtual_can_generator.rs");
-    let rs_out_file = File::create(rs_out_dir).expect("Unable to create file");
-    let mut mod_writter = BufWriter::new(rs_out_file);
+    let mut rs_out_file = File::create(rs_out_dir)?;
 
-    let syn_data = syn::parse_file(gen_output.as_str()).expect("Unable to parse generated code!");
-    let formatted_data = prettyplease::unparse(&syn_data);
+    // let syn_data = syn::parse_file(gen_output.as_str())?;
+    // let formatted_data = prettyplease::unparse(&syn_data);
 
-    mod_writter
-        .write(formatted_data.as_bytes())
-        .expect("Failed to write to file");
+    // rs_out_file.write_all(formatted_data.as_bytes())?;
+
+    rs_out_file.write_all(gen_output.as_bytes())?;
+    Command::new("rustfmt")
+        .arg("--edition=2024")
+        .arg(PathBuf::from(rs_out_dir))
+        .status()?;
+
+    Ok(())
 }
 
 // generates slint car data globals
-fn generate_slint_car_data(slint_path: impl AsRef<Path>) {
+fn generate_slint_car_data(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std::error::Error>> {
     // Read the mod.rs file
-    let mod_rs_content =
-        fs::read_to_string("src/can/messages/mod.rs").expect("Unable to read mod.rs");
-    let mod_rs: syn::File = syn::parse_str(&mod_rs_content).expect("Unable to parse mod.rs");
+    let mod_rs_content = fs::read_to_string("src/can/messages/mod.rs")?;
+    let mod_rs: syn::File = syn::parse_str(&mod_rs_content)?;
 
     // Extract module names
     let module_names: Vec<String> = mod_rs
@@ -268,9 +271,8 @@ fn generate_slint_car_data(slint_path: impl AsRef<Path>) {
     for module_name in module_names {
         let module_path = format!("src/can/messages/{}.rs", module_name);
 
-        let module_content = fs::read_to_string(&module_path).expect("Unable to read module file");
-        let module_file: syn::File =
-            syn::parse_str(&module_content).expect("Unable to parse module file");
+        let module_content = fs::read_to_string(&module_path)?;
+        let module_file: syn::File = syn::parse_str(&module_content)?;
 
         // Find the Messages enum
         let messages_enum = module_file
@@ -399,16 +401,14 @@ fn generate_slint_car_data(slint_path: impl AsRef<Path>) {
     gen_output += "}";
 
     let slint_out_dir = slint_path.as_ref().join("data/car_data.slint");
-    let slint_out_file = File::create(slint_out_dir).expect("Unable to create file");
-    let mut mod_writter = BufWriter::new(slint_out_file);
+    let mut slint_out_file = File::create(slint_out_dir)?;
 
-    mod_writter
-        .write(gen_output.as_bytes())
-        .expect("Failed to write to file");
+    slint_out_file.write(gen_output.as_bytes())?;
+
+    Ok(())
 }
 
 fn capitalize_first_words(s: &str) -> String {
-    // let words: Vec<&str> = ;
     let mut words_capitilized: Vec<String> = vec![];
 
     for word in s.split('-').collect::<Vec<_>>() {
@@ -480,8 +480,7 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
 
     for (i, theme_component) in theme_components.iter().enumerate() {
         gen_output += &format!(
-            "\tif Themes.current-theme == {}: root-{} := {theme_component} {{}}\n",
-            format!("root.themes[{i}]"),
+            "\tif Themes.current-theme == root.themes[{i}]: root-{} := {theme_component} {{}}\n",
             theme_component.to_lowercase()
         );
     }
@@ -489,10 +488,9 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
     gen_output += "}";
 
     let slint_out_dir = themes_dir.join("theme_loader_gen.slint");
-    let slint_out_file = File::create(slint_out_dir)?;
-    let mut mod_writter = BufWriter::new(slint_out_file);
+    let mut slint_out_file = File::create(slint_out_dir)?;
 
-    mod_writter.write(gen_output.as_bytes())?;
+    slint_out_file.write(gen_output.as_bytes())?;
 
     Ok(())
 }
@@ -500,9 +498,9 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
 fn main() {
     let slint_path = Path::new(SLINT_PATH);
 
-    build_dbc();
-    generate_vcan_handler();
-    generate_slint_car_data(slint_path);
+    build_dbc().unwrap();
+    generate_vcan_handler().unwrap();
+    generate_slint_car_data(slint_path).unwrap();
     generate_slint_themes(slint_path).unwrap();
 
     slint_build::compile(slint_path.join("main.slint")).unwrap();

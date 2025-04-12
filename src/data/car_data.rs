@@ -1,4 +1,4 @@
-use crate::can::can_mux_manager::{MuxContext, MuxParseResult};
+use crate::can::can_mux_manager::{MuxContext, MuxParseError, MuxParseResult};
 use crate::can::messages::wrx_2018::{self, EngineMtGear, Messages};
 use crate::data::data_parameter::DataParameter;
 use crate::data::units::{Unit, UnitSystem};
@@ -238,16 +238,29 @@ CarData! {
     };
 }
 
+#[derive(Debug)]
 pub enum ParseResult {
     Mux(MuxParseResult),
     Ok,
 }
 
+#[derive(Debug)]
+pub enum ParseError {
+    MuxError(MuxParseError),
+    CanError(wrx_2018::CanError),
+}
+
+impl std::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::MuxError(e) => e.fmt(f),
+            Self::CanError(e) => e.fmt(f),
+        }
+    }
+}
+
 impl CarData {
-    pub fn parse_frame(
-        &mut self,
-        frame: impl Frame,
-    ) -> Result<ParseResult, Box<dyn std::error::Error>> {
+    pub fn parse_frame(&mut self, frame: impl Frame) -> Result<ParseResult, ParseError> {
         let data = &frame.data()[..frame.dlc()];
 
         match Messages::from_can_message(frame.id(), data) {
@@ -256,14 +269,15 @@ impl CarData {
                 return Ok(ParseResult::Ok);
             }
             Err(e) => match e {
+                // if it's an unknown message, we will handle it with a different parser
                 wrx_2018::CanError::UnknownMessageId(_) => {}
-                _ => return Err(e.into()),
+                _ => return Err(ParseError::CanError(e)),
             },
         };
 
         match self.obd_mux_context.parse_frame(frame) {
             Ok(mux_result) => return Ok(ParseResult::Mux(mux_result)),
-            Err(e) => return Err(e.into()),
+            Err(e) => return Err(ParseError::MuxError(e)),
         }
     }
 }
