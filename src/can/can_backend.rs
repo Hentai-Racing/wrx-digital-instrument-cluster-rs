@@ -1,13 +1,12 @@
 #![allow(unused)] // temporary while this is being implemented
 
 use embedded_can::{Frame, Id};
-use socketcan::Socket;
 use std::error::Error;
 use std::path::Path;
 
 use serial;
 #[cfg(target_os = "linux")]
-use socketcan;
+use socketcan::Socket;
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum SelectedCanInterface {
