@@ -105,10 +105,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let mut can_backend = CanBackend::new(selected_interface, interface_path)?;
+    let can_backend = match CanBackend::new(selected_interface, interface_path) {
+        Ok(can_backend) => Some(can_backend),
+        Err(e) => {
+            eprintln!("Error in can backend: {e:?}");
+            None
+        }
+    };
     let running_can = Arc::new(AtomicBool::new(false));
 
-    {
+    if let Some(mut can_backend) = can_backend {
         let mut car_data = car_data.clone();
         let running_can = running_can.clone();
         let can_backend_read_handle = tokio_runtime.spawn(async move {
