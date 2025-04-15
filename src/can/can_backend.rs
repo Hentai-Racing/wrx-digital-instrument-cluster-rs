@@ -13,6 +13,7 @@ pub enum SelectedCanInterface {
 }
 
 impl SelectedCanInterface {
+    #[allow(unused)]
     fn as_str(&self) -> &'static str {
         match self {
             Self::VirtualCan => "vcan",

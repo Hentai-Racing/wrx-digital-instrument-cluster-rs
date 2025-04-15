@@ -21,7 +21,6 @@ pub enum OBD2Service {
 
 #[derive(Debug)]
 pub enum MuxParseError {
-    InvalidOBD2Service,
     ConsecutiveFrameMisaligned,
     ConsecutiveFrameNoPriorData,
     InvalidISOTPFrameType,
@@ -31,6 +30,7 @@ pub enum MuxParseError {
 pub enum MuxParseResult {
     None,
     ParseComplete,
+    BroadcastFeedback,
     AwaitingBroadcastAck,
     AwaitingReceiveAck,
     ConsecutiveFrameContinue,
@@ -71,13 +71,20 @@ impl MuxPayload {
 #[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
 pub struct MuxId {
     can_id: Id,
-    mode: OBD2Service,
+    mode: u8,
     pid: u8,
 }
 
 impl MuxId {
-    pub fn new(can_id: Id, mode: OBD2Service, pid: u8) -> Self {
+    pub fn new(can_id: Id, mode: u8, pid: u8) -> Self {
         Self { can_id, mode, pid }
+    }
+}
+
+fn raw_id(id: Id) -> u32 {
+    match id {
+        Id::Standard(id) => id.as_raw() as u32,
+        Id::Extended(id) => id.as_raw(),
     }
 }
 
@@ -119,23 +126,26 @@ impl MuxContext {
             match isotp_frame {
                 ISOTPFrameType::SingleFrame => {
                     let data_bytes: usize = (payload[0] & 0xF).into();
-                    let service = payload[1] - 0x40;
+
+                    let mut service = payload[1];
+
+                    if (0x7DF..=0x7E0).contains(&raw_id(id)) {
+                        return Ok(MuxParseResult::BroadcastFeedback);
+                    } else {
+                        service -= 0x40;
+                    }
+
                     let pid = payload[2];
                     let data = &payload[3..=data_bytes];
                     let mux_length = data.len();
 
-                    if let Ok(service) = OBD2Service::try_from(service) {
-                        let mux_id = MuxId::new(id, service, pid);
-                        let mux_data = MuxPayload::new(mux_length, 0, true, data);
+                    let mux_id = MuxId::new(id, service, pid);
+                    let mux_payload = MuxPayload::new(mux_length, 0, true, data);
 
-                        self.mux_data.insert(mux_id, mux_data);
+                    self.mux_data.insert(mux_id, mux_payload);
+                    self.perform_demux();
 
-                        self.perform_demux();
-
-                        Ok(MuxParseResult::ParseComplete)
-                    } else {
-                        Err(MuxParseError::InvalidOBD2Service)
-                    }
+                    Ok(MuxParseResult::ParseComplete)
                 }
                 ISOTPFrameType::FirstFrame => {
                     let mux_length = ((payload[0] & 0xF) as usize) << 8 | (payload[1] as usize) - 7;
@@ -144,16 +154,12 @@ impl MuxContext {
                     let frame_index = payload[4];
                     let data = &payload[5..];
 
-                    if let Ok(service) = OBD2Service::try_from(service) {
-                        let mux_id = MuxId::new(id, service, pid);
-                        let mux_payload = MuxPayload::new(mux_length, frame_index, true, data);
+                    let mux_id = MuxId::new(id, service, pid);
+                    let mux_payload = MuxPayload::new(mux_length, frame_index, false, data);
 
-                        self.mux_data.insert(mux_id, mux_payload);
+                    self.mux_data.insert(mux_id, mux_payload);
 
-                        Ok(MuxParseResult::AwaitingBroadcastAck)
-                    } else {
-                        Err(MuxParseError::InvalidOBD2Service)
-                    }
+                    Ok(MuxParseResult::AwaitingBroadcastAck)
                 }
                 ISOTPFrameType::ConsecutiveFrame => {
                     println!("Received consecutive frame");
@@ -210,43 +216,73 @@ impl MuxContext {
 
     fn perform_demux(&mut self) {
         // TODO: attach this data to DataParameter or something
-        //
         self.mux_data.retain(|mux_id, mux_payload| {
             if mux_payload.data_complete {
-                match mux_id.mode {
-                    OBD2Service::VehicleInformation => match mux_id.pid {
-                        // TODO: remove this and make it parameterized
-                        0x00 => {
-                            println!("S9 PIDS Supported:");
+                match OBD2Service::try_from(mux_id.mode) {
+                    Ok(service) => match service {
+                        OBD2Service::VehicleInformation => match mux_id.pid {
+                            // TODO: remove this and make it parameterized
+                            0x00 => {
+                                println!("S9 PIDS Supported:");
 
-                            let bits = BitVec::<u8, Msb0>::from_vec(mux_payload.data.to_owned());
+                                let bits =
+                                    BitVec::<u8, Msb0>::from_vec(mux_payload.data.to_owned());
 
-                            // let mut pids: BTreeMap<u32, bool> = BTreeMap::new();
-                            for (i, bit) in bits.iter().enumerate() {
-                                let pid = i as u32 + 1;
-                                let value = *bit;
-                                // pids.insert(pid, value);
+                                // let mut pids: BTreeMap<u32, bool> = BTreeMap::new();
+                                for (i, bit) in bits.iter().enumerate() {
+                                    let pid = i as u32 + 1;
+                                    let value = *bit;
+                                    // pids.insert(pid, value);
 
-                                print!("{pid:02X}: {value}; ")
+                                    print!("{pid:02X}: {value}; ")
+                                }
+
+                                println!("")
                             }
+                            0x02 => {
+                                let vin = String::from_utf8_lossy(&mux_payload.data).into_owned();
+                                println!("VIN: {:?}", vin);
+                            }
+                            _ => {}
+                        },
+                        OBD2Service::CurrentData => match mux_id.pid {
+                            0x00 => {} // PIDS supported
+                            0x01 => {} // monitor status since dtc cleared
 
-                            println!("")
-                        }
-                        0x02 => {
-                            let vin = String::from_utf8_lossy(&mux_payload.data).into_owned();
-                            println!("VIN: {:?}", vin);
-                        }
-                        _ => {}
+                            0x10 => {} // MAF rate
+                            0x44 => {} // AFR
+
+                            0x0C | 0x0D | 0x11 | 0x05 | 0x2F | 0x45 | 0x4C | 0x5C | 0xA6 | 0xA4 => {
+                            } // redundant CAN data
+
+                            0x42 => {
+                                // control module voltage
+                                let data = ((mux_payload.data[0] as u16) << 8)
+                                    | mux_payload.data[1] as u16;
+                                let _voltage = data as f32 * 0.001;
+                            }
+                            _ => println!(
+                                "Demuxed complete OBD2 data | Mode: {:02X} -> {:02X}: {:02X?}",
+                                mux_id.mode, mux_id.pid, mux_payload.data
+                            ),
+                        },
+                        _ => println!(
+                            "Demuxed complete OBD2 data | Mode: {:02X} -> {:02X}: {:02X?}",
+                            mux_id.mode, mux_id.pid, mux_payload.data
+                        ),
                     },
-                    _ => {}
+                    _ => println!(
+                        "Demuxed complete unknown data | {:02X} | Mode: {:02X} -> {:02X}: {:02X?}",
+                        raw_id(mux_id.can_id),
+                        mux_id.mode,
+                        mux_id.pid,
+                        mux_payload.data
+                    ),
                 }
-            };
+            }
 
             !mux_payload.data_complete
         });
-        // for (mux_id, mux_payload) in &self.mux_data {
-
-        // }
     }
 }
 
@@ -376,7 +412,6 @@ impl std::fmt::Display for MuxParseError {
             MuxParseError::InvalidISOTPFrameType => {
                 write!(f, "Frame protocol control is not an ISO-TP type")
             }
-            MuxParseError::InvalidOBD2Service => write!(f, "Invalid OBD2 service"),
         }
     }
 }
