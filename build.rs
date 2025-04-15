@@ -1,6 +1,6 @@
 use std::fs::{self, File};
 use std::io::{BufWriter, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 use syn;
 
@@ -12,7 +12,7 @@ const SLINT_PATH: &str = "src/slint-ui"; // path to the directory that contains 
 fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
     use dbc_codegen::{self, Config};
 
-    let dbc_file_dir = Path::new("resources/database/dbc/");
+    let dbc_file_dir = Path::new("resources/database/can/");
     let rs_messages_out_dir = Path::new("src/can/messages/");
     let rs_messages_mod_dir = Path::new("src/can/messages/mod.rs");
 
@@ -55,6 +55,7 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
                 .build();
 
             dbc_codegen::codegen(config, &mut BufWriter::new(out_file))?;
+
             // Command::new("rustfmt")
             //     .arg("--edition=2024")
             //     .arg(out_file_path)
@@ -70,7 +71,9 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
 /// Generates Rust code for virtual CAN data generation
 fn generate_vcan_handler() -> Result<(), Box<dyn std::error::Error>> {
     // Read the mod.rs file
-    let mod_rs_content = fs::read_to_string("src/can/messages/mod.rs")?;
+
+    let messages_dir = Path::new("src/can/messages");
+    let mod_rs_content = fs::read_to_string(messages_dir.join("mod.rs"))?;
     let mod_rs: syn::File = syn::parse_str(&mod_rs_content)?;
 
     // Extract module names
@@ -93,10 +96,9 @@ fn generate_vcan_handler() -> Result<(), Box<dyn std::error::Error>> {
 
     // Process each module
     for module_name in module_names {
-        let module_path = format!("src/can/messages/{}.rs", module_name);
         imports.push(format!("use crate::can::messages::{};", module_name));
 
-        let module_content = fs::read_to_string(&module_path)?;
+        let module_content = fs::read_to_string(messages_dir.join(format!("{module_name}.rs")))?;
         let module_file: syn::File = syn::parse_str(&module_content)?;
 
         // Find the Messages enum
@@ -231,16 +233,12 @@ fn generate_vcan_handler() -> Result<(), Box<dyn std::error::Error>> {
     let rs_out_dir = Path::new("src/can/virtual_can_generator.rs");
     let mut rs_out_file = File::create(rs_out_dir)?;
 
-    // let syn_data = syn::parse_file(gen_output.as_str())?;
-    // let formatted_data = prettyplease::unparse(&syn_data);
-
-    // rs_out_file.write_all(formatted_data.as_bytes())?;
-
     rs_out_file.write_all(gen_output.as_bytes())?;
-    Command::new("rustfmt")
+
+    let _ = Command::new("rustfmt")
         .arg("--edition=2024")
-        .arg(PathBuf::from(rs_out_dir))
-        .status()?;
+        .arg(rs_out_dir)
+        .status();
 
     Ok(())
 }

@@ -170,37 +170,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         });
         handles.push(can_backend_read_handle);
+
+        #[cfg(target_os = "linux")]
+        if virtual_cluster {
+            use socketcan::{CanSocket, Socket, SocketOptions};
+
+            use crate::can::virtual_can_generator::run_vcan_generator;
+            use std::time::Duration;
+
+            let running_vcan = Arc::new(AtomicBool::new(false));
+
+            let mut virtual_socket =
+                CanSocket::open(VCAN_IF_NAME).expect("Failed to open can socket");
+            // let _ = virtual_socket.set_loopback(true);
+
+            match virtual_socket.set_loopback(true) {
+                Err(e) => eprintln!("Failed to set loopback: {e:?}"),
+                _ => {}
+            }
+
+            running_simulation.store(true, Ordering::SeqCst);
+            running_vcan.store(true, Ordering::SeqCst);
+
+            let running_simulation_clone = running_simulation.clone();
+            let running_vcan_clone = running_vcan.clone();
+            let vcan_handle = tokio_runtime.spawn(async move {
+                run_vcan_generator(
+                    &mut virtual_socket,
+                    running_vcan_clone,
+                    running_simulation_clone,
+                    Duration::from_millis(1),
+                )
+            });
+            handles.push(vcan_handle);
+            runners.push(running_vcan);
+        }
     }
     runners.push(running_can);
-
-    #[cfg(target_os = "linux")]
-    if virtual_cluster {
-        use socketcan::{CanSocket, Socket, SocketOptions};
-
-        use crate::can::virtual_can_generator::run_vcan_generator;
-        use std::time::Duration;
-
-        let running_vcan = Arc::new(AtomicBool::new(false));
-
-        let mut virtual_socket = CanSocket::open(VCAN_IF_NAME).expect("Failed to open can socket");
-        let _ = virtual_socket.set_loopback(true);
-
-        running_simulation.store(true, Ordering::SeqCst);
-        running_vcan.store(true, Ordering::SeqCst);
-
-        let running_simulation_clone = running_simulation.clone();
-        let running_vcan_clone = running_vcan.clone();
-        let vcan_handle = tokio_runtime.spawn(async move {
-            run_vcan_generator(
-                &mut virtual_socket,
-                running_vcan_clone,
-                running_simulation_clone,
-                Duration::from_millis(1),
-            )
-        });
-        handles.push(vcan_handle);
-        runners.push(running_vcan);
-    }
 
     let debug_menu_state = ui.global::<DebugMenuState>();
     let application_state = ui.global::<ApplicationState>();

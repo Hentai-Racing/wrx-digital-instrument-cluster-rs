@@ -1,25 +1,25 @@
-#![allow(unused)] // temporary while this is being implemented
-
 use embedded_can::{Frame, Id};
 use std::error::Error;
 use std::path::Path;
 
-use serial;
 #[cfg(target_os = "linux")]
 use socketcan::Socket;
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum SelectedCanInterface {
     VirtualCan,
     Can,
     SerialCan,
 }
 
-pub enum CanInterface {
-    #[cfg(target_os = "linux")]
-    SocketCan(socketcan::CanInterface),
-    #[cfg(feature = "slcan")]
-    Serial(serial::SystemPort),
+impl SelectedCanInterface {
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::VirtualCan => "vcan",
+            Self::Can => "can",
+            Self::SerialCan => "slcan",
+        }
+    }
 }
 
 pub enum CanSocket {
@@ -95,21 +95,12 @@ impl CanBackend {
         let socket: Option<CanSocket> = match interface_type {
             #[cfg(target_os = "linux")]
             SelectedCanInterface::VirtualCan | SelectedCanInterface::Can => {
-                let mut created_interface = false;
-                let can_if_type = if interface_type == SelectedCanInterface::VirtualCan {
-                    "vcan"
-                } else {
-                    "can"
-                };
-
-                println!("Interface name: {interface_path}; Type: {can_if_type}");
-
                 let interface = match socketcan::CanInterface::open(&interface_path) {
                     Ok(can_interface) => Some(can_interface),
                     _ => {
-                        match socketcan::CanInterface::create(&interface_path, None, can_if_type) {
+                        let can_if_str = interface_type.as_str();
+                        match socketcan::CanInterface::create(&interface_path, None, can_if_str) {
                             Ok(can_interface) => {
-                                created_interface = true;
                                 println!("Created CAN interface {interface_path}");
                                 Some(can_interface)
                             }
@@ -128,7 +119,14 @@ impl CanBackend {
                     let is_up = if (&details).is_up {
                         true
                     } else {
-                        interface.set_bitrate(can_bitrate, None)?;
+                        match interface.set_bitrate(can_bitrate, None) {
+                            Ok(_) => {}
+                            Err(e) => match interface_type {
+                                SelectedCanInterface::VirtualCan => {} // vcan does not allow setting bitrate
+                                _ => eprintln!("Failed to set can bitrate: {e:?}"),
+                            },
+                        }
+
                         match interface.bring_up() {
                             Ok(_) => true,
                             Err(e) => {
@@ -170,6 +168,7 @@ impl CanBackend {
                 }
             }
 
+            #[allow(unreachable_patterns)]
             _ => return Err("Interface unsupported".into()),
         };
 
