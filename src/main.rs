@@ -155,18 +155,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 };
 
-                // if !car_data.obd_mux_context.waiting_for_responce {
-                //     if let Some(frame) = queue.pop_front() {
-                //         match can_backend.write_frame(frame) {
-                //             Ok(_written_bytes) => {
-                //                 car_data.obd_mux_context.waiting_for_responce = true;
-                //             }
-                //             Err(e) => {
-                //                 eprintln!("Failed to write to can_socket: {e:?}");
-                //             }
-                //         }
-                //     }
-                // }
+                if !car_data.obd_mux_context.waiting_for_responce {
+                    if let Some(frame) = queue.pop_front() {
+                        match can_backend.write_frame(frame) {
+                            Ok(_written_bytes) => {
+                                car_data.obd_mux_context.waiting_for_responce = true;
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to write to can_socket: {e:?}");
+                            }
+                        }
+                    }
+                }
             }
         });
         handles.push(can_backend_read_handle);

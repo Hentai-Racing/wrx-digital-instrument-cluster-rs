@@ -1,6 +1,7 @@
 use embedded_can::{Frame, Id};
 use std::error::Error;
 use std::path::Path;
+use std::time::Duration;
 
 #[cfg(target_os = "linux")]
 use socketcan::Socket;
@@ -142,6 +143,7 @@ impl CanBackend {
 
                     if is_up {
                         let socket = socketcan::CanSocket::open_iface(details.index)?;
+                        let _ = socket.set_read_timeout(Some(Duration::from_millis(1)));
 
                         Some(CanSocket::SocketCan(socket))
                     } else {

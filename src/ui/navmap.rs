@@ -8,7 +8,7 @@ use slint::{ComponentHandle, Rgba8Pixel, SharedPixelBuffer, VecModel};
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
-use crate::slint_generatedApp::{App, MapTile, NavMapProperties};
+use crate::{App, MapTile, NavMapProperties};
 use slint::Weak;
 
 const TILE_SIZE: isize = 256;
