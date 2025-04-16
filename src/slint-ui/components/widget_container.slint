@@ -5,6 +5,8 @@ import { RoadIndicatorWidget } from "../themes/default/components/road_indicator
 import { ThemeSelectorWidget } from "../themes/themes.slint";
 import { ApplicationState } from "../application/application_state.slint";
 import { NavigationMap } from "navmap.slint";
+import { CanDisplayWidget } from "can_display.slint";
+
 
 global WidgetContainerState {
     in property <duration> page-animation-duration: 150ms;
@@ -115,6 +117,13 @@ export component WidgetContainer inherits Rectangle {
                             }
                         }
                     }
+                }
+            }
+
+            Widget {
+                CanDisplayWidget {
+                    height: 100%;
+                    width: 100%;
                 }
             }
 

@@ -31,6 +31,7 @@ pub enum CanSocket {
     Serial(slcan::CanSocket<serial::SystemPort>),
 }
 
+#[derive(Clone, Copy)]
 pub struct CanFrame {
     id: Id,
     dlc: usize,

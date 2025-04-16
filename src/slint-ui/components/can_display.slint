@@ -1,0 +1,171 @@
+import { ScrollView } from "std-widgets.slint";
+
+export struct CanFrameDisplay {
+    id: string,
+    dlc: int,
+    data: [string],
+    byte_changes: [bool]
+}
+
+export global CanDisplay {
+    in-out property <[CanFrameDisplay]> CanFrames: [
+        {
+            id: "001",
+            dlc: 8,
+            data: ["00", "01", "02", "03", "04", "05", "06", "07"],
+            byte_changes: [false, false, false, false, false, false, false, false]
+        },
+        {
+            id: "002",
+            dlc: 5,
+            data: ["00", "01", "02", "03", "04", "05", "06", "07"],
+            byte_changes: [false, false, false, true, false, false, false, false]
+        },
+        {
+            id: "7DF",
+            dlc: 8,
+            data: ["00", "01", "02", "03", "04", "05", "06", "07"],
+            byte_changes: [false, false, false, false, false, false, true, false]
+        },
+    ];
+}
+
+component TableRect inherits Rectangle {
+    in property <string> text <=> label.text;
+    in property <length> post-padding: 20px;
+    in property <length> vertical-padding: 10px;
+    in property <length> pre-padding: 4px;
+    in property <length> font-size: 12px;
+
+    VerticalLayout {
+        Rectangle {
+            background: transparent;
+            height: root.vertical-padding / 2;
+        }
+
+        layout := HorizontalLayout {
+            alignment: LayoutAlignment.start;
+
+            Rectangle {
+                background: transparent;
+                width: root.pre-padding;
+            }
+
+            label := Text {
+                font-size: root.font-size;
+                horizontal-alignment: left;
+            }
+
+            Rectangle {
+                background: transparent;
+                width <=> root.post-padding;
+            }
+        }
+
+        Rectangle {
+            background: transparent;
+            height: root.vertical-padding / 2;
+        }
+    }
+}
+
+component TableHeaderRect inherits TableRect {
+    background: gray.darker(95%);
+    vertical-padding: 20px;
+
+    init => {
+        self.font-size += 1.5px;
+    }
+}
+
+export component CanDisplayWidget inherits Rectangle {
+    width: 1920px;
+    height: 720px;
+
+    header-layout := HorizontalLayout {
+        alignment: LayoutAlignment.start;
+        spacing: 0px;
+
+        id-column-header := VerticalLayout {
+            alignment: id-column.alignment;
+
+            id-header-label := TableHeaderRect {
+                text: "ID";
+            }
+        }
+
+        dlc-column-header := VerticalLayout {
+            alignment: dlc-column.alignment;
+
+            dlc-header-label := TableHeaderRect {
+                text: "DLC";
+            }
+        }
+
+        data-column-header := VerticalLayout {
+            width: 100%;
+            alignment: data-column.alignment;
+
+            data-header-label := TableHeaderRect {
+                text: "Data";
+            }
+        }
+    }
+
+    ScrollView {
+        width: 100%;
+        y: id-header-label.height;
+        height: root.height - id-header-label.height;
+
+        layout := HorizontalLayout {
+            alignment: LayoutAlignment.start;
+            spacing: 0px;
+            id-column := VerticalLayout {
+                width: id-column-header.width;
+                alignment: LayoutAlignment.start;
+
+                for frame_display[i] in CanDisplay.CanFrames: TableRect {
+                    background: gray.darker(mod(i, 2) == 1 ? 10% : 30%);
+                    text: frame-display.id;
+                }
+            }
+
+            dlc-column := VerticalLayout {
+                width: dlc-column-header.width;
+                alignment: LayoutAlignment.start;
+
+                for frame_display[i] in CanDisplay.CanFrames: TableRect {
+                    background: gray.darker(mod(i, 2) == 1 ? 10% : 30%);
+
+                    text: frame-display.dlc;
+                }
+            }
+
+            data-column := VerticalLayout {
+                width: 100%;
+                alignment: LayoutAlignment.start;
+
+                for frame_display[i] in CanDisplay.CanFrames: Rectangle {
+                    background: gray.darker(mod(i, 2) == 1 ? 10% : 30%);
+
+                    HorizontalLayout {
+                        alignment: LayoutAlignment.start;
+
+                        // Rectangle {
+                        //     background: transparent;
+                        //     width: data-header-label.pre-padding;
+                        // }
+
+                        for byte[i] in frame-display.dlc: TableRect {
+                            background: frame-display.byte_changes[i] ? green : transparent;
+                            post-padding: 4px;
+                            pre-padding: self.post-padding;
+
+                            text: frame-display.data[i];
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
