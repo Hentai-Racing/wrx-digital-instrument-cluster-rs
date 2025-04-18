@@ -101,7 +101,7 @@ impl MuxContext {
         Default::default()
     }
 
-    pub fn parse_frame(&mut self, frame: impl Frame) -> Result<MuxParseResult, MuxParseError> {
+    pub fn parse_frame(&mut self, frame: &impl Frame) -> Result<MuxParseResult, MuxParseError> {
         let raw_id: u32 = match frame.id() {
             Id::Standard(raw) => raw.as_raw().into(),
             Id::Extended(raw) => raw.as_raw().into(),
@@ -114,7 +114,7 @@ impl MuxContext {
         }
     }
 
-    fn parse_isotp_frame(&mut self, frame: impl Frame) -> Result<MuxParseResult, MuxParseError> {
+    fn parse_isotp_frame(&mut self, frame: &impl Frame) -> Result<MuxParseResult, MuxParseError> {
         let id = frame.id();
         let payload = frame.data();
 

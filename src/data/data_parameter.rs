@@ -1,4 +1,4 @@
-use crate::data::units;
+use crate::data::units::Unit;
 use tokio::sync::watch;
 
 #[derive(Clone)]
@@ -7,7 +7,7 @@ pub struct DataParameter<T> {
     max: T,
 
     value: T,
-    units: units::Unit,
+    units: Unit,
 
     changed: watch::Sender<T>,
 }
@@ -16,7 +16,7 @@ impl<T> DataParameter<T>
 where
     T: Copy + Clone + Default + PartialEq + PartialOrd,
 {
-    pub fn new(min: T, max: T, value: Option<T>, units: Option<units::Unit>) -> Self {
+    pub fn new(min: T, max: T, value: Option<T>, units: Option<Unit>) -> Self {
         let (channel_sender, _) = watch::channel(Default::default());
 
         Self {
@@ -46,12 +46,12 @@ where
         }
     }
 
-    pub fn set_units(&mut self, unit: units::Unit) {
+    pub fn set_units(&mut self, unit: Unit) {
         self.units = unit;
     }
 
     #[allow(unused)]
-    pub fn units(&self) -> units::Unit {
+    pub fn units(&self) -> Unit {
         self.units
     }
 

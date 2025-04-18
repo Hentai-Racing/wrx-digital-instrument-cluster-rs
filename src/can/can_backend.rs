@@ -1,7 +1,6 @@
 use embedded_can::{Frame, Id};
 use std::error::Error;
 use std::path::Path;
-use std::time::Duration;
 
 #[cfg(target_os = "linux")]
 use socketcan::Socket;
@@ -11,6 +10,7 @@ pub enum SelectedCanInterface {
     VirtualCan,
     Can,
     SerialCan,
+    Fake,
 }
 
 impl SelectedCanInterface {
@@ -20,6 +20,7 @@ impl SelectedCanInterface {
             Self::VirtualCan => "vcan",
             Self::Can => "can",
             Self::SerialCan => "slcan",
+            Self::Fake => "fake",
         }
     }
 }
@@ -143,6 +144,8 @@ impl CanBackend {
                     };
 
                     if is_up {
+                        use std::time::Duration;
+
                         let socket = socketcan::CanSocket::open_iface(details.index)?;
                         let _ = socket.set_read_timeout(Some(Duration::from_millis(1)));
 

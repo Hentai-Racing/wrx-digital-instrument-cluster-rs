@@ -1,33 +1,16 @@
 import { ScrollView } from "std-widgets.slint";
 
-export struct CanFrameDisplay {
-    id: string,
+export struct SCanFrameDisplay {
+    id: int,
+    formatted_id: string,
     dlc: int,
     data: [string],
     byte_changes: [bool]
 }
 
 export global CanDisplay {
-    in-out property <[CanFrameDisplay]> CanFrames: [
-        {
-            id: "001",
-            dlc: 8,
-            data: ["00", "01", "02", "03", "04", "05", "06", "07"],
-            byte_changes: [false, false, false, false, false, false, false, false]
-        },
-        {
-            id: "002",
-            dlc: 5,
-            data: ["00", "01", "02", "03", "04", "05", "06", "07"],
-            byte_changes: [false, false, false, true, false, false, false, false]
-        },
-        {
-            id: "7DF",
-            dlc: 8,
-            data: ["00", "01", "02", "03", "04", "05", "06", "07"],
-            byte_changes: [false, false, false, false, false, false, true, false]
-        },
-    ];
+    in-out property <bool> running: false;
+    in-out property <[SCanFrameDisplay]> CanFrames: [];
 }
 
 component TableRect inherits Rectangle {
@@ -79,6 +62,8 @@ component TableHeaderRect inherits TableRect {
 }
 
 export component CanDisplayWidget inherits Rectangle {
+    in-out property <bool> running <=> CanDisplay.running;
+
     width: 1920px;
     height: 720px;
 
@@ -120,19 +105,24 @@ export component CanDisplayWidget inherits Rectangle {
         layout := HorizontalLayout {
             alignment: LayoutAlignment.start;
             spacing: 0px;
+            padding: 0px;
             id-column := VerticalLayout {
                 width: id-column-header.width;
                 alignment: LayoutAlignment.start;
+                spacing: 0px;
+                padding: 0px;
 
                 for frame_display[i] in CanDisplay.CanFrames: TableRect {
                     background: gray.darker(mod(i, 2) == 1 ? 10% : 30%);
-                    text: frame-display.id;
+                    text: frame-display.formatted_id;
                 }
             }
 
             dlc-column := VerticalLayout {
                 width: dlc-column-header.width;
                 alignment: LayoutAlignment.start;
+                spacing: 0px;
+                padding: 0px;
 
                 for frame_display[i] in CanDisplay.CanFrames: TableRect {
                     background: gray.darker(mod(i, 2) == 1 ? 10% : 30%);
@@ -144,6 +134,8 @@ export component CanDisplayWidget inherits Rectangle {
             data-column := VerticalLayout {
                 width: 100%;
                 alignment: LayoutAlignment.start;
+                spacing: 0px;
+                padding: 0px;
 
                 for frame_display[i] in CanDisplay.CanFrames: Rectangle {
                     background: gray.darker(mod(i, 2) == 1 ? 10% : 30%);
@@ -151,15 +143,15 @@ export component CanDisplayWidget inherits Rectangle {
                     HorizontalLayout {
                         alignment: LayoutAlignment.start;
 
-                        // Rectangle {
-                        //     background: transparent;
-                        //     width: data-header-label.pre-padding;
-                        // }
+                        Rectangle {
+                            background: transparent;
+                            width: data-header-label.pre-padding;
+                        }
 
                         for byte[i] in frame-display.dlc: TableRect {
                             background: frame-display.byte_changes[i] ? green : transparent;
                             post-padding: 4px;
-                            pre-padding: self.post-padding;
+                            // pre-padding: self.post-padding;
 
                             text: frame-display.data[i];
                         }

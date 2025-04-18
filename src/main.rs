@@ -4,18 +4,14 @@ mod data;
 mod hardware;
 mod ui;
 
-use embedded_can::Frame;
-use slint::{ModelRc, SharedString, VecModel, Weak};
-
 use crate::application::s_car_data_bridge::SCarDataBridge;
 use crate::can::can_backend::{CanBackend, CanFrame, SelectedCanInterface};
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
 use crate::data::car_data::{CarData, ParseResult};
-use crate::ui::theme_handler;
+use crate::ui::{can_display::CanFrameDisplay, theme_handler};
 
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::VecDeque;
 use std::env;
-use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -107,6 +103,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 CAN_IF_NAME
             }
         }
+        SelectedCanInterface::Fake => "",
     };
 
     let can_backend = match CanBackend::new(selected_interface, interface_path) {
@@ -118,10 +115,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let running_can = Arc::new(AtomicBool::new(false));
 
-    let weak_ui = ui.as_weak();
-
     if let Some(mut can_backend) = can_backend {
+        let mut frame_display = CanFrameDisplay::new(ui.as_weak());
         let mut car_data = car_data.clone();
+
         let running_can = running_can.clone();
         let can_backend_read_handle = tokio_runtime.spawn(async move {
             running_can.store(true, Ordering::SeqCst);
@@ -144,49 +141,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ),
             ]);
 
-            fn raw_id(id: embedded_can::Id) -> u32 {
-                match id {
-                    embedded_can::Id::Standard(id) => id.as_raw() as u32,
-                    embedded_can::Id::Extended(id) => id.as_raw(),
-                }
-            }
-
-            let mut frames: BTreeMap<u32, CanFrame> = BTreeMap::new();
-
-            fn update_frame_display(ui: Weak<App>, frames: &BTreeMap<u32, CanFrame>) {
-                // todo: this is extremely slow
-                let frames = frames.clone();
-                let _ = ui.upgrade_in_event_loop(move |ui| {
-                    let can_display = ui.global::<CanDisplay>();
-                    let mut display_frames: Vec<CanFrameDisplay> = vec![];
-                    for (id, frame) in frames {
-                        let mut frame_display = CanFrameDisplay::default();
-                        frame_display.dlc = frame.dlc() as i32;
-                        frame_display.id = format!("0x{id:03X}").into();
-
-                        let mut bytes: Vec<SharedString> = vec![];
-
-                        for byte in frame.data() {
-                            bytes.push(format!("{byte:02X}").into());
-                        }
-
-                        frame_display.data = ModelRc::from(Rc::new(VecModel::from(bytes)));
-
-                        display_frames.push(frame_display);
-                    }
-
-                    can_display
-                        .set_CanFrames(ModelRc::from(Rc::new(VecModel::from(display_frames))));
-                });
-            }
-
             while running_can.load(Ordering::SeqCst) {
                 if let Some(frame) = can_backend.read_frame() {
-                    frames.insert(raw_id(frame.id()), frame.clone());
-
-                    // update_frame_display(weak_ui.clone(), &frames);
-
-                    match car_data.parse_frame(frame) {
+                    frame_display.update(&frame, false);
+                    match car_data.parse_frame(&frame) {
                         Ok(result) => match result {
                             ParseResult::Mux(result) => match result {
                                 MuxParseResult::AwaitingBroadcastAck => {

@@ -260,7 +260,7 @@ impl std::fmt::Display for ParseError {
 }
 
 impl CarData {
-    pub fn parse_frame(&mut self, frame: impl Frame) -> Result<ParseResult, ParseError> {
+    pub fn parse_frame(&mut self, frame: &impl Frame) -> Result<ParseResult, ParseError> {
         let data = &frame.data()[..frame.dlc()];
 
         match Messages::from_can_message(frame.id(), data) {

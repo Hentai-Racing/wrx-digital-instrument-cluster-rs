@@ -20,7 +20,10 @@ global WidgetContainerState {
 }
 
 component Widget {
+    out property <int> page-number;
+
     init => {
+        self.page-number = WidgetContainerState.num-pages;
         WidgetContainerState.num-pages += 1;
     }
 
@@ -122,6 +125,7 @@ export component WidgetContainer inherits Rectangle {
 
             Widget {
                 CanDisplayWidget {
+                    running: WidgetContainerState.current-page == parent.page-number;
                     height: 100%;
                     width: 100%;
                 }
