@@ -32,7 +32,15 @@ embedded-can = "*"
 futures = "*"
 bitvec = "*"
 
+tokio = { version = "*", features = [
+    "sync",
+    "rt-multi-thread",
+    "macros",
+], default-features = false }
+crossbeam-channel = "*"
+
 image = "*"
+
 
 # feature deps
 gpio-cdev = { version = "*", optional = true, features = ["async-tokio"] }
@@ -42,13 +50,6 @@ serial = { version = "*", optional = true }
 # feature deps network
 slcan = { git = "https://github.com/bryce-happel-walton/slcan.git", optional = true }
 reqwest = { version = "*", optional = true }
-
-# required due to dbc-codegen
-tokio = { version = "*", features = [
-    "sync",
-    "rt-multi-thread",
-    "macros",
-], default-features = false }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 socketcan = "*"

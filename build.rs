@@ -69,7 +69,7 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Generates Rust code for virtual CAN data generation
-fn generate_vcan_handler() -> Result<(), Box<dyn std::error::Error>> {
+fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
     // Read the mod.rs file
 
     let messages_dir = Path::new("src/can/messages");
@@ -90,7 +90,7 @@ fn generate_vcan_handler() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     let mut gen_output =
-        String::from("//! Generated code from build.rs::generate_vcan_handler()!\n\n"); // full file contents
+        String::from("//! Generated code from build.rs::generate_can_data_emulator()!\n\n"); // full file contents
     let mut gen_block = String::new(); // generated code
     let mut imports: Vec<String> = Vec::new(); // imported can message modules
 
@@ -188,17 +188,15 @@ fn generate_vcan_handler() -> Result<(), Box<dyn std::error::Error>> {
 
                         let frame_ident =
                             format!("{}_frame", variant.ident.to_string().to_lowercase());
-                        let frame_constructor_expression: String = format!(
+                        let frame_constructor_expression = format!(
                             "let {frame_ident} = {signal_path}::new({}).expect(\"Failed to create frame\");",
                             param_names.join(", ")
                         );
-                        let write_frame_expression: String = format!(
-                            "if let Some(frame) = CanFrame::new({0}.id(), {0}.data()) {{socket.write_frame(&frame).expect(\"Failed to write frame\");}}",
-                            frame_ident
-                        );
+                        let write_frame_expression =
+                            format!("let _ = can_backend.write_frame({frame_ident});");
 
                         gen_block += &format!(
-                            "{}\n{frame_constructor_expression}\n{write_frame_expression}\n",
+                            "{}\n{frame_constructor_expression}\n{write_frame_expression}\n\n",
                             value_expressions.join("\n"),
                         );
                     }
@@ -208,16 +206,15 @@ fn generate_vcan_handler() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     gen_output += &format!(
-        r#"use embedded_can::Frame;
+        r#"use crate::can::can_backend::CanBackend;
         use rand::Rng;
-        use socketcan::{{CanSocket, CanFrame, Socket}};
-        use std::sync::atomic::{{AtomicBool, Ordering}};
         use std::sync::Arc;
-        use std::time::Duration;
+        use std::sync::atomic::{{AtomicBool, Ordering}};
         use std::thread::sleep;
+        use std::time::Duration;
         {}
 
-        pub fn run_vcan_generator(socket: &mut CanSocket, running: Arc<AtomicBool>, simulating: Arc<AtomicBool>, delay: Duration) {{
+        pub fn run_can_data_emulator(can_backend: &mut CanBackend, running: Arc<AtomicBool>, simulating: Arc<AtomicBool>, delay: Duration) {{
             while running.load(Ordering::SeqCst) {{
                 while simulating.load(Ordering::SeqCst) {{
                     {gen_block}
@@ -230,7 +227,7 @@ fn generate_vcan_handler() -> Result<(), Box<dyn std::error::Error>> {
         &imports.join("\n")
     );
 
-    let rs_out_dir = Path::new("src/can/virtual_can_generator.rs");
+    let rs_out_dir = Path::new("src/can/can_data_emulator.rs");
     let mut rs_out_file = File::create(rs_out_dir)?;
 
     rs_out_file.write_all(gen_output.as_bytes())?;
@@ -497,7 +494,7 @@ fn main() {
     let slint_path = Path::new(SLINT_PATH);
 
     build_dbc().unwrap();
-    generate_vcan_handler().unwrap();
+    generate_can_data_emulator().unwrap();
     generate_slint_car_data(slint_path).unwrap();
     generate_slint_themes(slint_path).unwrap();
 

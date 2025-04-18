@@ -7019,6 +7019,7 @@ dependencies = [
  "async-compat",
  "bitvec",
  "clap",
+ "crossbeam-channel",
  "dbc-codegen",
  "embedded-can",
  "futures",

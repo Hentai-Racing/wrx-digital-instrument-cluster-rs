@@ -1,14 +1,20 @@
+use crossbeam_channel::{Receiver, RecvTimeoutError, Sender, TrySendError, bounded};
 use embedded_can::{Frame, Id};
+use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, LazyLock, Mutex};
+use std::time::Duration;
 
 #[cfg(target_os = "linux")]
 use socketcan::Socket;
 
+#[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub enum SelectedCanInterface {
-    VirtualCan,
-    Can,
+    VirtualSocketCan,
+    SocketCan,
     SerialCan,
     Fake,
 }
@@ -17,8 +23,8 @@ impl SelectedCanInterface {
     #[allow(unused)]
     fn as_str(&self) -> &'static str {
         match self {
-            Self::VirtualCan => "vcan",
-            Self::Can => "can",
+            Self::VirtualSocketCan => "vcan",
+            Self::SocketCan => "can",
             Self::SerialCan => "slcan",
             Self::Fake => "fake",
         }
@@ -30,9 +36,10 @@ pub enum CanSocket {
     SocketCan(socketcan::CanSocket),
     #[cfg(feature = "slcan")]
     Serial(slcan::CanSocket<serial::SystemPort>),
+    Fake(FakeCanSocket),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct CanFrame {
     id: Id,
     dlc: usize,
@@ -91,14 +98,16 @@ pub struct CanBackend {
     socket: CanSocket,
 }
 
+const DEFAULT_TIMEOUT: Duration = Duration::from_millis(1);
+
 impl CanBackend {
     pub fn new(
-        interface_type: SelectedCanInterface,
+        interface_type: &SelectedCanInterface,
         interface_path: &str,
     ) -> Result<Self, Box<dyn Error>> {
         let socket: Option<CanSocket> = match interface_type {
             #[cfg(target_os = "linux")]
-            SelectedCanInterface::VirtualCan | SelectedCanInterface::Can => {
+            SelectedCanInterface::VirtualSocketCan | SelectedCanInterface::SocketCan => {
                 let interface = match socketcan::CanInterface::open(&interface_path) {
                     Ok(can_interface) => Some(can_interface),
                     _ => {
@@ -126,7 +135,7 @@ impl CanBackend {
                         match interface.set_bitrate(can_bitrate, None) {
                             Ok(_) => {}
                             Err(e) => match interface_type {
-                                SelectedCanInterface::VirtualCan => {} // vcan does not allow setting bitrate
+                                SelectedCanInterface::VirtualSocketCan => {} // vcan does not allow setting bitrate
                                 _ => eprintln!("Failed to set can bitrate: {e:?}"),
                             },
                         }
@@ -144,10 +153,8 @@ impl CanBackend {
                     };
 
                     if is_up {
-                        use std::time::Duration;
-
                         let socket = socketcan::CanSocket::open_iface(details.index)?;
-                        let _ = socket.set_read_timeout(Some(Duration::from_millis(1)));
+                        let _ = socket.set_read_timeout(Some(DEFAULT_TIMEOUT));
 
                         Some(CanSocket::SocketCan(socket))
                     } else {
@@ -157,6 +164,7 @@ impl CanBackend {
                     None
                 }
             }
+
             #[cfg(feature = "slcan")]
             SelectedCanInterface::SerialCan => {
                 match serial::SystemPort::open(Path::new(interface_path)) {
@@ -173,6 +181,12 @@ impl CanBackend {
                         None
                     }
                 }
+            }
+
+            SelectedCanInterface::Fake => {
+                let mut socket = FakeCanSocket::open(interface_path);
+                socket.set_read_timeout(Some(DEFAULT_TIMEOUT));
+                Some(CanSocket::Fake(socket))
             }
 
             #[allow(unreachable_patterns)]
@@ -194,12 +208,15 @@ impl CanBackend {
                     return Some(CanFrame::from_frame(frame));
                 }
             }
+
             #[cfg(feature = "slcan")]
             CanSocket::Serial(ref mut socket) => {
                 if let Ok(frame) = socket.read() {
                     return Some(CanFrame::from_frame(frame));
                 }
             }
+
+            CanSocket::Fake(ref mut socket) => return socket.read().ok(),
         }
 
         None
@@ -219,11 +236,112 @@ impl CanBackend {
                     Err("Failed to create socketcan frame".into())
                 }
             }
+
             #[cfg(feature = "slcan")]
             CanSocket::Serial(ref mut socket) => match socket.write(frame.id(), &frame.data()) {
                 Ok(_) => Ok(()),
                 Err(e) => Err(e.into()),
             },
+
+            CanSocket::Fake(ref mut socket) => match socket.write(CanFrame::from_frame(frame)) {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.into()),
+            },
         }
+    }
+}
+
+static FAKE_CAN_BUSSES: LazyLock<Mutex<HashMap<String, Arc<FakeCanBus>>>> =
+    LazyLock::new(|| Default::default());
+
+#[derive(Default)]
+pub struct FakeCanBus {
+    subscribers: Mutex<Vec<Sender<CanFrame>>>,
+    loopback: AtomicBool,
+}
+
+impl FakeCanBus {
+    pub fn subscribe(
+        &self,
+    ) -> Result<(Sender<CanFrame>, Receiver<CanFrame>), Box<dyn std::error::Error>> {
+        match self.subscribers.lock() {
+            Ok(mut subscribers) => {
+                let (tx, rx) = bounded::<CanFrame>(1);
+                subscribers.push(tx.clone());
+                Ok((tx, rx))
+            }
+            Err(e) => Err(format!("{e:?}").into()),
+        }
+    }
+
+    fn broadcast(
+        &self,
+        tx: &Sender<CanFrame>,
+        frame: CanFrame,
+    ) -> Result<(), TrySendError<CanFrame>> {
+        let subscribers = self
+            .subscribers
+            .lock()
+            .ok()
+            .and_then(|subscribers| Some(subscribers.clone()));
+
+        if let Some(subscribers) = subscribers {
+            let loopback = self.loopback.load(Ordering::Relaxed);
+            for sub in subscribers {
+                if !sub.same_channel(&tx) || loopback {
+                    // NOTE: if the loopback doesn't have a consumer, then this may fail to fully broadcast
+                    if loopback {
+                        let _ = sub.try_send(frame.clone());
+                    } else {
+                        sub.try_send(frame.clone())?;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
+pub struct FakeCanSocket {
+    bus: Arc<FakeCanBus>,
+    tx: Sender<CanFrame>,
+    rx: Receiver<CanFrame>,
+    timeout: Option<Duration>,
+}
+
+impl FakeCanSocket {
+    pub fn open(name: &str) -> Self {
+        let bus = FAKE_CAN_BUSSES
+            .lock()
+            .unwrap()
+            .entry(name.to_owned())
+            .or_default()
+            .clone();
+
+        let (tx, rx) = bus.subscribe().ok().unwrap();
+
+        Self {
+            bus,
+            tx,
+            rx,
+            timeout: None,
+        }
+    }
+
+    pub fn set_read_timeout(&mut self, timeout: Option<Duration>) {
+        self.timeout = timeout;
+    }
+
+    pub fn read(&mut self) -> Result<CanFrame, RecvTimeoutError> {
+        if let Some(timeout) = self.timeout {
+            Ok(self.rx.recv_timeout(timeout)?)
+        } else {
+            Ok(self.rx.recv()?)
+        }
+    }
+
+    pub fn write(&mut self, frame: CanFrame) -> Result<(), TrySendError<CanFrame>> {
+        Ok(self.bus.broadcast(&self.tx, frame)?)
     }
 }

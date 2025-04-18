@@ -6,15 +6,16 @@ mod ui;
 
 use crate::application::s_car_data_bridge::SCarDataBridge;
 use crate::can::can_backend::{CanBackend, CanFrame, SelectedCanInterface};
+use crate::can::can_data_emulator::run_can_data_emulator;
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
 use crate::data::car_data::{CarData, ParseResult};
 use crate::ui::{can_display::CanFrameDisplay, theme_handler};
-
 use std::collections::VecDeque;
 use std::env;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-
+use std::thread;
+use std::time::Duration;
 slint::include_modules!();
 
 #[allow(unused)]
@@ -29,7 +30,16 @@ const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = clap::Command::new("")
         .args([
-            clap::arg!(-v --virtual "Runs the application in virtual mode for testing")
+            #[cfg(target_os = "linux")]
+            clap::arg!(-v --virtual "Runs the application in virtual mode using socketcan vcan")
+                .required(false)
+                .exclusive(true),
+            #[cfg(target_os = "linux")]
+            clap::arg!(-f --fakedev "Runs the application in virtual mode using a fake can socket emulator")
+                .required(false)
+                .exclusive(true),
+            #[cfg(not(target_os = "linux"))]
+            clap::arg!(-v --virtual "Runs the application in virtual mode using a fake can socket emulator")
                 .required(false)
                 .exclusive(true),
             clap::arg!(-c --candev <PATH> "Path to the desired CAN device to use")
@@ -44,18 +54,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .get_matches();
 
     let virtual_cluster = cli.get_flag("virtual");
+    #[cfg(target_os = "linux")]
+    let fake_dev = cli.get_flag("fakedev");
 
     // check if the user wants to set anything specific, else default
     let selected_interface = if virtual_cluster {
-        SelectedCanInterface::VirtualCan
+        #[cfg(target_os = "linux")]
+        if fake_dev {
+            SelectedCanInterface::Fake
+        } else {
+            SelectedCanInterface::VirtualSocketCan
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        {
+            SelectedCanInterface::Fake
+        }
     } else if cli.value_source("candev") == Some(clap::parser::ValueSource::CommandLine) {
-        SelectedCanInterface::Can
+        SelectedCanInterface::SocketCan
     } else if cli.value_source("sldev") == Some(clap::parser::ValueSource::CommandLine) {
         SelectedCanInterface::SerialCan
     } else {
         #[cfg(feature = "apalis_imx8")]
         {
-            SelectedCanInterface::Can
+            SelectedCanInterface::SocketCan
         }
         #[cfg(not(feature = "apalis_imx8"))]
         {
@@ -79,8 +101,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ui = App::new()?;
     ui.show()?;
 
-    let mut handles = Vec::<tokio::task::JoinHandle<()>>::new();
-    let mut runners = Vec::<Arc<AtomicBool>>::new();
+    let mut handles = vec![];
+    let mut runners = vec![];
 
     let car_data = CarData::new();
 
@@ -88,6 +110,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut _created_interface = false;
 
     let interface_path = match &selected_interface {
+        SelectedCanInterface::VirtualSocketCan | SelectedCanInterface::Fake => VCAN_IF_NAME,
         SelectedCanInterface::SerialCan => {
             if let Some(sldev) = cli.get_one::<String>("sldev") {
                 sldev.as_str()
@@ -95,18 +118,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 DEFAULT_SL_DEV
             }
         }
-        SelectedCanInterface::VirtualCan => VCAN_IF_NAME,
-        SelectedCanInterface::Can => {
+        SelectedCanInterface::SocketCan => {
             if let Some(candev) = cli.get_one::<String>("candev") {
                 candev.as_str()
             } else {
                 CAN_IF_NAME
             }
         }
-        SelectedCanInterface::Fake => "",
     };
 
-    let can_backend = match CanBackend::new(selected_interface, interface_path) {
+    let can_backend = match CanBackend::new(&selected_interface, interface_path) {
         Ok(can_backend) => Some(can_backend),
         Err(e) => {
             eprintln!("Error in can backend: {e:?}");
@@ -120,7 +141,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut car_data = car_data.clone();
 
         let running_can = running_can.clone();
-        let can_backend_read_handle = tokio_runtime.spawn(async move {
+        let can_backend_read_handle = thread::spawn(move || {
             running_can.store(true, Ordering::SeqCst);
 
             let obd_id =
@@ -175,37 +196,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
         handles.push(can_backend_read_handle);
 
-        #[cfg(target_os = "linux")]
         if virtual_cluster {
-            use socketcan::{CanSocket, Socket, SocketOptions};
-
-            use crate::can::virtual_can_generator::run_vcan_generator;
-            use std::time::Duration;
-
             let running_vcan = Arc::new(AtomicBool::new(false));
-
-            let mut virtual_socket =
-                CanSocket::open(VCAN_IF_NAME).expect("Failed to open can socket");
-            // let _ = virtual_socket.set_loopback(true);
-
-            match virtual_socket.set_loopback(true) {
-                Err(e) => eprintln!("Failed to set loopback: {e:?}"),
-                _ => {}
-            }
 
             running_simulation.store(true, Ordering::SeqCst);
             running_vcan.store(true, Ordering::SeqCst);
 
             let running_simulation_clone = running_simulation.clone();
             let running_vcan_clone = running_vcan.clone();
-            let vcan_handle = tokio_runtime.spawn(async move {
-                run_vcan_generator(
-                    &mut virtual_socket,
+            let mut backend = CanBackend::new(&selected_interface, interface_path).unwrap();
+
+            if !matches!(
+                &selected_interface,
+                SelectedCanInterface::Fake | SelectedCanInterface::VirtualSocketCan
+            ) {
+                panic!("Do not run the can generator on a real socket!")
+            }
+
+            let vcan_handle = thread::spawn(move || {
+                run_can_data_emulator(
+                    &mut backend,
                     running_vcan_clone,
                     running_simulation_clone,
                     Duration::from_millis(1),
-                )
+                );
             });
+
             handles.push(vcan_handle);
             runners.push(running_vcan);
         }
@@ -220,7 +236,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     application_state.set_cfg_network(cfg!(feature = "network"));
     application_state.set_cfg_three_d(cfg!(feature = "three-d"));
 
-    let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data.clone());
+    let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data);
     ui_data_bridge.run();
 
     if virtual_cluster {
@@ -326,22 +342,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     for handle in handles {
-        handle.abort();
+        handle.join().unwrap();
     }
-
-    // TODO: figure out why we aren't cleaning up properly
-
-    // tokio_runtime.block_on(async {
-    //     join_all(handles).await;
-    // });
-
-    // if can_backend.created_interface() {
-    //     match can_backend.delete() {
-    //         // TODO: these should be the name of the can interface, not VCAN_IF_NAME
-    //         Ok(_) => println!("Deleted interface {VCAN_IF_NAME}"),
-    //         Err(e) => println!("Error deleting interface {VCAN_IF_NAME}: {e:?}"),
-    //     }
-    // }
 
     Ok(())
 }

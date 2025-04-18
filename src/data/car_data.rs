@@ -8,14 +8,14 @@ use paste::paste;
 
 macro_rules! param_max_min {
     ($car_data:ident, $msg:path, $param:ident) => {paste!(
-        $car_data.$param().set_min($msg::[<$param:upper _MIN>]);
-        $car_data.$param().set_max($msg::[<$param:upper _MAX>]);
+        $car_data.$param.set_min($msg::[<$param:upper _MIN>]);
+        $car_data.$param.set_max($msg::[<$param:upper _MAX>]);
     )};
 }
 
 macro_rules! bool_default {
     ($car_data:ident, $msg:path, $param:ident) => {
-        $car_data.$param().set_value(true);
+        $car_data.$param.set_value(true);
     };
 }
 
@@ -68,7 +68,7 @@ macro_rules! handle_param_type {
 
 macro_rules! HandleSignalProcess {
     ($self:ident, $sig:ident, $param:ident) => {
-        $self.$param().set_value($sig.$param());
+        $self.$param.set_value($sig.$param());
     };
     ($self:ident, $sig:ident, $param:ident, $process_override:ident) => {
         $self.$process_override(&$sig.$param(), $sig);
@@ -134,8 +134,8 @@ macro_rules! CarData {
             }
 
             $($(
-                pub fn $param(&mut self) -> &mut DataParameter<$type> {
-                    &mut self.$param
+                pub fn $param(&self) -> &DataParameter<$type> {
+                    &self.$param
                 }
             )*)*
         }

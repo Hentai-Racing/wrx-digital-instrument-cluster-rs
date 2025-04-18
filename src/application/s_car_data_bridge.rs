@@ -42,7 +42,7 @@ macro_rules! bridge {
 
             $(
                 let ui = self.ui.clone();
-                let mut car_data = self.car_data.clone();
+                let car_data = self.car_data.clone();
                 let mut unit_system_changed = self.unit_system_watch.subscribe();
                 let mut thread_watch = car_data.$param().watch();
 
