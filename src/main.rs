@@ -32,12 +32,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .args([
             #[cfg(target_os = "linux")]
             clap::arg!(-v --virtual "Runs the application in virtual mode using socketcan vcan")
-                .required(false)
-                .exclusive(true),
+                .required(false),
             #[cfg(target_os = "linux")]
             clap::arg!(-f --fakedev "Runs the application in virtual mode using a fake can socket emulator")
-                .required(false)
-                .exclusive(true),
+                .required(false),
             #[cfg(not(target_os = "linux"))]
             clap::arg!(-v --virtual "Runs the application in virtual mode using a fake can socket emulator")
                 .required(false)

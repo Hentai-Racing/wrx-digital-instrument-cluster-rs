@@ -851,18 +851,18 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.36"
+version = "4.5.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2df961d8c8a0d08aa9945718ccf584145eee3f3aa06cddbeac12933781102e04"
+checksum = "eccb054f56cbd38340b380d4a8e69ef1f02f1af43db2f0cc817a4774d80ae071"
 dependencies = [
  "clap_builder",
 ]
 
 [[package]]
 name = "clap_builder"
-version = "4.5.36"
+version = "4.5.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "132dbda40fb6753878316a489d5a1242a8ef2f0d9e47ba01c951ea8aa7d013a5"
+checksum = "efd9466fac8543255d3b1fcad4762c5e116ffe808c8a3043d4263cd4fd4862a2"
 dependencies = [
  "anstream",
  "anstyle",
@@ -942,7 +942,7 @@ dependencies = [
 [[package]]
 name = "const-field-offset"
 version = "0.1.5"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "const-field-offset-macro",
  "field-offset",
@@ -951,7 +951,7 @@ dependencies = [
 [[package]]
 name = "const-field-offset-macro"
 version = "0.1.5"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2348,7 +2348,7 @@ dependencies = [
 [[package]]
 name = "i-slint-backend-linuxkms"
 version = "1.11.0"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "calloop 0.14.2",
  "drm 0.14.1",
@@ -2368,7 +2368,7 @@ dependencies = [
 [[package]]
 name = "i-slint-backend-selector"
 version = "1.11.0"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "cfg-if",
  "i-slint-backend-linuxkms",
@@ -2382,7 +2382,7 @@ dependencies = [
 [[package]]
 name = "i-slint-backend-winit"
 version = "1.11.0"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "cfg-if",
  "cfg_aliases 0.2.1",
@@ -2413,7 +2413,7 @@ dependencies = [
 [[package]]
 name = "i-slint-common"
 version = "1.11.0"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "cfg-if",
  "derive_more",
@@ -2425,7 +2425,7 @@ dependencies = [
 [[package]]
 name = "i-slint-compiler"
 version = "1.11.0"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "by_address",
  "codemap",
@@ -2454,7 +2454,7 @@ dependencies = [
 [[package]]
 name = "i-slint-core"
 version = "1.11.0"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "auto_enums",
  "bitflags 2.9.0",
@@ -2497,7 +2497,7 @@ dependencies = [
 [[package]]
 name = "i-slint-core-macros"
 version = "1.11.0"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "quote",
  "serde_json",
@@ -2507,7 +2507,7 @@ dependencies = [
 [[package]]
 name = "i-slint-renderer-skia"
 version = "1.11.0"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "bytemuck",
  "cfg-if",
@@ -5093,7 +5093,7 @@ dependencies = [
 [[package]]
 name = "slint"
 version = "1.11.0"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "const-field-offset",
  "i-slint-backend-selector",
@@ -5110,7 +5110,7 @@ dependencies = [
 [[package]]
 name = "slint-build"
 version = "1.11.0"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "derive_more",
  "i-slint-compiler",
@@ -5121,7 +5121,7 @@ dependencies = [
 [[package]]
 name = "slint-macros"
 version = "1.11.0"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "i-slint-compiler",
  "proc-macro2",
@@ -6084,7 +6084,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 [[package]]
 name = "vtable"
 version = "0.2.1"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "const-field-offset",
  "portable-atomic",
@@ -6095,7 +6095,7 @@ dependencies = [
 [[package]]
 name = "vtable-macro"
 version = "0.2.1"
-source = "git+https://github.com/slint-ui/slint.git#93fe0174fc9334b9e6c29b273616810e53a46224"
+source = "git+https://github.com/slint-ui/slint.git#07782db482e3facf57da8f079198c51732c350a3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6985,7 +6985,7 @@ checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
 
 [[package]]
 name = "wrx-digital-instrument-cluster-rs"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "async-compat",
  "bitvec",

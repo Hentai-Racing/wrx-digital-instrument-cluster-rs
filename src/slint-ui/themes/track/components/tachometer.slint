@@ -1,0 +1,78 @@
+import { SCarData } from "../../../data/car_data.slint";
+
+component TachVerticalLine {
+    in property <float> mid-gap: self.height / 2px;
+
+    Path {
+        property <float> y-point: (self.viewbox-height - root.mid-gap) / 2;
+
+        viewbox-height: root.height / 1px;
+        viewbox-width: root.width / 1px;
+
+        MoveTo {
+            y: 0;
+            x: 0;
+        }
+
+        LineTo {
+            y: y-point;
+            x: 0;
+        }
+
+        LineTo {
+            y: y-point;
+            x: parent.viewbox-width;
+        }
+
+        LineTo {
+            y: 0;
+            x: parent.viewbox-width;
+        }
+
+        MoveTo {
+            y: parent.viewbox-height;
+            x: 0;
+        }
+
+        LineTo {
+            y: parent.viewbox-height - y-point;
+            x: 0;
+        }
+
+        LineTo {
+            y: parent.viewbox-height - y-point;
+            x: parent.viewbox-width;
+        }
+
+        LineTo {
+            y: parent.viewbox-height;
+            x: parent.viewbox-width;
+        }
+
+        fill: white;
+    }
+
+    @children
+}
+
+export component Tachometer inherits Rectangle {
+    property <int> major-tick-lines: ceil((/* SCarData.engine_rpm.max */8000 + 1) / 1000);
+
+    property <length> tick-step: (self.width - major-tick-lines * tick-thickness) / (major-tick-lines - 1);
+    property <length> tick-thickness: 5px;
+
+    for major-tick-line in major-tick-lines: TachVerticalLine {
+        width: tick-thickness;
+        height: 100%;
+        x: major-tick-line * (tick-thickness + tick-step);
+
+        label := Text {
+            x: parent.width / 2 - self.width / 2;
+            y: parent.height / 2 - self.height / 2;
+            text: major-tick-line;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            font-size: 25px;
+        }
+    }
+}

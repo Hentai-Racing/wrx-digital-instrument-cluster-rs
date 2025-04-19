@@ -1,0 +1,38 @@
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Black.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Bold.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-ExtraLight.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Light.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Medium.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Regular.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-SemiBold.ttf";
+import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
+
+import { Button, VerticalBox, ComboBox } from "std-widgets.slint";
+
+import { Tachometer } from "components/tachometer.slint";
+import { DebugMenuWidget, DebugMenuState } from "../../components/debug.slint";
+import { SymbolLight } from "../default/theme_main.slint";
+import { SCarData } from "../../data/car_data.slint";
+import { SUnitSystem } from "../../data/units.slint";
+import { ApplicationState } from "../../application/application_state.slint";
+import { ThemeSelectorWidget } from "../themes.slint";
+import { WidgetContainer } from "../../components/widget_container.slint";
+
+global DefaultThemeParams {
+    property <string> default-font-family:  "Montserrat";
+    property <int> default-font-weight: 400;
+}
+
+export component TrackTheme inherits Rectangle {
+    background: transparent;
+    // height: 100%;
+    // width: 100%;
+
+    preferred-width: 1920px;
+    preferred-height: 720px;
+
+    tachometer := Tachometer {
+        width: 75%;
+        height: 15%;
+    }
+}

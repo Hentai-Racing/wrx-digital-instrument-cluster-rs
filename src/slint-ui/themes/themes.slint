@@ -6,8 +6,8 @@
 import { ComboBox } from "std-widgets.slint";
 
 export global Themes {
-    out property <[string]> themes: ["Default", "Default-Navmap", "Debug"];
-    in-out property <string> current-theme: themes[0];
+    in-out property <[string]> themes; //* set by theme_loader_gen
+    in-out property <string> current-theme: "Default";
     callback theme-changed(string);
 }
 

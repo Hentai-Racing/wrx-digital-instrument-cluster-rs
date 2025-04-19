@@ -465,13 +465,14 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
     gen_output += "\nexport component ThemeLoader {\n\twidth: 100%;\n\theight: 100%;\n\n";
 
     gen_output += &format!(
-        "\tout property <[string]> themes: [{}];\n\n",
+        "\tin-out property <[string]> themes: [{}];\n\n",
         theme_components
             .iter()
             .map(|val| format!("\"{}\"", val.strip_suffix("Theme").unwrap()))
             .collect::<Vec<_>>()
             .join(", ")
     );
+    gen_output += "\tinit() => {\n\t\tThemes.themes = self.themes;\n\t}\n\n";
 
     for (i, theme_component) in theme_components.iter().enumerate() {
         gen_output += &format!(
