@@ -3,8 +3,8 @@
 //! See note in themes.slint
 
 import { DebugTheme } from "debug/theme_main.slint";
-import { Default-NavmapTheme } from "default-navmap/theme_main.slint";
 import { DefaultTheme } from "default/theme_main.slint";
+import { Default-NavmapTheme } from "default-navmap/theme_main.slint";
 import { TrackTheme } from "track/theme_main.slint";
 import { Themes } from "themes.slint";
 
@@ -12,14 +12,14 @@ export component ThemeLoader {
 	width: 100%;
 	height: 100%;
 
-	in-out property <[string]> themes: ["Debug", "Default-Navmap", "Default", "Track"];
+	in-out property <[string]> themes: ["Debug", "Default", "Default-Navmap", "Track"];
 
 	init() => {
 		Themes.themes = self.themes;
 	}
 
-	if Themes.current-theme == root.themes[0]: root-debugtheme := DebugTheme {}
-	if Themes.current-theme == root.themes[1]: root-default-navmaptheme := Default-NavmapTheme {}
-	if Themes.current-theme == root.themes[2]: root-defaulttheme := DefaultTheme {}
-	if Themes.current-theme == root.themes[3]: root-tracktheme := TrackTheme {}
+	if Themes.current-theme == root.themes[0]: DebugTheme {}
+	if Themes.current-theme == root.themes[1]: DefaultTheme {}
+	if Themes.current-theme == root.themes[2]: Default-NavmapTheme {}
+	if Themes.current-theme == root.themes[3]: TrackTheme {}
 }

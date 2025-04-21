@@ -435,8 +435,17 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
 
     let mut theme_components: Vec<String> = vec![];
 
-    for entry in fs::read_dir(&themes_dir)? {
-        let entry = entry?;
+    let mut theme_entries: Vec<std::fs::DirEntry> = fs::read_dir(&themes_dir)?
+        .filter_map(|entry| entry.ok())
+        .collect();
+
+    theme_entries.sort_by(|a, b| {
+        a.file_name()
+            .to_ascii_lowercase()
+            .cmp(&b.file_name().to_ascii_lowercase())
+    });
+
+    for entry in theme_entries {
         let path = entry.path();
 
         if let Some(parent_dir) = path.file_name() {
@@ -475,10 +484,8 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
     gen_output += "\tinit() => {\n\t\tThemes.themes = self.themes;\n\t}\n\n";
 
     for (i, theme_component) in theme_components.iter().enumerate() {
-        gen_output += &format!(
-            "\tif Themes.current-theme == root.themes[{i}]: root-{} := {theme_component} {{}}\n",
-            theme_component.to_lowercase()
-        );
+        gen_output +=
+            &format!("\tif Themes.current-theme == root.themes[{i}]: {theme_component} {{}}\n");
     }
 
     gen_output += "}";
