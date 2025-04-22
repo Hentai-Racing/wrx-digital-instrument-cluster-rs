@@ -55,10 +55,7 @@ component TableRect inherits Rectangle {
 component TableHeaderRect inherits TableRect {
     background: gray.darker(95%);
     vertical-padding: 20px;
-
-    init => {
-        self.font-size += 1.5px;
-    }
+    font-size: 13.5px;
 }
 
 export component CanDisplayWidget inherits Rectangle {
@@ -101,6 +98,10 @@ export component CanDisplayWidget inherits Rectangle {
         width: 100%;
         y: id-header-label.height;
         height: root.height - id-header-label.height;
+
+        scrolled => {
+            debug("Scroll event");
+        }
 
         layout := HorizontalLayout {
             alignment: LayoutAlignment.start;

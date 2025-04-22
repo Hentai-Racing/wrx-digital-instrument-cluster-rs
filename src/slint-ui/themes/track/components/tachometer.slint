@@ -1,9 +1,11 @@
 import { SCarData } from "../../../data/car_data.slint";
 
 component TachVerticalLine {
+    in property <brush> brush: white;
     in property <float> mid-gap: self.height / 2px;
 
     Path {
+        fill: root.brush;
         property <float> y-point: (self.viewbox-height - root.mid-gap) / 2;
 
         viewbox-height: root.height / 1px;
@@ -48,18 +50,48 @@ component TachVerticalLine {
             y: parent.viewbox-height;
             x: parent.viewbox-width;
         }
-
-        fill: white;
     }
 
     @children
 }
 
 export component Tachometer inherits Rectangle {
-    property <int> major-tick-lines: ceil((/* SCarData.engine_rpm.max */8000 + 1) / 1000);
+    in property <int> major-tick-lines: ceil((SCarData.engine_rpm.max + 1) / 1000);
+    in property <length> tick-thickness: 5px;
 
-    property <length> tick-step: (self.width - major-tick-lines * tick-thickness) / (major-tick-lines - 1);
-    property <length> tick-thickness: 5px;
+    private property <length> tick-step: (self.width - major-tick-lines * tick-thickness) / (major-tick-lines - 1);
+
+    in property <int> redline-ticks: 7;
+    in property <length> redline-tick-gap: 4.5px;
+    private property <float> redline-ratio: 6600 / SCarData.engine_rpm.max;
+    private property <length> start-x: root.width * redline-ratio;
+    private property <length> end-x: root.width;
+    private property <float> redline-curvature: 3.75;
+    private property <float> redline-ramp: 3;
+    private property <length> redline-length: (end-x - start-x) - redline-ticks * redline-tick-gap;
+
+    pure function exp_m1(k: float) -> float {
+        // exp(k) - 1 // TODO: track https://github.com/slint-ui/slint/pull/8226
+        pow(redline-ramp, k) - 1
+    }
+
+    pure function get-redline-tick-width-log(index: int) -> length {
+        redline-length * (exp_m1(redline-curvature * ((index + 1) / redline-ticks)) - exp_m1(redline-curvature * (index / redline-ticks))) / exp_m1(redline-curvature)
+    }
+
+    private property <length> thickest-redline: get-redline-tick-width-log(redline-ticks - 1);
+
+    redline-layout := HorizontalLayout {
+        alignment: LayoutAlignment.end;
+        spacing: redline-tick-gap;
+
+        for redline-tick in redline-ticks: TachVerticalLine {
+            width: get-redline-tick-width-log(redline-tick);
+            brush: red.mix(#ff5900, self.width / thickest-redline).transparentize(20%);
+            height: 100%;
+            mid-gap: 0;
+        }
+    }
 
     for major-tick-line in major-tick-lines: TachVerticalLine {
         width: tick-thickness;
@@ -74,5 +106,12 @@ export component Tachometer inherits Rectangle {
             vertical-alignment: center;
             font-size: 25px;
         }
+    }
+
+    needle-bar := Rectangle {
+        x: 0;
+        height: 100%;
+        width: root.width * SCarData.engine_rpm.value / SCarData.engine_rpm.max;
+        background: white.transparentize(45%);
     }
 }
