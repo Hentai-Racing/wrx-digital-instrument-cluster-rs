@@ -32,10 +32,10 @@ export component TrackTheme inherits Rectangle {
     height: 500px;
 
     tachometer := Tachometer {
-        width: 80%;
-        height: 15%;
+        width: 90%;
+        height: 22%;
 
-        y: root.height * 15%;
+        y: root.height * 10%;
     }
 
     gear-indicator := Text {
@@ -43,7 +43,7 @@ export component TrackTheme inherits Rectangle {
         text: SCarData.mt_gear.value;
         font-size: 75px;
 
-        y: root.height / 2 - self.height / 2;
+        y: root.height / 2 - self.height / 2 + 45px;
 
         vertical-alignment: TextVerticalAlignment.center;
         horizontal-alignment: TextHorizontalAlignment.center;
