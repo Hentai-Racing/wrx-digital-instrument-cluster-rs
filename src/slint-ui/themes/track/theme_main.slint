@@ -10,8 +10,10 @@ import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
 import { Button, VerticalBox, ComboBox } from "std-widgets.slint";
 
 import { Tachometer } from "components/tachometer.slint";
+import { PillGauge } from "components/generic-gauge.slint";
 import { DebugMenuWidget, DebugMenuState } from "../../components/debug.slint";
 import { SymbolLight } from "../default/theme_main.slint";
+import { SymbolProperties } from "../default/symbol_properties.slint";
 import { SCarData } from "../../data/car_data.slint";
 import { SUnitSystem } from "../../data/units.slint";
 import { ApplicationState } from "../../application/application_state.slint";
@@ -26,11 +28,147 @@ global DefaultThemeParams {
 export component TrackTheme inherits Rectangle {
     background: transparent;
 
-    preferred-width: 1920px;
-    preferred-height: 720px;
+    width: self.height * (1920 / 720);
+    height: 500px;
 
     tachometer := Tachometer {
-        width: 75%;
+        width: 80%;
         height: 15%;
+
+        y: root.height * 15%;
+    }
+
+    gear-indicator := Text {
+        color: white;
+        text: SCarData.mt_gear.value;
+        font-size: 75px;
+
+        y: root.height / 2 - self.height / 2;
+
+        vertical-alignment: TextVerticalAlignment.center;
+        horizontal-alignment: TextHorizontalAlignment.center;
+    }
+
+    speedometer-label := Text {
+        text: round(SCarData.vehicle_speed.value);
+        color: white;
+        font-size: 60px;
+
+        y: gear-indicator.y;
+        x: root.width * 65%;
+
+        vertical-alignment: TextVerticalAlignment.center;
+        horizontal-alignment: TextHorizontalAlignment.center;
+
+        speedometer-unit-label := Text {
+            text: SCarData.vehicle_speed.unit-str;
+            color: speedometer-label.color.transparentize(75%);
+            font-size: speedometer-label.font-size * 70%;
+            horizontal-alignment: TextHorizontalAlignment.center;
+
+            // y: parent.height;
+            x: parent.width + 5px;
+        }
+    }
+
+    coolant-temp-gauge := PillGauge {
+        progress: SCarData.engine_coolant_temp.value / SCarData.engine_coolant_temp.max;
+
+        width: 18%;
+        height: 3%;
+
+        x: tachometer.x + 50px;
+        y: root.height - self.height - odometer-layout.padding - 13px;
+
+        private property <color> needle-sweep-color:  SymbolProperties.symbol_color_white;
+
+        SymbolLight {
+            scale: 30%;
+            source: @image-url("../../../../resources/images/coolant-temp-low-high-indicator-light.png");
+            colorize: parent.needle-sweep-color;
+
+            x: -self.width - 5px;
+        }
+    }
+
+    oil-temp-gauge := PillGauge {
+        progress: SCarData.engine_oil_temp.value / SCarData.engine_oil_temp.max;
+
+        width: coolant-temp-gauge.width;
+        height: coolant-temp-gauge.height;
+
+        x: coolant-temp-gauge.x;
+        y: coolant-temp-gauge.y - self.height - 2.5px;
+
+        private property <color> needle-sweep-color:  SymbolProperties.symbol_color_white;
+
+        SymbolLight {
+            scale: 35%;
+            source: @image-url("../../../../resources/images/oil-pressure-warning-light.png");
+            colorize: parent.needle-sweep-color;
+
+            x: -self.width - 5px;
+        }
+    }
+
+    fuel-gauge := PillGauge {
+        progress: SCarData.fuel_level.value / SCarData.fuel_level.max;
+        width: coolant-temp-gauge.width;
+        height: coolant-temp-gauge.height;
+
+        x: tachometer.x + tachometer.width - self.width - 50px;
+        y: coolant-temp-gauge.y;
+
+        private property <color> needle-sweep-color:  SymbolProperties.symbol_color_white;
+
+        fuel-level-light := SymbolLight {
+            scale: 30%;
+            source: @image-url("../../../../resources/images/lowfuel-warning-light.png");
+            colorize: parent.needle-sweep-color;
+
+            x: parent.width + 5px;
+
+            Text {
+                color: parent.colorize;
+                font-size: 12px;
+                text: "►";
+                x: parent.width - 2px;
+                y: parent.height / 2 - self.height / 2 + 2px;
+            }
+        }
+    }
+
+    odometer-layout := VerticalLayout {
+        alignment: LayoutAlignment.end;
+        padding: 10px;
+
+        HorizontalLayout {
+            odometer-section := Rectangle {
+                odometer-label := Text {
+                    color: white;
+                    text: floor(SCarData.odometer.value);
+                    font-size: 40px;
+                    vertical-alignment: center;
+                    horizontal-alignment: center;
+                }
+
+                odometer-dec-label := Text {
+                    color: odometer-label.color.transparentize(60%);
+                    text: "." + (floor(SCarData.odometer.value * 10) / 10 - floor(SCarData.odometer.value)) * 10;
+                    font-size: odometer-label.font-size;
+                    horizontal-alignment: TextHorizontalAlignment.left;
+                    vertical-alignment: odometer-label.vertical-alignment;
+                    x: odometer-label.x + odometer-label.width;
+                }
+
+                odometer-unit-label := Text {
+                    vertical-alignment: center;
+                    color: odometer-label.color.transparentize(70%);
+                    text: SCarData.odometer.unit_str;
+                    font-size: odometer-label.font-size * 70%;
+                    x: odometer-dec-label.x + odometer-dec-label.width + 5px;
+                }
+            }
+        }
     }
 }

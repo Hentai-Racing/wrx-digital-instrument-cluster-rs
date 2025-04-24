@@ -1,0 +1,123 @@
+export component PillGauge {
+    private property <float> radius: min(self.height / 2px, self.width / 2px);
+    in property <float> progress: 25%;
+    in property <float> line-thickness: 2;
+    in property <float> bar-padding: 1;
+
+    outline := Path {
+        fill: white;
+        viewbox-height: root.height / 1px;
+        viewbox-width: root.width / 1px;
+
+        MoveTo {
+            x: radius;
+            y: 0;
+        }
+
+        ArcTo {
+            radius-x: 1;
+            radius-y: 1;
+            x: radius;
+            y: radius * 2;
+        }
+
+        LineTo {
+            x: radius;
+            y: radius * 2 - line-thickness;
+        }
+
+        ArcTo {
+            radius-x: 1;
+            radius-y: 1;
+            sweep: true;
+            x: radius;
+            y: line-thickness;
+        }
+
+        LineTo {
+            x: root.width / 1px - radius;
+            y: line-thickness;
+        }
+
+        ArcTo {
+            radius-x: 1;
+            radius-y: 1;
+            sweep: true;
+            x: root.width / 1px - radius;
+            y: radius * 2 - line-thickness;
+        }
+
+        LineTo {
+            x: radius;
+            y: radius * 2 - line-thickness;
+        }
+
+        LineTo {
+            x: radius;
+            y: radius * 2;
+        }
+
+        LineTo {
+            x: root.width / 1px - radius;
+            y: radius * 2;
+        }
+
+        ArcTo {
+            radius-x: 1;
+            radius-y: 1;
+            x: root.width / 1px - radius;
+            y: 0;
+        }
+    }
+
+    Rectangle {
+        background: transparent;
+        clip: true;
+        x: (line-thickness) * 0.5px;
+        height: root.height - (line-thickness + bar-padding) * 2px;
+        property <length> max-bar-width: root.width - (line-thickness) * 0.5px;
+
+        width: max-bar-width * root.progress;
+
+        Path {
+            height: parent.height;
+            width: root.width;
+
+            x: -parent.x;
+            y: 0;
+
+            fill: white;
+
+            viewbox-height: self.height / 1px;
+            viewbox-width: self.width / 1px;
+
+            MoveTo {
+                x: radius;
+                y: 0;
+            }
+
+            ArcTo {
+                radius-x: 1;
+                radius-y: 1;
+
+                x: radius;
+                y: parent.viewbox-height;
+            }
+
+            LineTo {
+                x: parent.viewbox-width - radius;
+                y: parent.viewbox-height;
+            }
+
+            ArcTo {
+                radius-x: 1;
+                radius-y: 1;
+
+                x: parent.viewbox-width - radius;
+                y: 0;
+            }
+        }
+    }
+
+    @children
+}

@@ -2,39 +2,39 @@
 import {SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter} from "data_parameter.slint";
 export global SCarData {
 // GSensor
-	in property <SFDataParameter> g_sensor_lateral: { value: 999.4, unit_str: "?UNIT?" };
-	in property <SFDataParameter> g_sensor_longitudinal: { value: 999.4, unit_str: "?UNIT?" };
-	in property <SFDataParameter> steering_angle: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> g_sensor_lateral: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
+	in property <SFDataParameter> g_sensor_longitudinal: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
+	in property <SFDataParameter> steering_angle: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
 // BrakePedal
-	in property <SFDataParameter> brake_pedal_pressure: { value: 999.4, unit_str: "?UNIT?" };
-	in property <SFDataParameter> vehicle_speed: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> brake_pedal_pressure: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
+	in property <SFDataParameter> vehicle_speed: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
 // DriverRoadAssists
 	in property <SBDataParameter> active_tq_vectoring_enabled: { value: true };
 	in property <SBDataParameter> brake_cruise_on: { value: true };
 	in property <SBDataParameter> hill_assist_enabled: { value: true };
 	in property <SBDataParameter> traction_control_disabled: { value: true };
 // WheelSpeeds
-	in property <SFDataParameter> left_front_wheel_speed: { value: 999.4, unit_str: "?UNIT?" };
-	in property <SFDataParameter> left_rear_wheel_speed: { value: 999.4, unit_str: "?UNIT?" };
-	in property <SFDataParameter> right_front_wheel_speed: { value: 999.4, unit_str: "?UNIT?" };
-	in property <SFDataParameter> right_rear_wheel_speed: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> left_front_wheel_speed: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
+	in property <SFDataParameter> left_rear_wheel_speed: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
+	in property <SFDataParameter> right_front_wheel_speed: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
+	in property <SFDataParameter> right_rear_wheel_speed: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
 // Steering
-	in property <SFDataParameter> steering_wheel_angle: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> steering_wheel_angle: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
 // MotorControl
-	in property <SFDataParameter> accelerator_combined: { value: 999.4, unit_str: "?UNIT?" };
-	in property <SIDataParameter> accelerator_cruise_position: { value: 999, unit_str: "?UNIT?" };
-	in property <SFDataParameter> accelerator_pedal_position: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> accelerator_combined: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> accelerator_cruise_position: { value: 999, max: 9999, unit_str: "?UNIT?" };
+	in property <SFDataParameter> accelerator_pedal_position: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
 	in property <SBDataParameter> mt_clutch_sw: { value: true };
 	in property <SBDataParameter> n_accelerator_pedal_max_sw: { value: true };
-	in property <SFDataParameter> throttle_plate_position: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> throttle_plate_position: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
 // Engine
-	in property <SIDataParameter> engine_rpm: { value: 999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> engine_rpm: { value: 999, max: 9999, unit_str: "?UNIT?" };
 	in property <SBDataParameter> engine_running: { value: true };
 	in property <SBDataParameter> engine_stop: { value: true };
 	in property <SStrDataParameter> mt_gear: { value: "?VAL?" };
 // Transmission
-	in property <SIDataParameter> mt_gear_verify: { value: 999, unit_str: "?UNIT?" };
-	in property <SIDataParameter> transmission_temp_verify: { value: 999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> mt_gear_verify: { value: 999, max: 9999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> transmission_temp_verify: { value: 999, max: 9999, unit_str: "?UNIT?" };
 // StatusSwitches
 	in property <SBDataParameter> acc_power: { value: true };
 	in property <SBDataParameter> brake_sw: { value: true };
@@ -58,15 +58,15 @@ export global SCarData {
 	in property <SBDataParameter> rcta_right: { value: true };
 // ClimateControl
 	in property <SStrDataParameter> airflow_distribution_mode: { value: "?VAL?" };
-	in property <SIDataParameter> blower_fan_level: { value: 999, unit_str: "?UNIT?" };
-	in property <SFDataParameter> blend_door: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SIDataParameter> blower_fan_level: { value: 999, max: 9999, unit_str: "?UNIT?" };
+	in property <SFDataParameter> blend_door: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
 	in property <SBDataParameter> rear_defrost_enabled: { value: true };
 // Cluster
 	in property <SBDataParameter> driver_seatbelt_warning_enabled: { value: true };
-	in property <SFDataParameter> fuel_level: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> fuel_level: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
 	in property <SBDataParameter> left_turn_signal_enabled: { value: true };
 	in property <SBDataParameter> passenger_seatbelt_warning_enabled: { value: true };
-	in property <SIDataParameter> raw_fuel_testing: { value: 999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> raw_fuel_testing: { value: 999, max: 9999, unit_str: "?UNIT?" };
 	in property <SBDataParameter> right_turn_signal_enabled: { value: true };
 // Ignition
 	in property <SBDataParameter> access_key_detected: { value: true };
@@ -75,11 +75,11 @@ export global SCarData {
 // EngineStatus2
 	in property <SBDataParameter> cruise_control_enabled: { value: true };
 	in property <SBDataParameter> cruise_control_set_enabled: { value: true };
-	in property <SIDataParameter> cruise_control_speed: { value: 999, unit_str: "?UNIT?" };
-	in property <SFDataParameter> engine_boost_pressure: { value: 999.4, unit_str: "?UNIT?" };
-	in property <SIDataParameter> engine_coolant_temp: { value: 999, unit_str: "?UNIT?" };
-	in property <SIDataParameter> engine_fuel_flow: { value: 999, unit_str: "?UNIT?" };
-	in property <SIDataParameter> engine_oil_temp: { value: 999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> cruise_control_speed: { value: 999, max: 9999, unit_str: "?UNIT?" };
+	in property <SFDataParameter> engine_boost_pressure: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> engine_coolant_temp: { value: 999, max: 9999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> engine_fuel_flow: { value: 999, max: 9999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> engine_oil_temp: { value: 999, max: 9999, unit_str: "?UNIT?" };
 // EngineWarningLights
 	in property <SBDataParameter> check_engine_light_enabled: { value: true };
 	in property <SBDataParameter> oil_pressure_warning_light_enabled: { value: true };
@@ -102,10 +102,10 @@ export global SCarData {
 // DashStateVerify
 	in property <SStrDataParameter> units: { value: "?VAL?" };
 // Odometer
-	in property <SFDataParameter> odometer: { value: 999.4, unit_str: "?UNIT?" };
+	in property <SFDataParameter> odometer: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
 // Tpms
-	in property <SIDataParameter> left_front_tire_pressure: { value: 999, unit_str: "?UNIT?" };
-	in property <SIDataParameter> left_rear_tire_pressure: { value: 999, unit_str: "?UNIT?" };
-	in property <SIDataParameter> right_front_tire_pressure: { value: 999, unit_str: "?UNIT?" };
-	in property <SIDataParameter> right_rear_tire_pressure: { value: 999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> left_front_tire_pressure: { value: 999, max: 9999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> left_rear_tire_pressure: { value: 999, max: 9999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> right_front_tire_pressure: { value: 999, max: 9999, unit_str: "?UNIT?" };
+	in property <SIDataParameter> right_rear_tire_pressure: { value: 999, max: 9999, unit_str: "?UNIT?" };
 }

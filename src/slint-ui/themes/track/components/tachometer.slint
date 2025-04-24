@@ -2,72 +2,76 @@ import { SCarData } from "../../../data/car_data.slint";
 
 component TachVerticalLine {
     in property <brush> brush: white;
-    in property <float> mid-gap: self.height / 2px;
+    in property <length> mid-gap: self.height / 2;
 
-    Path {
-        fill: root.brush;
-        property <float> y-point: (self.viewbox-height - root.mid-gap) / 2;
+    property <length> y-point: (self.height - root.mid-gap) / 2;
 
-        viewbox-height: root.height / 1px;
-        viewbox-width: root.width / 1px;
+    Rectangle {
+        x: 0;
+        y: 0;
+        height: root.y-point;
+        background: root.brush;
+    }
 
-        MoveTo {
-            y: 0;
-            x: 0;
-        }
-
-        LineTo {
-            y: y-point;
-            x: 0;
-        }
-
-        LineTo {
-            y: y-point;
-            x: parent.viewbox-width;
-        }
-
-        LineTo {
-            y: 0;
-            x: parent.viewbox-width;
-        }
-
-        MoveTo {
-            y: parent.viewbox-height;
-            x: 0;
-        }
-
-        LineTo {
-            y: parent.viewbox-height - y-point;
-            x: 0;
-        }
-
-        LineTo {
-            y: parent.viewbox-height - y-point;
-            x: parent.viewbox-width;
-        }
-
-        LineTo {
-            y: parent.viewbox-height;
-            x: parent.viewbox-width;
-        }
+    Rectangle {
+        y: root.height - root.y-point;
+        x: 0;
+        height: root.y-point;
+        background: root.brush;
     }
 
     @children
 }
 
+component DecorationBar inherits Rectangle {
+    width: 100%;
+    height: 1px;
+    background: transparent;
+
+    center-bar := Rectangle {
+        height: 100%;
+        width: 90%;
+        x: root.width / 2 - self.width / 2;
+        background: white;
+    }
+
+    left-bar := Rectangle {
+        height: 100%;
+        width: 5%;
+        x: 0;
+
+        background: @linear-gradient(90deg, #00000000 0%, white 100%);
+    }
+
+    right-bar := Rectangle {
+        height: 100%;
+        width: 5%;
+        x: root.width - self.width;
+
+        background: @linear-gradient(-90deg, #00000000 0%, white 100%);
+    }
+}
+
 export component Tachometer inherits Rectangle {
-    in property <int> major-tick-lines: ceil((SCarData.engine_rpm.max + 1) / 1000);
-    in property <length> tick-thickness: 5px;
+    in property <int> max-rpm: SCarData.engine_rpm.max;
+    in property <int> rpm-denominator: 1000;
+    in property <float> redline: 6600;
+    in property <length> major-tick-thickness: 2.5px;
 
-    private property <length> tick-step: (self.width - major-tick-lines * tick-thickness) / (major-tick-lines - 1);
+    in property <int> minor-tick-lines: 1;
+    in property <length> minor-tick-thickness: major-tick-thickness * 60%;
 
-    in property <int> redline-ticks: 7;
+    in property <int> redline-ticks: 8;
     in property <length> redline-tick-gap: 4.5px;
-    private property <float> redline-ratio: 6600 / SCarData.engine_rpm.max;
-    private property <length> start-x: root.width * redline-ratio;
-    private property <length> end-x: root.width;
-    private property <float> redline-curvature: 3.75;
-    private property <float> redline-ramp: 3;
+
+    private property <int> major-tick-lines: ceil((root.max-rpm + 1) / root.rpm-denominator);
+    private property <length> tick-step: (interior.width - major-tick-lines * major-tick-thickness) / (major-tick-lines - 1);
+
+    private property <float> redline-ratio: root.redline / root.max-rpm;
+    private property <length> start-x: interior.width * redline-ratio;
+    private property <length> end-x: interior.width;
+    private property <float> redline-curvature: 6;
+    private property <float> redline-ramp: 2;
     private property <length> redline-length: (end-x - start-x) - redline-ticks * redline-tick-gap;
 
     pure function exp_m1(k: float) -> float {
@@ -81,37 +85,79 @@ export component Tachometer inherits Rectangle {
 
     private property <length> thickest-redline: get-redline-tick-width-log(redline-ticks - 1);
 
-    redline-layout := HorizontalLayout {
-        alignment: LayoutAlignment.end;
-        spacing: redline-tick-gap;
+    interior := Rectangle {
 
-        for redline-tick in redline-ticks: TachVerticalLine {
-            width: get-redline-tick-width-log(redline-tick);
-            brush: red.mix(#ff5900, self.width / thickest-redline).transparentize(20%);
+        background: transparent;
+        width: 87.5%;
+        height: root.height - top-bar.height - bottom-bar.height;
+
+        redline-layout := HorizontalLayout {
+            alignment: LayoutAlignment.end;
+            spacing: redline-tick-gap;
+
+            for redline-tick in redline-ticks: Rectangle {
+                width: get-redline-tick-width-log(redline-tick);
+                background: red.mix(#ff5900, self.width / thickest-redline).transparentize(30%);
+                height: 100%;
+
+                HorizontalLayout {
+                    alignment: LayoutAlignment.center;
+                }
+            }
+        }
+
+        major-tick-lines-layout := HorizontalLayout {
+
+            alignment: LayoutAlignment.start;
+            spacing: tick-step;
+
+            for major-tick-line in major-tick-lines: TachVerticalLine {
+                width: major-tick-thickness;
+                height: 100%;
+
+                label := Text {
+                    x: parent.width / 2 - self.width / 2;
+                    y: parent.height / 2 - self.height / 2;
+                    color: parent.brush;
+                    text: major-tick-line;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                    font-size: 25px;
+                }
+            }
+        }
+
+        minor-tick-lines-layout := HorizontalLayout {
+            alignment: LayoutAlignment.start;
+            spacing: major-tick-thickness;
+
+            for major-tick-minor-layout in (major-tick-lines - 1): HorizontalLayout {
+                width: (parent.width - major-tick-lines * major-tick-thickness) / (major-tick-lines - 1);
+                alignment: LayoutAlignment.center;
+                spacing: tick-step / (minor-tick-lines + 1);
+
+                for minor-tick-line in minor-tick-lines: TachVerticalLine {
+                    width: minor-tick-thickness;
+                    height: 100%;
+                    mid-gap: (minor-tick-lines - 1) / 2 == minor-tick-line ? self.height * 75% : self.height * 80%;
+                }
+            }
+        }
+
+        needle-bar := Rectangle {
+            x: 0;
             height: 100%;
-            mid-gap: 0;
+            width: interior.width * SCarData.engine_rpm.value / SCarData.engine_rpm.max;
+            background: @linear-gradient(90deg, #00000000 0%, #ffffff70 100%);
         }
     }
 
-    for major-tick-line in major-tick-lines: TachVerticalLine {
-        width: tick-thickness;
-        height: 100%;
-        x: major-tick-line * (tick-thickness + tick-step);
-
-        label := Text {
-            x: parent.width / 2 - self.width / 2;
-            y: parent.height / 2 - self.height / 2;
-            text: major-tick-line;
-            horizontal-alignment: center;
-            vertical-alignment: center;
-            font-size: 25px;
-        }
+    top-bar := DecorationBar {
+        y: 0;
     }
 
-    needle-bar := Rectangle {
-        x: 0;
-        height: 100%;
-        width: root.width * SCarData.engine_rpm.value / SCarData.engine_rpm.max;
-        background: white.transparentize(45%);
+    bottom-bar := DecorationBar {
+        y: root.height - self.height;
+        x: top-bar.x;
     }
 }

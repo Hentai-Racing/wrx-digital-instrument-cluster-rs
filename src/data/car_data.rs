@@ -143,6 +143,7 @@ macro_rules! CarData {
 }
 
 // TODO: make a hashmap or something so all the parameters can be displayed in slint as a list
+// TODO: add additional parameters that are not attached to DBC
 
 CarData! {
     {

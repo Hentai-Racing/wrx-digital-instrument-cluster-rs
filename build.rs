@@ -368,8 +368,7 @@ fn generate_slint_car_data(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn s
                                                         match slint_type {
                                                             "SIDataParameter"
                                                             | "SFDataParameter" => {
-                                                                gen_block +=
-                                                                    ", unit_str: \"?UNIT?\"";
+                                                                gen_block += ", max: 9999, unit_str: \"?UNIT?\"";
                                                             }
                                                             _ => {}
                                                         }
