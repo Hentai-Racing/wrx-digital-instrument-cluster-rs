@@ -99,10 +99,6 @@ export component CanDisplayWidget inherits Rectangle {
         y: id-header-label.height;
         height: root.height - id-header-label.height;
 
-        scrolled => {
-            debug("Scroll event");
-        }
-
         layout := HorizontalLayout {
             alignment: LayoutAlignment.start;
             spacing: 0px;
