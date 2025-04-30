@@ -36,6 +36,15 @@ export component TrackTheme inherits Rectangle {
         height: 22%;
 
         y: root.height * 10%;
+
+        Text {
+            font-size: 25px;
+            y: -self.height;
+            x: parent.width - self.width;
+            color: white.transparentize(85%);
+
+            text: "×1000";
+        }
     }
 
     gear-indicator := Text {
@@ -75,7 +84,7 @@ export component TrackTheme inherits Rectangle {
         progress: SCarData.engine_coolant_temp.value / SCarData.engine_coolant_temp.max;
 
         width: 18%;
-        height: 3%;
+        height: 3.5%;
 
         x: tachometer.x + 50px;
         y: root.height - self.height - odometer-layout.padding - 13px;
