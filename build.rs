@@ -451,7 +451,6 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
             let parent_dir = parent_dir.to_string_lossy().into_owned();
             if path.is_dir() {
                 for entry in path.read_dir()?.filter_map(Result::ok) {
-                    println!("{entry:?}");
                     let path = entry.path();
 
                     if path.is_file()
@@ -483,8 +482,9 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
     gen_output += "\tinit() => {\n\t\tThemes.themes = self.themes;\n\t}\n\n";
 
     for (i, theme_component) in theme_components.iter().enumerate() {
-        gen_output +=
-            &format!("\tif Themes.current-theme == root.themes[{i}]: {theme_component} {{}}\n");
+        gen_output += &format!(
+            "\tif Themes.current-theme == root.themes[{i}]: {theme_component} {{width: 100%; height: 100%;}}\n"
+        );
     }
 
     gen_output += "}";

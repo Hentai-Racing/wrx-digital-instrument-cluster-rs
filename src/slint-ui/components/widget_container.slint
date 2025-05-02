@@ -2,7 +2,6 @@ import { Button } from "std-widgets.slint";
 
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import { RoadIndicatorWidget } from "../themes/default/components/road_indicators.slint";
-import { ThemeSelectorWidget } from "../themes/themes.slint";
 import { ApplicationState } from "../application/application_state.slint";
 import { NavigationMap } from "navmap.slint";
 import { CanDisplayWidget } from "can_display.slint";
@@ -14,7 +13,7 @@ global WidgetContainerState {
     in-out property <int> current-page: 0;
     in property <int> num-pages: 0;
 
-    function change-page(to-page: int) {
+    public function change-page(to-page: int) {
         current-page = to-page;
     }
 }
@@ -35,7 +34,7 @@ component Widget {
 
 export component WidgetContainer inherits Rectangle {
     init => {
-        WidgetContainerState.num-pages = 0;
+        WidgetContainerState.num-pages = 1;
     }
 
     FocusScope {
@@ -53,88 +52,99 @@ export component WidgetContainer inherits Rectangle {
 
     background: transparent;
 
-    center-widget-container-indicator := Rectangle {
-        width: parent.width;
-        height: parent.height - center-widget-container-inner.height;
+    VerticalLayout {
+        center-widget-container-indicator := Rectangle {
+            property <length> indicator-width: self.height;
 
-        y: 0;
+            HorizontalLayout {
+                alignment: center;
+                spacing: 5px;
+                for i in WidgetContainerState.num-pages: Rectangle {
+                    background: black;
+                    width: indicator-width;
 
-        property <length> indicator-width: self.height;
-    }
-
-    center-widget-container-inner := Rectangle {
-        width: 80%;
-        height: 90%;
-
-        y: parent.height - self.height;
-        clip: true;
-
-        center-widget-container-layout := HorizontalLayout {
-            spacing: 10px;
-
-            x: -WidgetContainerState.current-page * center-widget-container-inner.width - self.spacing * WidgetContainerState.current-page;
-            animate x {
-                duration: WidgetContainerState.page-animation-duration;
-                easing: ease-in-out;
-            }
-
-            road-indicator-widget := Widget {
-                RoadIndicatorWidget {
-                    height: 100%;
-                    width: 100%;
-                }
-            }
-
-            if ApplicationState.cfg-three-d: threed-container-image := Widget {
-                Image {
-                    height: 100%;
-                    width: 100%;
-                }
-            }
-
-            if ApplicationState.cfg-network: Widget {
-                NavigationMap {
-                    height: 100%;
-                    width: 100%;
-                }
-            }
-
-            Widget {
-                VerticalLayout {
-                    padding: 20px;
-
-                    theme-setting-widget := ThemeSelectorWidget {
-                        width: 100%;
+                    Text {
+                        text: i;
                     }
 
-                    Rectangle {
-                        Button {
-                            width: 100px;
-                            height: 25px;
-                            x: parent.width / 2 - self.width / 2;
-
-                            text: "Toggle Settings";
-
-                            clicked => {
-                                ApplicationState.settings-menu-visible = !ApplicationState.settings-menu-visible;
-                            }
+                    TouchArea {
+                        clicked => {
+                            WidgetContainerState.change-page(i);
                         }
                     }
                 }
             }
+        }
 
-            Widget {
-                CanDisplayWidget {
-                    running: WidgetContainerState.current-page == parent.page-number;
-                    height: 100%;
-                    width: 100%;
+        center-widget-container-inner := Rectangle {
+            width: 80%;
+            height: 90%;
+
+            clip: true;
+
+            center-widget-container-layout := HorizontalLayout {
+                spacing: 10px;
+
+                x: -WidgetContainerState.current-page * center-widget-container-inner.width - self.spacing * WidgetContainerState.current-page;
+                animate x {
+                    duration: WidgetContainerState.page-animation-duration;
+                    easing: ease-in-out;
                 }
-            }
 
-            if ApplicationState.debug-mode: Widget {
-                DebugMenuWidget {
-                    height: 100%;
-                    width: 100%;
+                road-indicator-widget := Widget {
+                    RoadIndicatorWidget {
+                        height: 100%;
+                        width: 100%;
+                    }
+                }
+
+                if ApplicationState.cfg-three-d: threed-container-image := Widget {
+                    Image {
+                        height: 100%;
+                        width: 100%;
+                    }
+                }
+
+                // TODO: fix this
+                // if ApplicationState.cfg-network: Widget {
+                //     NavigationMap {
+                //         height: 100%;
+                //         width: 100%;
+                //     }
+                // }
+
+                Widget {
+                    VerticalLayout {
+                        padding: 20px;
+
+                        Rectangle {
+                            Button {
+                                height: 25px;
+                                x: parent.width / 2 - self.width / 2;
+
+                                text: "Open Settings";
+
+                                clicked => {
+                                    ApplicationState.settings-menu-visible = !ApplicationState.settings-menu-visible;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Widget {
+                    CanDisplayWidget {
+                        running: WidgetContainerState.current-page == parent.page-number;
+                        height: 100%;
+                        width: 100%;
+                    }
+                }
+
+                if ApplicationState.debug-mode: Widget {
+                    DebugMenuWidget {
+                        height: 100%;
+                        width: 100%;
+                    }
                 }
             }
         }

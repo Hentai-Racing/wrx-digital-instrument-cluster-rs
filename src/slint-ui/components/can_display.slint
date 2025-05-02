@@ -60,6 +60,7 @@ component TableHeaderRect inherits TableRect {
 
 export component CanDisplayWidget inherits Rectangle {
     in-out property <bool> running <=> CanDisplay.running;
+    clip: true;
 
     width: 1920px;
     height: 720px;

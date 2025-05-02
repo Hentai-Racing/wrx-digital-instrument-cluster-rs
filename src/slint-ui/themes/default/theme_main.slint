@@ -52,8 +52,9 @@ component GaugeAttachedSymbol inherits SymbolLight {
 
 export component DefaultTheme inherits Rectangle {
     background: transparent;
-    height: 100%;
-    width: 100%;
+
+    width: self.height * (1920 / 720);
+    height: 500px;
 
     VerticalLayout {
         top-span := PrimarySection {

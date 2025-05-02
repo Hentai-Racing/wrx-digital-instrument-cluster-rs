@@ -1,30 +1,32 @@
 import { Button } from "std-widgets.slint";
 import { ApplicationState } from "../application/application_state.slint";
+import { ThemeSelectorWidget } from "../themes/themes.slint";
+
 export global UserSettings { } // TODO
 
-export component MenuRectangle inherits Rectangle {
-    // all children of this component should have their relevant brush's alpha match the alpha
-    // of this root's `background` in order for the animation to be effective
-
-    in property <brush> background-color: white;
-    in-out property <bool> open: true;
+export component SettingsMenu inherits Rectangle {
+    in property <brush> background-color: black;
+    in-out property <bool> open <=> ApplicationState.settings-menu-visible;
     property <duration> open-animation-duration: 60ms;
 
+    in-out property <length> parent-width;
+    in-out property <length> parent-height;
+
+    in-out property <length> open-width;
+    in-out property <length> open-height;
+
     background: background-color;
-    width: 70%;
-    height: 90%;
 
     clip: true;
-    border-radius: 15px;
 
     visible: self.y <= -self.height ? false : true;
 
     states [
         opened when open: {
-            width: 70%;
-            height: 90%;
+            width: root.open-width;
+            height: root.open-height;
             background: background-color;
-            y: (self.height / 90% / 2) - (self.height / 2);
+            y: parent-height / 2 - open-height / 2;
             in {
                 animate y { duration: 0; }
             }
@@ -33,8 +35,8 @@ export component MenuRectangle inherits Rectangle {
             }
         }
         closed when !open: {
-            width: 65%;
-            height: 85%;
+            width: root.open-width * 65%;
+            height: root.open-height * 85%;
             background: transparent;
             y: -self.height; // move offscreen since `visible` can't be animated
             in {
@@ -48,32 +50,6 @@ export component MenuRectangle inherits Rectangle {
             }
         }
     ]
-}
-
-component SettingsMain inherits MenuRectangle {
-    open <=> ApplicationState.settings-menu-visible;
-
-    focus := FocusScope { }
-
-    TouchArea {
-        enabled: root.open;
-    }
-
-    main := PopupWindow {
-        x: root.x;
-        y: root.y;
-        width: root.width;
-        height: root.height;
-
-        close-policy: PopupClosePolicy.no-auto-close;
-
-        Rectangle {
-            width: 100%;
-            height: 100%;
-
-            @children
-        }
-    }
 
     changed background => {
         if self.background.alpha >= 1 {
@@ -82,14 +58,33 @@ component SettingsMain inherits MenuRectangle {
             main.close();
         }
     }
-}
 
-export component SettingsMenu inherits SettingsMain {
-    Button {
-        text: "Exit";
+    main := PopupWindow {
+        width: root.width;
+        height: root.height;
+        close-policy: PopupClosePolicy.no-auto-close;
 
-        clicked => {
-            root.open = false;
+        focus := FocusScope { }
+
+        @children
+
+        VerticalLayout {
+            spacing: 10px;
+
+            Button {
+                height: 30px;
+                width: 50px;
+                text: "Exit";
+
+                clicked => {
+                    root.open = false;
+                }
+            }
+
+            theme-setting-widget := ThemeSelectorWidget {
+                width: 100%;
+                height: 30px;
+            }
         }
     }
 }

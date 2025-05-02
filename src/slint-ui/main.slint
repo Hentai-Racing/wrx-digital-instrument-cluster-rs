@@ -42,12 +42,18 @@ export component App inherits Window {
 
     title: "WRX Digital Instrument Cluster";
 
-    preferred-height: 720px;
     preferred-width: 1920px;
+    preferred-height: 720px;
 
     background: black;
 
     ThemeLoader { }
 
-    settings-menu := SettingsMenu { }
+    settings-menu := SettingsMenu {
+        open-height: 720px;
+        open-width: 1920px;
+
+        parent-height: 720px;
+        parent-width: 1920px;
+    }
 }

@@ -75,7 +75,6 @@ export component Tachometer inherits Rectangle {
     private property <length> redline-length: (end-x - start-x) - redline-ticks * redline-tick-gap;
 
     pure function exp_m1(k: float) -> float {
-        // exp(k) - 1 // TODO: track https://github.com/slint-ui/slint/pull/8226
         pow(redline-ramp, k) - 1
     }
 

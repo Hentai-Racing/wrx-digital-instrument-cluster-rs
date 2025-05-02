@@ -1,6 +1,9 @@
+import { SFDataParameter, SIDataParameter } from "../../../data/data_parameter.slint";
+
 export component PillGauge {
+    in property <SFDataParameter> data_parameter;
     private property <float> radius: min(self.height / 2px, self.width / 2px);
-    in property <float> progress: 25%;
+    in property <float> progress: data_parameter.value / data_parameter.max;
     in property <float> line-thickness: 2;
     in property <float> bar-padding: 2;
 
