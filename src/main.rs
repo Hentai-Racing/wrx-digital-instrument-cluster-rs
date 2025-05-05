@@ -59,11 +59,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     virtual_cluster |= fake_dev;
     let selected_interface = if virtual_cluster {
+        #[cfg(target_os = "linux")]
         if fake_dev {
             SelectedCanInterface::Fake
         } else {
-            #[cfg(target_os = "linux")]
             SelectedCanInterface::VirtualSocketCan
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        {
+            SelectedCanInterface::Fake
         }
     } else if cli.value_source("candev") == Some(clap::parser::ValueSource::CommandLine) {
         SelectedCanInterface::SocketCan
