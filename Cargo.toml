@@ -31,24 +31,23 @@ clap = "*"
 embedded-can = "*"
 futures = "*"
 bitvec = "*"
-
+serde = "*"
+toml = "*"
 tokio = { version = "*", features = [
     "sync",
     "rt-multi-thread",
     "macros",
 ], default-features = false }
 crossbeam-channel = "*"
-
 image = "*"
-
 
 # feature deps
 gpio-cdev = { version = "*", optional = true, features = ["async-tokio"] }
 three-d = { git = "https://github.com/asny/three-d.git", optional = true }
 serial = { version = "*", optional = true }
+slcan = { git = "https://github.com/bryce-happel-walton/slcan.git", optional = true }
 
 # feature deps network
-slcan = { git = "https://github.com/bryce-happel-walton/slcan.git", optional = true }
 reqwest = { version = "*", optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]

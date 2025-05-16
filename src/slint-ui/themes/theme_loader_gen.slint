@@ -6,7 +6,7 @@ import { DebugTheme } from "debug/theme_main.slint";
 import { DefaultTheme } from "default/theme_main.slint";
 import { Default-NavmapTheme } from "default-navmap/theme_main.slint";
 import { TrackTheme } from "track/theme_main.slint";
-import { Themes } from "themes.slint";
+import { GlobalThemeData } from "themes.slint";
 
 export component ThemeLoader {
 	width: 100%;
@@ -15,11 +15,11 @@ export component ThemeLoader {
 	in-out property <[string]> themes: ["Debug", "Default", "Default-Navmap", "Track"];
 
 	init() => {
-		Themes.themes = self.themes;
+		GlobalThemeData.themes = self.themes;
 	}
 
-	if Themes.current-theme == root.themes[0]: DebugTheme {width: 100%; height: 100%;}
-	if Themes.current-theme == root.themes[1]: DefaultTheme {width: 100%; height: 100%;}
-	if Themes.current-theme == root.themes[2]: Default-NavmapTheme {width: 100%; height: 100%;}
-	if Themes.current-theme == root.themes[3]: TrackTheme {width: 100%; height: 100%;}
+	if GlobalThemeData.current-theme == root.themes[0]: DebugTheme {width: 100%; height: 100%;}
+	if GlobalThemeData.current-theme == root.themes[1]: DefaultTheme {width: 100%; height: 100%;}
+	if GlobalThemeData.current-theme == root.themes[2]: Default-NavmapTheme {width: 100%; height: 100%;}
+	if GlobalThemeData.current-theme == root.themes[3]: TrackTheme {width: 100%; height: 100%;}
 }

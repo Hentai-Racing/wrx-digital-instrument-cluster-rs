@@ -5,7 +5,7 @@
 
 import { ComboBox } from "std-widgets.slint";
 
-export global Themes {
+export global GlobalThemeData {
     in-out property <[string]> themes; //* set by theme_loader_gen
     in-out property <string> current-theme: "Default";
     callback theme-changed(string);
@@ -25,14 +25,14 @@ export component ThemeSelectorWidget {
         theme-selection-box := ComboBox {
             width: 125px;
 
-            model: Themes.themes;
-            current-value: Themes.current-theme;
+            model: GlobalThemeData.themes;
+            current-value: GlobalThemeData.current-theme;
 
-            enabled: Themes.themes.length > 1;
+            enabled: GlobalThemeData.themes.length > 1;
 
             selected(current-value) => {
-                Themes.theme-changed(current-value);
-                Themes.current-theme = current-value;
+                GlobalThemeData.theme-changed(current-value);
+                GlobalThemeData.current-theme = current-value;
             }
         }
     }

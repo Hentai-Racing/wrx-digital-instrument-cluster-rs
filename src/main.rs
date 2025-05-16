@@ -4,18 +4,22 @@ mod data;
 mod hardware;
 mod ui;
 
-use crate::application::s_car_data_bridge::SCarDataBridge;
+use application::serdes::SerdesManager;
+
 use crate::can::can_backend::{CanBackend, CanFrame, SelectedCanInterface};
 use crate::can::can_data_emulator::run_can_data_emulator;
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
 use crate::data::car_data::{CarData, ParseResult};
-use crate::ui::{can_display::CanFrameDisplay, theme_handler};
+use crate::ui::car_data_bridge::SCarDataBridge;
+use crate::ui::{can_display::CanFrameDisplay, theme_handler, user_settings_bridge};
+
 use std::collections::VecDeque;
 use std::env;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
+
 slint::include_modules!();
 
 #[allow(unused)]
@@ -238,6 +242,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data);
     ui_data_bridge.run();
+
+    let mut serdes_manager = SerdesManager::new(ui.as_weak());
+    serdes_manager.load_from_fs()?;
+    let mut ui_user_settings_bridge =
+        user_settings_bridge::bridge_settings(ui.as_weak(), serdes_manager);
 
     if virtual_cluster {
         let running_simulation_clone = running_simulation.clone();

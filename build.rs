@@ -468,7 +468,7 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
         }
     }
 
-    gen_output += "import { Themes } from \"themes.slint\";\n";
+    gen_output += "import { GlobalThemeData } from \"themes.slint\";\n";
     gen_output += "\nexport component ThemeLoader {\n\twidth: 100%;\n\theight: 100%;\n\n";
 
     gen_output += &format!(
@@ -479,11 +479,11 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
             .collect::<Vec<_>>()
             .join(", ")
     );
-    gen_output += "\tinit() => {\n\t\tThemes.themes = self.themes;\n\t}\n\n";
+    gen_output += "\tinit() => {\n\t\tGlobalThemeData.themes = self.themes;\n\t}\n\n";
 
     for (i, theme_component) in theme_components.iter().enumerate() {
         gen_output += &format!(
-            "\tif Themes.current-theme == root.themes[{i}]: {theme_component} {{width: 100%; height: 100%;}}\n"
+            "\tif GlobalThemeData.current-theme == root.themes[{i}]: {theme_component} {{width: 100%; height: 100%;}}\n"
         );
     }
 
