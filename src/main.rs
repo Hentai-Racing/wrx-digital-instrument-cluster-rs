@@ -15,8 +15,8 @@ use crate::ui::{can_display::CanFrameDisplay, theme_handler, user_settings_bridg
 
 use std::collections::VecDeque;
 use std::env;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::Duration;
 
@@ -243,10 +243,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data);
     ui_data_bridge.run();
 
-    let mut serdes_manager = SerdesManager::new(ui.as_weak());
-    serdes_manager.load_from_fs()?;
-    let mut ui_user_settings_bridge =
-        user_settings_bridge::bridge_settings(ui.as_weak(), serdes_manager);
+    let serdes_manager = Arc::new(RwLock::new(SerdesManager::new(ui.as_weak())));
+
+    match serdes_manager.write() {
+        Ok(mut serdes_manager) => serdes_manager.load_from_fs()?,
+        _ => {}
+    }
+    user_settings_bridge::bridge_settings(ui.as_weak(), serdes_manager.clone());
 
     if virtual_cluster {
         let running_simulation_clone = running_simulation.clone();
@@ -345,6 +348,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ui.run()?;
 
     // cleanup
+
+    match serdes_manager.read() {
+        Ok(serdes_manager) => {
+            serdes_manager.save_to_fs()?;
+        }
+        _ => {}
+    }
 
     for runner in runners {
         runner.store(false, Ordering::SeqCst);

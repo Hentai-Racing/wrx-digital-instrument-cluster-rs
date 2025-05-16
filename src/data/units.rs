@@ -1,7 +1,8 @@
 #![allow(dead_code, unused)]
+use serde::{Deserialize, Serialize};
 use std::default;
 
-#[derive(Copy, Clone, Default, Debug)]
+#[derive(Copy, Clone, Default, Debug, Serialize, Deserialize)]
 pub enum UnitSystem {
     #[default]
     SI, // International System of Units

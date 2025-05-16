@@ -1,20 +1,32 @@
-use crate::slint_generatedApp::{App, GlobalThemeData};
+use crate::data::units::UnitSystem;
+use crate::slint_generatedApp::App;
 
 use serde::{Deserialize, Serialize};
 use slint::Weak;
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use tokio::sync::watch;
 use toml;
 
 #[derive(Serialize, Deserialize)]
-pub struct UserSettings {
-    selected_theme: String,
+pub struct ThemeSettings {
+    pub selected_theme: String,
 }
 
-impl Default for UserSettings {
+#[derive(Serialize, Deserialize, Default)]
+pub struct GeneralSettings {
+    pub unit_system: UnitSystem,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct UserSettings {
+    pub theme: ThemeSettings,
+    pub general: GeneralSettings,
+}
+
+impl Default for ThemeSettings {
     fn default() -> Self {
         Self {
             selected_theme: "Default".into(),
@@ -29,24 +41,29 @@ pub struct StaticCarData {
 }
 
 #[derive(Default)]
+pub enum SaveStatus {
+    #[default]
+    Sucess,
+    Failed(Box<dyn std::error::Error>),
+}
+
+#[derive(Default)]
 pub struct SerdesManager {
     loaded: watch::Sender<bool>,
-    user_settings: UserSettings,
+    pub user_settings: UserSettings,
     static_car_data: StaticCarData,
     app: Weak<App>,
 }
 
 impl SerdesManager {
     pub fn new(app: Weak<App>) -> Self {
-        let (loaded_tx, _) = watch::channel(false);
         Self {
             app,
-            loaded: loaded_tx,
             ..Default::default()
         }
     }
 
-    pub fn load_from_fs(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn get_config_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
         let exe_dir = env::current_exe()?
             .parent()
             .map(|x| x.to_path_buf())
@@ -59,7 +76,13 @@ impl SerdesManager {
             _ => (),
         }
 
-        let user_settings_dir = &config_dir.join("user_settings.toml");
+        Ok(config_dir)
+    }
+
+    pub fn get_user_settings_dir(&self) -> Result<PathBuf, Box<dyn std::error::Error>> {
+        let config_dir = Self::get_config_dir()?;
+
+        let user_settings_dir = config_dir.join("user_settings.toml");
         match File::create_new(&user_settings_dir) {
             Ok(mut file) => {
                 let toml_string = toml::to_string_pretty(&self.user_settings)?;
@@ -68,17 +91,44 @@ impl SerdesManager {
             _ => {}
         };
 
+        Ok(user_settings_dir)
+    }
+
+    pub fn load_from_fs(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let user_settings_dir = Self::get_user_settings_dir(&self)?;
+
         let user_settings_file = fs::read_to_string(&user_settings_dir)?;
         self.user_settings = toml::from_str(user_settings_file.as_str())?;
 
-        println!("{}", self.user_settings.selected_theme);
+        println!("{}", self.user_settings.theme.selected_theme);
 
         self.loaded.send_replace(true);
         Ok(())
     }
 
-    pub fn save_to_fs(&self) -> Result<(), Box<dyn std::error::Error>> {
-        Ok(())
+    pub fn save_to_fs(&self) -> Result<SaveStatus, Box<dyn std::error::Error>> {
+        let user_settings_dir = Self::get_user_settings_dir(&self)?;
+
+        let save_status = match File::options()
+            .write(true)
+            .truncate(true)
+            .open(&user_settings_dir)
+        {
+            Ok(mut file) => {
+                let toml_string = toml::to_string_pretty(&self.user_settings)?;
+                file.write(toml_string.as_bytes())?;
+                SaveStatus::Sucess
+            }
+            Err(e) => {
+                eprintln!(
+                    "Failed to open {} as write: {e}",
+                    user_settings_dir.display()
+                );
+                SaveStatus::Failed(e.into())
+            }
+        };
+
+        Ok(save_status)
     }
 
     pub fn loaded(&self) -> watch::Receiver<bool> {
