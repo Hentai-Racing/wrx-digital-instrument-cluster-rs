@@ -31,7 +31,7 @@ clap = "*"
 embedded-can = "*"
 futures = "*"
 bitvec = "*"
-serde = "*"
+serde = { version = "*", features = ["std", "derive"] }
 toml = "*"
 tokio = { version = "*", features = [
     "sync",
