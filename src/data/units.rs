@@ -2,14 +2,14 @@
 use serde::{Deserialize, Serialize};
 use std::default;
 
-#[derive(Copy, Clone, Default, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Default, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub enum UnitSystem {
     #[default]
     SI, // International System of Units
     USCS, // US Customary System
 }
 
-#[derive(Clone, Copy, Default, Debug)]
+#[derive(Clone, Copy, Default, Debug, Serialize, Deserialize)]
 pub enum PressureUnit {
     #[default]
     BAR,
@@ -17,7 +17,7 @@ pub enum PressureUnit {
     PSI,
 }
 
-#[derive(Clone, Copy, Default, Debug)]
+#[derive(Clone, Copy, Default, Debug, Serialize, Deserialize)]
 pub enum Unit {
     #[default]
     None,

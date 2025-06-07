@@ -52,6 +52,7 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
                 .allow_dead_code(true)
                 .check_ranges(dbc_codegen::FeatureConfig::Never)
                 .impl_error(dbc_codegen::FeatureConfig::Always)
+                .impl_serde(dbc_codegen::FeatureConfig::Always)
                 .build();
 
             dbc_codegen::codegen(config, &mut BufWriter::new(out_file))?;

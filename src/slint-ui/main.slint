@@ -50,10 +50,10 @@ export component App inherits Window {
     ThemeLoader { }
 
     settings-menu := SettingsMenu {
-        open-height: 720px;
-        open-width: 1920px;
+        open-height: root.height * 0.6;
+        open-width: root.width * 0.75;
 
-        parent-height: 720px;
-        parent-width: 1920px;
+        parent-height: root.height;
+        parent-width: root.width;
     }
 }

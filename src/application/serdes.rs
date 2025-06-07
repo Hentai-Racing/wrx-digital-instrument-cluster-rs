@@ -1,3 +1,4 @@
+use crate::data::data_parameter::DataParameter;
 use crate::data::units::UnitSystem;
 use crate::slint_generatedApp::App;
 
@@ -99,8 +100,6 @@ impl SerdesManager {
 
         let user_settings_file = fs::read_to_string(&user_settings_dir)?;
         self.user_settings = toml::from_str(user_settings_file.as_str())?;
-
-        println!("{}", self.user_settings.theme.selected_theme);
 
         self.loaded.send_replace(true);
         Ok(())

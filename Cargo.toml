@@ -10,7 +10,7 @@ license-file = "LICENSE"
 readme = "README.md"
 
 [features]
-default = ["slint/backend-winit", "slint/renderer-skia-opengl", "slcan"]
+default = ["slint/backend-winit-wayland", "slint/renderer-skia-opengl", "slcan"]
 kms = ["slint/backend-linuxkms", "slint/renderer-skia-opengl"]
 apalis_imx8 = ["dep:gpio-cdev", "kms"]
 network = ["dep:reqwest"]
@@ -32,6 +32,7 @@ embedded-can = "*"
 futures = "*"
 bitvec = "*"
 serde = { version = "*", features = ["std", "derive"] }
+serde_bytes = "*"
 toml = "*"
 tokio = { version = "*", features = [
     "sync",

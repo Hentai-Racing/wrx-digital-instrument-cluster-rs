@@ -1,11 +1,12 @@
 import { Button } from "std-widgets.slint";
 import { ApplicationState } from "../application/application_state.slint";
+import { SUnitSystem } from "../data/units.slint";
 import { ThemeSelectorWidget } from "../themes/themes.slint";
 
 export global UserSettings { } // TODO
 
 export component SettingsMenu inherits Rectangle {
-    in property <brush> background-color: black;
+    in property <brush> background-color: ApplicationState.debug-mode ? purple : black;
     in-out property <bool> open <=> ApplicationState.settings-menu-visible;
     property <duration> open-animation-duration: 60ms;
 
@@ -71,19 +72,40 @@ export component SettingsMenu inherits Rectangle {
         VerticalLayout {
             spacing: 10px;
 
-            Button {
+            Rectangle {
                 height: 30px;
                 width: 50px;
-                text: "Exit";
 
-                clicked => {
-                    root.open = false;
+                Button {
+                    text: "Exit";
+
+                    clicked => {
+                        root.open = false;
+                    }
                 }
             }
 
             theme-setting-widget := ThemeSelectorWidget {
                 width: 100%;
                 height: 30px;
+            }
+
+            user-unit-setting := HorizontalLayout {
+                height: 30px;
+                alignment: center;
+                padding: 2px;
+
+                label := Text {
+                    text: "Units";
+                }
+
+                Button {
+                    text: ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI";
+
+                    clicked => {
+                        ApplicationState.update_user_unit(ApplicationState.user_unit == SUnitSystem.USCS ? SUnitSystem.SI : SUnitSystem.USCS);
+                    }
+                }
             }
         }
     }

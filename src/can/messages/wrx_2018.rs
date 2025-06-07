@@ -13,9 +13,12 @@
 use core::ops::BitOr;
 use bitvec::prelude::*;
 use embedded_can::{Id, StandardId, ExtendedId};
+use serde::{Serialize, Deserialize};
 
 /// All messages
 #[derive(Clone)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub enum Messages {
     /// g_sensor
     GSensor(GSensor),
@@ -105,7 +108,10 @@ impl Messages {
 /// - Standard ID: 208 (0xd0)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct GSensor {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -311,7 +317,10 @@ impl embedded_can::Frame for GSensor {
 /// - Standard ID: 209 (0xd1)
 /// - Size: 4 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct BrakePedal {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 4],
 }
 
@@ -470,7 +479,10 @@ impl embedded_can::Frame for BrakePedal {
 /// - Standard ID: 211 (0xd3)
 /// - Size: 7 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct DriverRoadAssists {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 7],
 }
 
@@ -685,7 +697,10 @@ impl embedded_can::Frame for DriverRoadAssists {
 /// - Standard ID: 212 (0xd4)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct WheelSpeeds {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -928,7 +943,10 @@ impl embedded_can::Frame for WheelSpeeds {
 /// - Standard ID: 282 (0x11a)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct Steering {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -1046,7 +1064,10 @@ impl embedded_can::Frame for Steering {
 /// - Standard ID: 320 (0x140)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct MotorControl {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -1361,7 +1382,10 @@ impl embedded_can::Frame for MotorControl {
 /// - Standard ID: 321 (0x141)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct Engine {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -1598,6 +1622,8 @@ impl embedded_can::Frame for Engine {
 }
 /// Defined values for mt_gear
 #[derive(Clone, Copy, PartialEq)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub enum EngineMtGear {
     Floating,
     X1,
@@ -1632,7 +1658,10 @@ impl From<EngineMtGear> for u8 {
 /// - Standard ID: 328 (0x148)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct Transmission {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -1792,7 +1821,10 @@ impl embedded_can::Frame for Transmission {
 /// - Standard ID: 338 (0x152)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct StatusSwitches {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -2217,7 +2249,10 @@ impl embedded_can::Frame for StatusSwitches {
 /// - Standard ID: 340 (0x154)
 /// - Size: 7 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct XxxMsg340 {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 7],
 }
 
@@ -2327,7 +2362,10 @@ impl embedded_can::Frame for XxxMsg340 {
 /// - Standard ID: 604 (0x25c)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct BsdRcta {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -2647,7 +2685,10 @@ impl embedded_can::Frame for BsdRcta {
 /// - Standard ID: 641 (0x281)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct ClimateControl {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -2888,6 +2929,8 @@ impl embedded_can::Frame for ClimateControl {
 }
 /// Defined values for airflow_distribution_mode
 #[derive(Clone, Copy, PartialEq)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub enum ClimateControlAirflowDistributionMode {
     Panel,
     PanelFloor,
@@ -2916,7 +2959,10 @@ impl From<ClimateControlAirflowDistributionMode> for u8 {
 /// - Standard ID: 642 (0x282)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct Cluster {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -3217,7 +3263,10 @@ impl embedded_can::Frame for Cluster {
 /// - Standard ID: 644 (0x284)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct Ignition {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -3399,7 +3448,10 @@ impl embedded_can::Frame for Ignition {
 /// - Standard ID: 864 (0x360)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct EngineStatus2 {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -3761,7 +3813,10 @@ impl embedded_can::Frame for EngineStatus2 {
 /// - Standard ID: 865 (0x361)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct EngineWarningLights {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -3906,7 +3961,10 @@ impl embedded_can::Frame for EngineWarningLights {
 /// - Standard ID: 882 (0x372)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct SrsStatus {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -4016,7 +4074,10 @@ impl embedded_can::Frame for SrsStatus {
 /// - Standard ID: 884 (0x374)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct Cluster2 {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -4161,7 +4222,10 @@ impl embedded_can::Frame for Cluster2 {
 /// - Standard ID: 885 (0x375)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct Cabin {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -4481,7 +4545,10 @@ impl embedded_can::Frame for Cabin {
 /// - Standard ID: 886 (0x376)
 /// - Size: 2 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct DimmerAndHood {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 2],
 }
 
@@ -4639,6 +4706,8 @@ impl embedded_can::Frame for DimmerAndHood {
 }
 /// Defined values for dimmer_dial_value
 #[derive(Clone, Copy, PartialEq)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub enum DimmerAndHoodDimmerDialValue {
     X0,
     X1,
@@ -4669,7 +4738,10 @@ impl From<DimmerAndHoodDimmerDialValue> for u8 {
 /// - Standard ID: 977 (0x3d1)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct DashStateVerify {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -4783,6 +4855,8 @@ impl embedded_can::Frame for DashStateVerify {
 }
 /// Defined values for UNITS
 #[derive(Clone, Copy, PartialEq)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub enum DashStateVerifyUnits {
     Si,
     Uscs,
@@ -4805,7 +4879,10 @@ impl From<DashStateVerifyUnits> for bool {
 /// - Standard ID: 1745 (0x6d1)
 /// - Size: 8 bytes
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct Odometer {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 
@@ -4926,7 +5003,10 @@ impl embedded_can::Frame for Odometer {
 ///
 /// no successful communication with bcm yet
 #[derive(Clone, Copy)]
+#[derive(Serialize)]
+#[derive(Deserialize)]
 pub struct Tpms {
+    #[serde(with = "serde_bytes")]
     raw: [u8; 8],
 }
 

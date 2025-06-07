@@ -109,6 +109,7 @@ impl SCarDataBridge {
             let unit_system_watch = self.unit_system_watch.clone();
 
             ui_application_state.on_update_user_unit(move |value: SUnitSystem| {
+                println!("update_user_unit from scardata bridge");
                 if let Some(ui) = ui_binding.upgrade() {
                     let ui_application_state = ui.global::<ApplicationState>();
                     ui_application_state.set_user_unit(value);
