@@ -38,8 +38,6 @@ macro_rules! param_convertion_handle {
 macro_rules! bridge {
     ($($param:ident: $type:tt),+ $(,)? ) => {
         pub fn run(&mut self) {
-            // self.handle_unit_system();
-
             $(
                 let ui = self.ui.clone();
                 let car_data = self.car_data.clone();

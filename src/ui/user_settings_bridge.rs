@@ -13,7 +13,7 @@ pub fn bridge_settings(ui: Weak<App>, serdes_manager: Arc<RwLock<SerdesManager>>
         }
 
         if let Some(ui) = ui.upgrade() {
-            let ui_binding = ui.clone_strong().as_weak();
+            let ui_binding = ui.as_weak();
 
             let application_state = ui.global::<ApplicationState>();
             let global_theme_data = ui.global::<GlobalThemeData>();
