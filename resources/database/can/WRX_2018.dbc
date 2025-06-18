@@ -1,4 +1,4 @@
-VERSION "0.5.2"
+VERSION "0.6.0"
 
 
 NS_ :
@@ -33,7 +33,6 @@ NS_ :
 
 BS_:
 BU_:
-
 BO_ 208 g_sensor: 8 Vector__XXX
    SG_ g_sensor_lateral : 16|16@1- (-0.0035,1) [-255|255] "m/s/s" Vector__XXX
    SG_ g_sensor_longitudinal : 48|16@1- (-0.0035,1) [-255|255] "m/s/s" Vector__XXX
@@ -111,11 +110,10 @@ BO_ 642 cluster: 8 Vector__XXX
    SG_ fuel_level : 0|12@1+ (-0.12,101.58) [0|100] "%" Vector__XXX
    SG_ left_turn_signal_enabled : 44|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ passenger_seatbelt_warning_enabled : 41|1@0+ (1,0) [0|1] "" Vector__XXX
-   SG_ raw_fuel_testing : 0|12@1+ (1,0) [0|100] "%" Vector__XXX
    SG_ right_turn_signal_enabled : 45|1@0+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 644 ignition: 8 Vector__XXX
-   SG_ access_key_detected : 46|1@0+ (-1,0) [0|1] "" Vector__XXX
+   SG_ access_key_detected : 46|3@0+ (-1,1) [0|1] "" Vector__XXX
    SG_ ignition_acc : 25|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ ignition_on : 6|1@0+ (1,0) [0|1] "" Vector__XXX
 
@@ -123,14 +121,14 @@ BO_ 864 engine_status_2: 8 Vector__XXX
    SG_ cruise_control_enabled : 44|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ cruise_control_set_enabled : 45|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ cruise_control_speed : 56|8@1+ (1,0) [0|255] "" Vector__XXX
-   SG_ engine_boost_pressure : 32|8@1- (0.1,-15) [0|255] "psi" Vector__XXX
+   SG_ engine_boost_pressure : 32|8@1- (0.0206843,-0.985911) [-1.1|1.65] "bar" Vector__XXX
    SG_ engine_coolant_temp : 24|8@1+ (1,-40) [0|200] "degC" Vector__XXX
    SG_ engine_fuel_flow : 8|8@1+ (1,0) [0|255] "" Vector__XXX
    SG_ engine_oil_temp : 16|8@1+ (1,-40) [0|216] "degC" Vector__XXX
 
 BO_ 865 engine_warning_lights: 8 Vector__XXX
    SG_ check_engine_light_enabled : 39|1@0+ (1,0) [0|1] "" Vector__XXX
-   SG_ oil_pressure_warning_light_enabled : 12|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ oil_pressure_warning_light_enabled : 4|1@0+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 882 srs_status: 8 Vector__XXX
    SG_ srs_warning_light_enabled : 16|1@0+ (1,0) [0|1] "" Vector__XXX
@@ -138,6 +136,7 @@ BO_ 882 srs_status: 8 Vector__XXX
 BO_ 884 cluster_2: 8 Vector__XXX
    SG_ fog_lights_enabled : 14|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ tpms_warning_light_enabled : 36|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ rear_fog_lights_enabled : 15|1@0+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 885 cabin: 8 Vector__XXX
    SG_ dimmer_max_brightness_enabled : 31|1@0+ (1,0) [0|1] "" Vector__XXX
@@ -147,6 +146,8 @@ BO_ 885 cabin: 8 Vector__XXX
    SG_ right_front_door_open : 9|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ right_rear_door_open : 10|1@0+ (1,0) [0|1] "" Vector__XXX
    SG_ trunk_open : 13|1@0+ (1,0) [0|1] "" Vector__XXX
+   SG_ left_front_door_locked : 0|1@0+ (-1,1) [0|1] "" Vector__XXX
+   SG_ right_front_door_locked : 1|1@0+ (-1,1) [0|1] "" Vector__XXX
 
 BO_ 886 dimmer_and_hood: 2 Vector__XXX
    SG_ dimmer_dial_value : 0|8@1+ (1,0) [0|250] "" Vector__XXX
@@ -156,7 +157,7 @@ BO_ 977 dash_state_VERIFY: 8 Vector__XXX
    SG_ UNITS : 15|1@1+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 1745 odometer: 8 Vector__XXX
-   SG_ odometer : 0|32@1+ (0.160934,0) [0|1e+9] "KM" Vector__XXX
+   SG_ odometer : 0|32@1+ (0.160934,0) [0|1e+09] "KM" Vector__XXX
 
 BO_ 1883 tpms: 8 Vector__XXX
    SG_ left_front_tire_pressure : 0|8@1+ (1,0) [0|1] "" Vector__XXX
@@ -164,13 +165,13 @@ BO_ 1883 tpms: 8 Vector__XXX
    SG_ right_front_tire_pressure : 8|8@1+ (1,0) [0|1] "" Vector__XXX
    SG_ right_rear_tire_pressure : 16|8@1+ (1,0) [0|1] "" Vector__XXX
 
-CM_ SG_ 642 fuel_level "offset and scale calculated with 14047 samples of OBD2 reported value and raw can value over a period of 10+ hours of highway driving and fuel fill-ups";
 CM_ SG_ 208 steering_angle "might be actual wheel angle not steering wheel";
 CM_ SG_ 320 n_accelerator_pedal_max_sw "is 0 when pressed NOT VERIFIED";
-CM_ SG_ 644 access_key_detected "4:6 bits are set but only check 6";
+CM_ SG_ 642 fuel_level "offset and scale calculated with 14047 samples of OBD2 reported value and raw can value over a period of 10+ hours of highway driving and fuel fill-ups";
 CM_ SG_ 864 cruise_control_speed "unit is determined by vehicle region or bit flag";
-CM_ SG_ 864 engine_boost_pressure "need to verify";
 CM_ SG_ 864 engine_fuel_flow "scale/unit undetermined";
+CM_ SG_ 865 check_engine_light_enabled "fuzzing has shown that any bit here will set the CEL, but individual bits do also have different status information";
+CM_ SG_ 884 tpms_warning_light_enabled "appears to be general warning light";
 CM_ SG_ 977 UNITS "NOT VERIFIED";
 CM_ SG_ 1745 odometer "USCS converted";
 CM_ BO_ 1883 "no successful communication with bcm yet";
@@ -178,7 +179,6 @@ CM_ SG_ 1883 left_front_tire_pressure "scale/unit undetermined";
 CM_ SG_ 1883 left_rear_tire_pressure "scale/unit undetermined";
 CM_ SG_ 1883 right_front_tire_pressure "scale/unit undetermined";
 CM_ SG_ 1883 right_rear_tire_pressure "scale/unit undetermined";
-
 VAL_ 321 mt_gear 0 "FLOATING" 1 "1" 2 "2" 3 "3" 4 "4" 5 "5" 6 "6" 7 "NEUTRAL";
 VAL_ 641 airflow_distribution_mode 1 "panel" 2 "panel,floor" 3 "floor" 4 "floor,defrost" 5 "defrost";
 VAL_ 886 dimmer_dial_value 0 "0" 33 "1" 82 "2" 125 "3" 173 "4" 250 "5";

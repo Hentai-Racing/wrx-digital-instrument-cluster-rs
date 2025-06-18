@@ -62,13 +62,24 @@ impl CanFrameDisplay {
                             formatted_id: formatted_frame_id.into(),
                             id: raw_id,
                             data: ModelRc::new(VecModel::default()),
+                            bit_display: ModelRc::new(VecModel::from(vec![false; frame_dlc])),
                             ..Default::default()
                         });
+
                         frames.iter().last().unwrap() //* guaranteed unwrap
                     });
 
-                if let Some(data) = frame.data.as_any().downcast_ref::<VecModel<SharedString>>() {
-                    let format_data = frame_data.iter().map(|byte| format!("{byte:02X}").into());
+                if let (Some(data), Some(bit_display)) = (
+                    frame.data.as_any().downcast_ref::<VecModel<SharedString>>(),
+                    frame.bit_display.as_any().downcast_ref::<VecModel<bool>>(),
+                ) {
+                    let format_data = frame_data.iter().enumerate().map(|(i, byte)| {
+                        match bit_display.row_data(i) {
+                            Some(true) => format!("{byte:08b}").into(),
+                            _ => format!("{byte:02X}").into(),
+                        }
+                    });
+
                     data.set_vec(Vec::from_iter(format_data));
                 }
             }

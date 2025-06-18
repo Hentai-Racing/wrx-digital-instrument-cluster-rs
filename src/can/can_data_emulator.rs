@@ -217,22 +217,21 @@ pub fn run_can_data_emulator(
             );
             let left_turn_signal_enabled = rand::rng().random_bool(0.5);
             let passenger_seatbelt_warning_enabled = rand::rng().random_bool(0.5);
-            let raw_fuel_testing = rand::rng().random_range(
-                wrx_2018::Cluster::RAW_FUEL_TESTING_MIN..=wrx_2018::Cluster::RAW_FUEL_TESTING_MAX,
-            );
             let right_turn_signal_enabled = rand::rng().random_bool(0.5);
             let cluster_frame = wrx_2018::Cluster::new(
                 driver_seatbelt_warning_enabled,
                 fuel_level,
                 left_turn_signal_enabled,
                 passenger_seatbelt_warning_enabled,
-                raw_fuel_testing,
                 right_turn_signal_enabled,
             )
             .expect("Failed to create frame");
             let _ = can_backend.write_frame(cluster_frame);
 
-            let access_key_detected = rand::rng().random_bool(0.5);
+            let access_key_detected = rand::rng().random_range(
+                wrx_2018::Ignition::ACCESS_KEY_DETECTED_MIN
+                    ..=wrx_2018::Ignition::ACCESS_KEY_DETECTED_MAX,
+            );
             let ignition_acc = rand::rng().random_bool(0.5);
             let ignition_on = rand::rng().random_bool(0.5);
             let ignition_frame =
@@ -290,9 +289,13 @@ pub fn run_can_data_emulator(
 
             let fog_lights_enabled = rand::rng().random_bool(0.5);
             let tpms_warning_light_enabled = rand::rng().random_bool(0.5);
-            let cluster2_frame =
-                wrx_2018::Cluster2::new(fog_lights_enabled, tpms_warning_light_enabled)
-                    .expect("Failed to create frame");
+            let rear_fog_lights_enabled = rand::rng().random_bool(0.5);
+            let cluster2_frame = wrx_2018::Cluster2::new(
+                fog_lights_enabled,
+                tpms_warning_light_enabled,
+                rear_fog_lights_enabled,
+            )
+            .expect("Failed to create frame");
             let _ = can_backend.write_frame(cluster2_frame);
 
             let dimmer_max_brightness_enabled = rand::rng().random_bool(0.5);
@@ -302,6 +305,8 @@ pub fn run_can_data_emulator(
             let right_front_door_open = rand::rng().random_bool(0.5);
             let right_rear_door_open = rand::rng().random_bool(0.5);
             let trunk_open = rand::rng().random_bool(0.5);
+            let left_front_door_locked = rand::rng().random_bool(0.5);
+            let right_front_door_locked = rand::rng().random_bool(0.5);
             let cabin_frame = wrx_2018::Cabin::new(
                 dimmer_max_brightness_enabled,
                 headlight_dimmer_enabled,
@@ -310,6 +315,8 @@ pub fn run_can_data_emulator(
                 right_front_door_open,
                 right_rear_door_open,
                 trunk_open,
+                left_front_door_locked,
+                right_front_door_locked,
             )
             .expect("Failed to create frame");
             let _ = can_backend.write_frame(cabin_frame);

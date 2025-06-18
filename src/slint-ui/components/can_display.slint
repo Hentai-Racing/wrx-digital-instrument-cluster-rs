@@ -1,10 +1,11 @@
-import { ScrollView } from "std-widgets.slint";
+import { ScrollView, Button } from "std-widgets.slint";
 
 export struct SCanFrameDisplay {
     id: int,
     formatted_id: string,
     dlc: int,
     data: [string],
+    bit_display: [bool],
     byte_changes: [bool]
 }
 
@@ -36,6 +37,7 @@ component TableRect inherits Rectangle {
 
             label := Text {
                 font-size: root.font-size;
+                font-family: "JetBrains Mono";
                 horizontal-alignment: left;
             }
 
@@ -104,6 +106,7 @@ export component CanDisplayWidget inherits Rectangle {
             alignment: LayoutAlignment.start;
             spacing: 0px;
             padding: 0px;
+
             id-column := VerticalLayout {
                 width: id-column-header.width;
                 alignment: LayoutAlignment.start;
@@ -148,10 +151,20 @@ export component CanDisplayWidget inherits Rectangle {
 
                         for byte[i] in frame-display.dlc: TableRect {
                             background: frame-display.byte_changes[i] ? green : transparent;
-                            post-padding: 4px;
+                            post-padding: 6px;
                             // pre-padding: self.post-padding;
 
-                            text: frame-display.data[i];
+                            Button {
+                                width: 100%;
+                                clicked => {
+                                    frame-display.bit_display[i] = !frame-display.bit_display[i]
+                                }
+                            }
+
+                            Text {
+                                text: frame-display.data[i];
+                                font-family: "JetBrains Mono";
+                            }
                         }
                     }
                 }

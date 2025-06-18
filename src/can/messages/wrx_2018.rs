@@ -8,7 +8,7 @@
 
 //! Message definitions from file `"WRX_2018.dbc"`
 //!
-//! - Version: `Version("0.5.2")`
+//! - Version: `Version("0.6.0")`
 
 use core::ops::BitOr;
 use bitvec::prelude::*;
@@ -2971,17 +2971,14 @@ impl Cluster {
     
     pub const FUEL_LEVEL_MIN: f32 = 0_f32;
     pub const FUEL_LEVEL_MAX: f32 = 100_f32;
-    pub const RAW_FUEL_TESTING_MIN: u16 = 0_u16;
-    pub const RAW_FUEL_TESTING_MAX: u16 = 100_u16;
     
     /// Construct new cluster from values
-    pub fn new(driver_seatbelt_warning_enabled: bool, fuel_level: f32, left_turn_signal_enabled: bool, passenger_seatbelt_warning_enabled: bool, raw_fuel_testing: u16, right_turn_signal_enabled: bool) -> Result<Self, CanError> {
+    pub fn new(driver_seatbelt_warning_enabled: bool, fuel_level: f32, left_turn_signal_enabled: bool, passenger_seatbelt_warning_enabled: bool, right_turn_signal_enabled: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_driver_seatbelt_warning_enabled(driver_seatbelt_warning_enabled)?;
         res.set_fuel_level(fuel_level)?;
         res.set_left_turn_signal_enabled(left_turn_signal_enabled)?;
         res.set_passenger_seatbelt_warning_enabled(passenger_seatbelt_warning_enabled)?;
-        res.set_raw_fuel_testing(raw_fuel_testing)?;
         res.set_right_turn_signal_enabled(right_turn_signal_enabled)?;
         Ok(res)
     }
@@ -3134,45 +3131,6 @@ impl Cluster {
         Ok(())
     }
     
-    /// raw_fuel_testing
-    ///
-    /// - Min: 0
-    /// - Max: 100
-    /// - Unit: "%"
-    /// - Receivers: Vector__XXX
-    #[inline(always)]
-    pub fn raw_fuel_testing(&self) -> u16 {
-        self.raw_fuel_testing_raw()
-    }
-    
-    /// Get raw value of raw_fuel_testing
-    ///
-    /// - Start bit: 0
-    /// - Signal size: 12 bits
-    /// - Factor: 1
-    /// - Offset: 0
-    /// - Byte order: LittleEndian
-    /// - Value type: Unsigned
-    #[inline(always)]
-    pub fn raw_fuel_testing_raw(&self) -> u16 {
-        let signal = self.raw.view_bits::<Lsb0>()[0..12].load_le::<u16>();
-        
-        let factor = 1;
-        u16::from(signal).saturating_mul(factor).saturating_add(0)
-    }
-    
-    /// Set value of raw_fuel_testing
-    #[inline(always)]
-    pub fn set_raw_fuel_testing(&mut self, value: u16) -> Result<(), CanError> {
-        let factor = 1;
-        let value = value.checked_sub(0)
-            .ok_or(CanError::ParameterOutOfRange { message_id: Cluster::MESSAGE_ID })?;
-        let value = (value / factor) as u16;
-        
-        self.raw.view_bits_mut::<Lsb0>()[0..12].store_le(value);
-        Ok(())
-    }
-    
     /// right_turn_signal_enabled
     ///
     /// - Min: 0
@@ -3273,9 +3231,11 @@ pub struct Ignition {
 impl Ignition {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x284)});
     
+    pub const ACCESS_KEY_DETECTED_MIN: i8 = 0_i8;
+    pub const ACCESS_KEY_DETECTED_MAX: i8 = 1_i8;
     
     /// Construct new ignition from values
-    pub fn new(access_key_detected: bool, ignition_acc: bool, ignition_on: bool) -> Result<Self, CanError> {
+    pub fn new(access_key_detected: i8, ignition_acc: bool, ignition_on: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_access_key_detected(access_key_detected)?;
         res.set_ignition_acc(ignition_acc)?;
@@ -3290,37 +3250,41 @@ impl Ignition {
     
     /// access_key_detected
     ///
-    /// 4:6 bits are set but only check 6
-    ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn access_key_detected(&self) -> bool {
+    pub fn access_key_detected(&self) -> i8 {
         self.access_key_detected_raw()
     }
     
     /// Get raw value of access_key_detected
     ///
     /// - Start bit: 46
-    /// - Signal size: 1 bits
+    /// - Signal size: 3 bits
     /// - Factor: -1
-    /// - Offset: 0
+    /// - Offset: 1
     /// - Byte order: BigEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn access_key_detected_raw(&self) -> bool {
-        let signal = self.raw.view_bits::<Msb0>()[41..42].load_be::<u8>();
+    pub fn access_key_detected_raw(&self) -> i8 {
+        let signal = self.raw.view_bits::<Msb0>()[41..44].load_be::<u8>();
         
-        signal == 1
+        let factor = -1;
+        let signal = signal as i8;
+        i8::from(signal).saturating_mul(factor).saturating_add(1)
     }
     
     /// Set value of access_key_detected
     #[inline(always)]
-    pub fn set_access_key_detected(&mut self, value: bool) -> Result<(), CanError> {
-        let value = value as u8;
-        self.raw.view_bits_mut::<Msb0>()[41..42].store_be(value);
+    pub fn set_access_key_detected(&mut self, value: i8) -> Result<(), CanError> {
+        let factor = -1;
+        let value = value.checked_sub(1)
+            .ok_or(CanError::ParameterOutOfRange { message_id: Ignition::MESSAGE_ID })?;
+        let value = (value / factor) as u8;
+        
+        self.raw.view_bits_mut::<Msb0>()[41..44].store_be(value);
         Ok(())
     }
     
@@ -3460,8 +3424,8 @@ impl EngineStatus2 {
     
     pub const CRUISE_CONTROL_SPEED_MIN: u8 = 0_u8;
     pub const CRUISE_CONTROL_SPEED_MAX: u8 = 255_u8;
-    pub const ENGINE_BOOST_PRESSURE_MIN: f32 = 0_f32;
-    pub const ENGINE_BOOST_PRESSURE_MAX: f32 = 255_f32;
+    pub const ENGINE_BOOST_PRESSURE_MIN: f32 = -1_f32;
+    pub const ENGINE_BOOST_PRESSURE_MAX: f32 = 1.65_f32;
     pub const ENGINE_COOLANT_TEMP_MIN: i16 = 0_i16;
     pub const ENGINE_COOLANT_TEMP_MAX: i16 = 200_i16;
     pub const ENGINE_FUEL_FLOW_MIN: u8 = 0_u8;
@@ -3598,11 +3562,9 @@ impl EngineStatus2 {
     
     /// engine_boost_pressure
     ///
-    /// need to verify
-    ///
-    /// - Min: 0
-    /// - Max: 255
-    /// - Unit: "psi"
+    /// - Min: -1
+    /// - Max: 1.65
+    /// - Unit: "bar"
     /// - Receivers: Vector__XXX
     #[inline(always)]
     pub fn engine_boost_pressure(&self) -> f32 {
@@ -3613,24 +3575,24 @@ impl EngineStatus2 {
     ///
     /// - Start bit: 32
     /// - Signal size: 8 bits
-    /// - Factor: 0.1
-    /// - Offset: -15
+    /// - Factor: 0.0206843
+    /// - Offset: -0.985911
     /// - Byte order: LittleEndian
     /// - Value type: Signed
     #[inline(always)]
     pub fn engine_boost_pressure_raw(&self) -> f32 {
         let signal = self.raw.view_bits::<Lsb0>()[32..40].load_le::<i8>();
         
-        let factor = 0.1_f32;
-        let offset = -15_f32;
+        let factor = 0.0206843_f32;
+        let offset = -0.985911_f32;
         (signal as f32) * factor + offset
     }
     
     /// Set value of engine_boost_pressure
     #[inline(always)]
     pub fn set_engine_boost_pressure(&mut self, value: f32) -> Result<(), CanError> {
-        let factor = 0.1_f32;
-        let offset = -15_f32;
+        let factor = 0.0206843_f32;
+        let offset = -0.985911_f32;
         let value = ((value - offset) / factor) as i8;
         
         let value = u8::from_ne_bytes(value.to_ne_bytes());
@@ -3839,6 +3801,8 @@ impl EngineWarningLights {
     
     /// check_engine_light_enabled
     ///
+    /// fuzzing has shown that any bit here will set the CEL, but individual bits do also have different status information
+    ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
@@ -3884,7 +3848,7 @@ impl EngineWarningLights {
     
     /// Get raw value of oil_pressure_warning_light_enabled
     ///
-    /// - Start bit: 12
+    /// - Start bit: 4
     /// - Signal size: 1 bits
     /// - Factor: 1
     /// - Offset: 0
@@ -3892,7 +3856,7 @@ impl EngineWarningLights {
     /// - Value type: Unsigned
     #[inline(always)]
     pub fn oil_pressure_warning_light_enabled_raw(&self) -> bool {
-        let signal = self.raw.view_bits::<Msb0>()[11..12].load_be::<u8>();
+        let signal = self.raw.view_bits::<Msb0>()[3..4].load_be::<u8>();
         
         signal == 1
     }
@@ -3901,7 +3865,7 @@ impl EngineWarningLights {
     #[inline(always)]
     pub fn set_oil_pressure_warning_light_enabled(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
-        self.raw.view_bits_mut::<Msb0>()[11..12].store_be(value);
+        self.raw.view_bits_mut::<Msb0>()[3..4].store_be(value);
         Ok(())
     }
     
@@ -4086,10 +4050,11 @@ impl Cluster2 {
     
     
     /// Construct new cluster_2 from values
-    pub fn new(fog_lights_enabled: bool, tpms_warning_light_enabled: bool) -> Result<Self, CanError> {
+    pub fn new(fog_lights_enabled: bool, tpms_warning_light_enabled: bool, rear_fog_lights_enabled: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_fog_lights_enabled(fog_lights_enabled)?;
         res.set_tpms_warning_light_enabled(tpms_warning_light_enabled)?;
+        res.set_rear_fog_lights_enabled(rear_fog_lights_enabled)?;
         Ok(res)
     }
     
@@ -4134,6 +4099,8 @@ impl Cluster2 {
     
     /// tpms_warning_light_enabled
     ///
+    /// appears to be general warning light
+    ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
@@ -4163,6 +4130,40 @@ impl Cluster2 {
     pub fn set_tpms_warning_light_enabled(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Msb0>()[35..36].store_be(value);
+        Ok(())
+    }
+    
+    /// rear_fog_lights_enabled
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: ""
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn rear_fog_lights_enabled(&self) -> bool {
+        self.rear_fog_lights_enabled_raw()
+    }
+    
+    /// Get raw value of rear_fog_lights_enabled
+    ///
+    /// - Start bit: 15
+    /// - Signal size: 1 bits
+    /// - Factor: 1
+    /// - Offset: 0
+    /// - Byte order: BigEndian
+    /// - Value type: Unsigned
+    #[inline(always)]
+    pub fn rear_fog_lights_enabled_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[8..9].load_be::<u8>();
+        
+        signal == 1
+    }
+    
+    /// Set value of rear_fog_lights_enabled
+    #[inline(always)]
+    pub fn set_rear_fog_lights_enabled(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Msb0>()[8..9].store_be(value);
         Ok(())
     }
     
@@ -4234,7 +4235,7 @@ impl Cabin {
     
     
     /// Construct new cabin from values
-    pub fn new(dimmer_max_brightness_enabled: bool, headlight_dimmer_enabled: bool, left_front_door_open: bool, left_rear_door_open: bool, right_front_door_open: bool, right_rear_door_open: bool, trunk_open: bool) -> Result<Self, CanError> {
+    pub fn new(dimmer_max_brightness_enabled: bool, headlight_dimmer_enabled: bool, left_front_door_open: bool, left_rear_door_open: bool, right_front_door_open: bool, right_rear_door_open: bool, trunk_open: bool, left_front_door_locked: bool, right_front_door_locked: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_dimmer_max_brightness_enabled(dimmer_max_brightness_enabled)?;
         res.set_headlight_dimmer_enabled(headlight_dimmer_enabled)?;
@@ -4243,6 +4244,8 @@ impl Cabin {
         res.set_right_front_door_open(right_front_door_open)?;
         res.set_right_rear_door_open(right_rear_door_open)?;
         res.set_trunk_open(trunk_open)?;
+        res.set_left_front_door_locked(left_front_door_locked)?;
+        res.set_right_front_door_locked(right_front_door_locked)?;
         Ok(res)
     }
     
@@ -4486,6 +4489,74 @@ impl Cabin {
     pub fn set_trunk_open(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Msb0>()[10..11].store_be(value);
+        Ok(())
+    }
+    
+    /// left_front_door_locked
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: ""
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn left_front_door_locked(&self) -> bool {
+        self.left_front_door_locked_raw()
+    }
+    
+    /// Get raw value of left_front_door_locked
+    ///
+    /// - Start bit: 0
+    /// - Signal size: 1 bits
+    /// - Factor: -1
+    /// - Offset: 1
+    /// - Byte order: BigEndian
+    /// - Value type: Unsigned
+    #[inline(always)]
+    pub fn left_front_door_locked_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[7..8].load_be::<u8>();
+        
+        signal == 0
+    }
+    
+    /// Set value of left_front_door_locked
+    #[inline(always)]
+    pub fn set_left_front_door_locked(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Msb0>()[7..8].store_be(value);
+        Ok(())
+    }
+    
+    /// right_front_door_locked
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: ""
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn right_front_door_locked(&self) -> bool {
+        self.right_front_door_locked_raw()
+    }
+    
+    /// Get raw value of right_front_door_locked
+    ///
+    /// - Start bit: 1
+    /// - Signal size: 1 bits
+    /// - Factor: -1
+    /// - Offset: 1
+    /// - Byte order: BigEndian
+    /// - Value type: Unsigned
+    #[inline(always)]
+    pub fn right_front_door_locked_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[6..7].load_be::<u8>();
+        
+        signal == 0
+    }
+    
+    /// Set value of right_front_door_locked
+    #[inline(always)]
+    pub fn set_right_front_door_locked(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Msb0>()[6..7].store_be(value);
         Ok(())
     }
     

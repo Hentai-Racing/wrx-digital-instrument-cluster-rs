@@ -158,6 +158,7 @@ CarData! {
     EngineStatus2 => {
         <Temperature> engine_oil_temp: i16,
         <Temperature> engine_coolant_temp: i16,
+        <Pressure> engine_boost_pressure: f32,
         cruise_control_enabled: bool,
         cruise_control_set_enabled: bool,
         /* <Speed:USCS> */ cruise_control_speed: u8,

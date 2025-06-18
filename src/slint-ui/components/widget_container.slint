@@ -22,7 +22,7 @@ component Widget {
     out property <int> page-number;
 
     init => {
-        self.page-number = WidgetContainerState.num-pages;
+        self.page-number = WidgetContainerState.num-pages - 1;
         WidgetContainerState.num-pages += 1;
     }
 

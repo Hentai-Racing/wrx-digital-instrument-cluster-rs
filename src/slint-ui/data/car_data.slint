@@ -66,10 +66,9 @@ export global SCarData {
 	in property <SFDataParameter> fuel_level: { value: 999.4, max: 9999, unit_str: "?UNIT?" };
 	in property <SBDataParameter> left_turn_signal_enabled: { value: true };
 	in property <SBDataParameter> passenger_seatbelt_warning_enabled: { value: true };
-	in property <SIDataParameter> raw_fuel_testing: { value: 999, max: 9999, unit_str: "?UNIT?" };
 	in property <SBDataParameter> right_turn_signal_enabled: { value: true };
 // Ignition
-	in property <SBDataParameter> access_key_detected: { value: true };
+	in property <SIDataParameter> access_key_detected: { value: 999, max: 9999, unit_str: "?UNIT?" };
 	in property <SBDataParameter> ignition_acc: { value: true };
 	in property <SBDataParameter> ignition_on: { value: true };
 // EngineStatus2
@@ -88,6 +87,7 @@ export global SCarData {
 // Cluster2
 	in property <SBDataParameter> fog_lights_enabled: { value: true };
 	in property <SBDataParameter> tpms_warning_light_enabled: { value: true };
+	in property <SBDataParameter> rear_fog_lights_enabled: { value: true };
 // Cabin
 	in property <SBDataParameter> dimmer_max_brightness_enabled: { value: true };
 	in property <SBDataParameter> headlight_dimmer_enabled: { value: true };
@@ -96,6 +96,8 @@ export global SCarData {
 	in property <SBDataParameter> right_front_door_open: { value: true };
 	in property <SBDataParameter> right_rear_door_open: { value: true };
 	in property <SBDataParameter> trunk_open: { value: true };
+	in property <SBDataParameter> left_front_door_locked: { value: true };
+	in property <SBDataParameter> right_front_door_locked: { value: true };
 // DimmerAndHood
 	in property <SStrDataParameter> dimmer_dial_value: { value: "?VAL?" };
 	in property <SBDataParameter> hood_open: { value: true };

@@ -3,6 +3,7 @@ import { Button, GridBox } from "std-widgets.slint";
 
 export global DebugMenuState {
     callback debug-suspend();
+    callback can-write-test();
 }
 
 export component DebugMenuWidget inherits Rectangle {
@@ -17,6 +18,14 @@ export component DebugMenuWidget inherits Rectangle {
 
             clicked => {
                 DebugMenuState.debug-suspend();
+            }
+        }
+
+        write-test-button := Button {
+            text: "CAN Write Test";
+
+            clicked => {
+                DebugMenuState.can-write-test();
             }
         }
     }

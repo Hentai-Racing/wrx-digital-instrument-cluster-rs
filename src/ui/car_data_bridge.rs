@@ -11,9 +11,9 @@ macro_rules! number_param_convertion_handle {
         let units = $car_data.$param().units();
 
         let mut sparam = $ui_car_data.[<get_ $param>]();
-        sparam.value = units.convert_value_to(f64::from($value), $unit_system) as $type;
-        sparam.min = units.convert_value_to($car_data.$param().min(), $unit_system) as $type;
-        sparam.max = units.convert_value_to($car_data.$param().max(), $unit_system) as $type;
+        sparam.value = units.convert_value_to($value as f64, $unit_system) as $type;
+        sparam.min = units.convert_value_to($car_data.$param().min() as f64, $unit_system) as $type;
+        sparam.max = units.convert_value_to($car_data.$param().max() as f64, $unit_system) as $type;
         sparam.unit_str = units.convert_system_to($unit_system).get_short_str().into();
 
         $ui_car_data.[<set_ $param>](sparam);
@@ -109,7 +109,7 @@ impl SCarDataBridge {
             let unit_system_watch = self.unit_system_watch.clone();
 
             ui_application_state.on_update_user_unit(move |value: SUnitSystem| {
-                println!("update_user_unit from scardata bridge");
+                // TODO: this is currently overwritten by user_settings_bridge. Need to implement a source of truth in serdes manager that can propogate to the rest of the systems
                 if let Some(ui) = ui_binding.upgrade() {
                     let ui_application_state = ui.global::<ApplicationState>();
                     ui_application_state.set_user_unit(value);
@@ -126,6 +126,7 @@ impl SCarDataBridge {
 
         engine_oil_temp: SIDataParameter,
         engine_coolant_temp: SIDataParameter,
+        engine_boost_pressure: SFDataParameter,
         cruise_control_enabled: SBDataParameter,
         cruise_control_set_enabled: SBDataParameter,
         cruise_control_speed: SIDataParameter,

@@ -21,7 +21,7 @@ import { ThemeSelectorWidget } from "../themes.slint";
 import { WidgetContainer } from "../../components/widget_container.slint";
 
 global DefaultThemeParams {
-    property <string> default-font-family:  "Montserrat";
+    property <string> default-font-family:  "JetBrainsMono";
     property <int> default-font-weight: 400;
 }
 
@@ -98,6 +98,20 @@ export component TrackTheme inherits Rectangle {
 
                     vertical-alignment: TextVerticalAlignment.center;
                     horizontal-alignment: TextHorizontalAlignment.center;
+                }
+
+                boost-test := Text {
+                    y: gear-indicator.y + gear-indicator.height + 5px;
+                    color: white;
+
+                    text: SCarData.engine_boost_pressure.value;
+                }
+
+                boost-test-unit := Text {
+                    y: boost-test.y + boost-test.height + 5px;
+                    color: white;
+
+                    text: SCarData.engine_boost_pressure.unit-str;
                 }
             }
 
