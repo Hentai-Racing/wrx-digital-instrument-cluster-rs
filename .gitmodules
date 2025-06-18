@@ -1,6 +1,6 @@
-[submodule "Montserrat"]
+[submodule "resources/fonts/Montserrat"]
 	path = resources/fonts/Montserrat
 	url = https://github.com/JulietaUla/Montserrat.git
-[submodule "JetBrainsMono"]
+[submodule "resources/fonts/JetBrainsMono"]
 	path = resources/fonts/JetBrainsMono
 	url = https://github.com/JetBrains/JetBrainsMono.git
