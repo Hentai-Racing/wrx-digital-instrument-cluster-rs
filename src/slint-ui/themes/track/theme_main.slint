@@ -100,19 +100,19 @@ export component TrackTheme inherits Rectangle {
                     horizontal-alignment: TextHorizontalAlignment.center;
                 }
 
-                boost-test := Text {
-                    y: gear-indicator.y + gear-indicator.height + 5px;
-                    color: white;
+                // boost-test := Text {
+                //     y: gear-indicator.y + gear-indicator.height + 5px;
+                //     color: white;
 
-                    text: SCarData.engine_boost_pressure.value;
-                }
+                //     text: SCarData.engine_boost_pressure.value;
+                // }
 
-                boost-test-unit := Text {
-                    y: boost-test.y + boost-test.height + 5px;
-                    color: white;
+                // boost-test-unit := Text {
+                //     y: boost-test.y + boost-test.height + 5px;
+                //     color: white;
 
-                    text: SCarData.engine_boost_pressure.unit-str;
-                }
+                //     text: SCarData.engine_boost_pressure.unit-str;
+                // }
             }
 
             HorizontalLayout {

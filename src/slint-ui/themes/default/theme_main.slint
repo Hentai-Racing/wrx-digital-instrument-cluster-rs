@@ -660,33 +660,6 @@ export component DefaultTheme inherits Rectangle {
                     }
                 }
             }
-
-            if ApplicationState.debug_mode: unit-toggle-region := Rectangle {
-                background: transparent;
-
-                unit-toggle-button := Button {
-                    text: "Toggle Unit System";
-                    x: 0;
-
-                    clicked => {
-                        ApplicationState.update_user_unit(ApplicationState.user_unit == SUnitSystem.USCS ? SUnitSystem.SI : SUnitSystem.USCS);
-                    }
-                }
-
-                Text {
-                    text: ApplicationState.user_unit == SUnitSystem.USCS ? "USCS" : "SI";
-                    x: unit-toggle-button.x + unit-toggle-button.width + 10px;
-                }
-            }
-
-            if ApplicationState.virtual_cluster: simulation-toggle-button := Button {
-                text: "Toggle Simulation";
-                x: parent.width - self.width;
-
-                clicked => {
-                    ApplicationState.toggle_simulation();
-                }
-            }
         }
     }
 }

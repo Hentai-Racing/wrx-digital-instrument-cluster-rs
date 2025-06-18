@@ -1,10 +1,10 @@
+use crate::data::parameters::FieldParameter;
 use crate::data::{car_data::CarData, units::UnitSystem};
 use crate::slint_generatedApp::*;
 
 use paste::paste;
 use slint::{ComponentHandle, Weak};
 use tokio::select;
-use tokio::sync::watch;
 
 macro_rules! number_param_convertion_handle {
     ($car_data:ident, $ui_car_data:ident, $unit_system:ident, $param:ident: $type:ty = $value:expr) => {paste!(
@@ -38,12 +38,12 @@ macro_rules! param_convertion_handle {
 macro_rules! bridge {
     ($($param:ident: $type:tt),+ $(,)? ) => {
         pub fn run(&mut self) {
-            self.handle_unit_system();
+            // self.handle_unit_system();
 
             $(
                 let ui = self.ui.clone();
                 let car_data = self.car_data.clone();
-                let mut unit_system_changed = self.unit_system_watch.subscribe();
+                let mut unit_system_changed = self.unit_system_parameter.watch();
                 let mut thread_watch = car_data.$param().watch();
 
                 slint::spawn_local(async_compat::Compat::new(async move {
@@ -79,44 +79,22 @@ macro_rules! bridge {
 pub struct SCarDataBridge {
     ui: Weak<App>,
     car_data: CarData,
-    unit_system_watch: watch::Sender<UnitSystem>,
+    unit_system_parameter: FieldParameter<UnitSystem>,
 }
 
 impl SCarDataBridge {
-    pub fn new(ui: Weak<App>, car_data: CarData) -> Self {
-        let (sender, _) = watch::channel(Default::default());
-
+    pub fn new(
+        ui: Weak<App>,
+        car_data: CarData,
+        unit_system_parameter: FieldParameter<UnitSystem>,
+    ) -> Self {
         let this = Self {
             ui,
             car_data,
-            unit_system_watch: sender,
+            unit_system_parameter,
         };
 
-        // set the initial unit system to whatever the UI is set to
-        if let Some(ui) = this.ui.clone().upgrade() {
-            let ui_application_state = ui.global::<ApplicationState>();
-            let unit: UnitSystem = ui_application_state.get_user_unit().into();
-            this.unit_system_watch.send_replace(unit.into());
-        }
-
         this
-    }
-
-    fn handle_unit_system(&self) {
-        if let Some(ui) = self.ui.upgrade() {
-            let ui_application_state = ui.global::<ApplicationState>();
-            let ui_binding = self.ui.clone();
-            let unit_system_watch = self.unit_system_watch.clone();
-
-            ui_application_state.on_update_user_unit(move |value: SUnitSystem| {
-                // TODO: this is currently overwritten by user_settings_bridge. Need to implement a source of truth in serdes manager that can propogate to the rest of the systems
-                if let Some(ui) = ui_binding.upgrade() {
-                    let ui_application_state = ui.global::<ApplicationState>();
-                    ui_application_state.set_user_unit(value);
-                    unit_system_watch.send_replace(value.into());
-                }
-            });
-        }
     }
 
     // TODO: auto generate this somewhere else, maybe in CarData itself
@@ -198,19 +176,6 @@ impl Into<slint::SharedString> for EngineMtGear {
             EngineMtGear::X6 => "6".into(),
             _ => "?ERR_MT_GEAR".into(),
         }
-    }
-}
-
-impl std::fmt::Debug for EngineMtGear {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let gear_str: slint::SharedString = self.clone().into();
-        write!(f, "{}", gear_str)
-    }
-}
-
-impl Into<f64> for EngineMtGear {
-    fn into(self) -> f64 {
-        u8::from(self) as f64
     }
 }
 

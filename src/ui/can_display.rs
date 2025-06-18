@@ -7,7 +7,6 @@ pub struct CanFrameDisplay {
 }
 
 impl CanFrameDisplay {
-    // TODO: add bit view
     // TODO: implement byte changes
     pub fn new(ui: Weak<App>) -> Self {
         Self { ui }

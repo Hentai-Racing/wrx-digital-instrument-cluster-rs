@@ -3,7 +3,6 @@ import { Button } from "std-widgets.slint";
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import { RoadIndicatorWidget } from "../themes/default/components/road_indicators.slint";
 import { ApplicationState } from "../application/application_state.slint";
-import { NavigationMap } from "navmap.slint";
 import { CanDisplayWidget } from "can_display.slint";
 
 
@@ -97,21 +96,6 @@ export component WidgetContainer inherits Rectangle {
                         width: 100%;
                     }
                 }
-
-                if ApplicationState.cfg-three-d: threed-container-image := Widget {
-                    Image {
-                        height: 100%;
-                        width: 100%;
-                    }
-                }
-
-                // TODO: fix this
-                // if ApplicationState.cfg-network: Widget {
-                //     NavigationMap {
-                //         height: 100%;
-                //         width: 100%;
-                //     }
-                // }
 
                 Widget {
                     VerticalLayout {

@@ -17,6 +17,7 @@ use serde::{Serialize, Deserialize};
 
 /// All messages
 #[derive(Clone)]
+#[derive(Debug)]
 #[derive(Serialize)]
 #[derive(Deserialize)]
 pub enum Messages {
@@ -311,6 +312,20 @@ impl embedded_can::Frame for GSensor {
         &self.raw
     }
 }
+impl core::fmt::Debug for GSensor {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("GSensor")
+                .field("g_sensor_lateral", &self.g_sensor_lateral())
+                .field("g_sensor_longitudinal", &self.g_sensor_longitudinal())
+                .field("steering_angle", &self.steering_angle())
+            .finish()
+        } else {
+            f.debug_tuple("GSensor").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// brake_pedal
 ///
@@ -473,6 +488,19 @@ impl embedded_can::Frame for BrakePedal {
         &self.raw
     }
 }
+impl core::fmt::Debug for BrakePedal {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("BrakePedal")
+                .field("brake_pedal_pressure", &self.brake_pedal_pressure())
+                .field("vehicle_speed", &self.vehicle_speed())
+            .finish()
+        } else {
+            f.debug_tuple("BrakePedal").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// driver_road_assists
 ///
@@ -691,6 +719,21 @@ impl embedded_can::Frame for DriverRoadAssists {
         &self.raw
     }
 }
+impl core::fmt::Debug for DriverRoadAssists {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("DriverRoadAssists")
+                .field("active_tq_vectoring_enabled", &self.active_tq_vectoring_enabled())
+                .field("brake_cruise_on", &self.brake_cruise_on())
+                .field("hill_assist_enabled", &self.hill_assist_enabled())
+                .field("traction_control_disabled", &self.traction_control_disabled())
+            .finish()
+        } else {
+            f.debug_tuple("DriverRoadAssists").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// wheel_speeds
 ///
@@ -937,6 +980,21 @@ impl embedded_can::Frame for WheelSpeeds {
         &self.raw
     }
 }
+impl core::fmt::Debug for WheelSpeeds {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("WheelSpeeds")
+                .field("left_front_wheel_speed", &self.left_front_wheel_speed())
+                .field("left_rear_wheel_speed", &self.left_rear_wheel_speed())
+                .field("right_front_wheel_speed", &self.right_front_wheel_speed())
+                .field("right_rear_wheel_speed", &self.right_rear_wheel_speed())
+            .finish()
+        } else {
+            f.debug_tuple("WheelSpeeds").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// steering
 ///
@@ -1058,6 +1116,18 @@ impl embedded_can::Frame for Steering {
         &self.raw
     }
 }
+impl core::fmt::Debug for Steering {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("Steering")
+                .field("steering_wheel_angle", &self.steering_wheel_angle())
+            .finish()
+        } else {
+            f.debug_tuple("Steering").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// motor_control
 ///
@@ -1376,6 +1446,23 @@ impl embedded_can::Frame for MotorControl {
         &self.raw
     }
 }
+impl core::fmt::Debug for MotorControl {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("MotorControl")
+                .field("accelerator_combined", &self.accelerator_combined())
+                .field("accelerator_cruise_position", &self.accelerator_cruise_position())
+                .field("accelerator_pedal_position", &self.accelerator_pedal_position())
+                .field("mt_clutch_sw", &self.mt_clutch_sw())
+                .field("n_accelerator_pedal_max_sw", &self.n_accelerator_pedal_max_sw())
+                .field("throttle_plate_position", &self.throttle_plate_position())
+            .finish()
+        } else {
+            f.debug_tuple("MotorControl").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// engine
 ///
@@ -1620,8 +1707,24 @@ impl embedded_can::Frame for Engine {
         &self.raw
     }
 }
+impl core::fmt::Debug for Engine {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("Engine")
+                .field("engine_rpm", &self.engine_rpm())
+                .field("engine_running", &self.engine_running())
+                .field("engine_stop", &self.engine_stop())
+                .field("mt_gear", &self.mt_gear())
+            .finish()
+        } else {
+            f.debug_tuple("Engine").field(&self.raw).finish()
+        }
+    }
+}
+
 /// Defined values for mt_gear
 #[derive(Clone, Copy, PartialEq)]
+#[derive(Debug)]
 #[derive(Serialize)]
 #[derive(Deserialize)]
 pub enum EngineMtGear {
@@ -1815,6 +1918,19 @@ impl embedded_can::Frame for Transmission {
         &self.raw
     }
 }
+impl core::fmt::Debug for Transmission {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("Transmission")
+                .field("mt_gear_verify", &self.mt_gear_verify())
+                .field("transmission_temp_verify", &self.transmission_temp_verify())
+            .finish()
+        } else {
+            f.debug_tuple("Transmission").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// status_switches
 ///
@@ -2243,6 +2359,27 @@ impl embedded_can::Frame for StatusSwitches {
         &self.raw
     }
 }
+impl core::fmt::Debug for StatusSwitches {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("StatusSwitches")
+                .field("acc_power", &self.acc_power())
+                .field("brake_sw", &self.brake_sw())
+                .field("handbrake_sw", &self.handbrake_sw())
+                .field("highbeams_enabled", &self.highbeams_enabled())
+                .field("key_on", &self.key_on())
+                .field("lowbeams_enabled", &self.lowbeams_enabled())
+                .field("parking_lights_enabled", &self.parking_lights_enabled())
+                .field("reverse_sw", &self.reverse_sw())
+                .field("running_lights_enabled", &self.running_lights_enabled())
+                .field("wiper_moving_sw", &self.wiper_moving_sw())
+            .finish()
+        } else {
+            f.debug_tuple("StatusSwitches").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// XXXMsg340
 ///
@@ -2356,6 +2493,18 @@ impl embedded_can::Frame for XxxMsg340 {
         &self.raw
     }
 }
+impl core::fmt::Debug for XxxMsg340 {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("XxxMsg340")
+                .field("any_door_open", &self.any_door_open())
+            .finish()
+        } else {
+            f.debug_tuple("XxxMsg340").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// bsd_rcta
 ///
@@ -2679,6 +2828,24 @@ impl embedded_can::Frame for BsdRcta {
         &self.raw
     }
 }
+impl core::fmt::Debug for BsdRcta {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("BsdRcta")
+                .field("bsd_left_adjacent", &self.bsd_left_adjacent())
+                .field("bsd_left_approaching", &self.bsd_left_approaching())
+                .field("bsd_right_adjacent", &self.bsd_right_adjacent())
+                .field("bsd_right_approaching", &self.bsd_right_approaching())
+                .field("rcta_enabled", &self.rcta_enabled())
+                .field("rcta_left", &self.rcta_left())
+                .field("rcta_right", &self.rcta_right())
+            .finish()
+        } else {
+            f.debug_tuple("BsdRcta").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// climate_control
 ///
@@ -2927,8 +3094,24 @@ impl embedded_can::Frame for ClimateControl {
         &self.raw
     }
 }
+impl core::fmt::Debug for ClimateControl {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("ClimateControl")
+                .field("airflow_distribution_mode", &self.airflow_distribution_mode())
+                .field("blower_fan_level", &self.blower_fan_level())
+                .field("blend_door", &self.blend_door())
+                .field("rear_defrost_enabled", &self.rear_defrost_enabled())
+            .finish()
+        } else {
+            f.debug_tuple("ClimateControl").field(&self.raw).finish()
+        }
+    }
+}
+
 /// Defined values for airflow_distribution_mode
 #[derive(Clone, Copy, PartialEq)]
+#[derive(Debug)]
 #[derive(Serialize)]
 #[derive(Deserialize)]
 pub enum ClimateControlAirflowDistributionMode {
@@ -3215,6 +3398,22 @@ impl embedded_can::Frame for Cluster {
         &self.raw
     }
 }
+impl core::fmt::Debug for Cluster {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("Cluster")
+                .field("driver_seatbelt_warning_enabled", &self.driver_seatbelt_warning_enabled())
+                .field("fuel_level", &self.fuel_level())
+                .field("left_turn_signal_enabled", &self.left_turn_signal_enabled())
+                .field("passenger_seatbelt_warning_enabled", &self.passenger_seatbelt_warning_enabled())
+                .field("right_turn_signal_enabled", &self.right_turn_signal_enabled())
+            .finish()
+        } else {
+            f.debug_tuple("Cluster").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// ignition
 ///
@@ -3406,6 +3605,20 @@ impl embedded_can::Frame for Ignition {
         &self.raw
     }
 }
+impl core::fmt::Debug for Ignition {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("Ignition")
+                .field("access_key_detected", &self.access_key_detected())
+                .field("ignition_acc", &self.ignition_acc())
+                .field("ignition_on", &self.ignition_on())
+            .finish()
+        } else {
+            f.debug_tuple("Ignition").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// engine_status_2
 ///
@@ -3424,7 +3637,7 @@ impl EngineStatus2 {
     
     pub const CRUISE_CONTROL_SPEED_MIN: u8 = 0_u8;
     pub const CRUISE_CONTROL_SPEED_MAX: u8 = 255_u8;
-    pub const ENGINE_BOOST_PRESSURE_MIN: f32 = -1_f32;
+    pub const ENGINE_BOOST_PRESSURE_MIN: f32 = -1.1_f32;
     pub const ENGINE_BOOST_PRESSURE_MAX: f32 = 1.65_f32;
     pub const ENGINE_COOLANT_TEMP_MIN: i16 = 0_i16;
     pub const ENGINE_COOLANT_TEMP_MAX: i16 = 200_i16;
@@ -3562,7 +3775,7 @@ impl EngineStatus2 {
     
     /// engine_boost_pressure
     ///
-    /// - Min: -1
+    /// - Min: -1.1
     /// - Max: 1.65
     /// - Unit: "bar"
     /// - Receivers: Vector__XXX
@@ -3769,6 +3982,24 @@ impl embedded_can::Frame for EngineStatus2 {
         &self.raw
     }
 }
+impl core::fmt::Debug for EngineStatus2 {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("EngineStatus2")
+                .field("cruise_control_enabled", &self.cruise_control_enabled())
+                .field("cruise_control_set_enabled", &self.cruise_control_set_enabled())
+                .field("cruise_control_speed", &self.cruise_control_speed())
+                .field("engine_boost_pressure", &self.engine_boost_pressure())
+                .field("engine_coolant_temp", &self.engine_coolant_temp())
+                .field("engine_fuel_flow", &self.engine_fuel_flow())
+                .field("engine_oil_temp", &self.engine_oil_temp())
+            .finish()
+        } else {
+            f.debug_tuple("EngineStatus2").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// engine_warning_lights
 ///
@@ -3919,6 +4150,19 @@ impl embedded_can::Frame for EngineWarningLights {
         &self.raw
     }
 }
+impl core::fmt::Debug for EngineWarningLights {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("EngineWarningLights")
+                .field("check_engine_light_enabled", &self.check_engine_light_enabled())
+                .field("oil_pressure_warning_light_enabled", &self.oil_pressure_warning_light_enabled())
+            .finish()
+        } else {
+            f.debug_tuple("EngineWarningLights").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// srs_status
 ///
@@ -4032,6 +4276,18 @@ impl embedded_can::Frame for SrsStatus {
         &self.raw
     }
 }
+impl core::fmt::Debug for SrsStatus {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("SrsStatus")
+                .field("srs_warning_light_enabled", &self.srs_warning_light_enabled())
+            .finish()
+        } else {
+            f.debug_tuple("SrsStatus").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// cluster_2
 ///
@@ -4217,6 +4473,20 @@ impl embedded_can::Frame for Cluster2 {
         &self.raw
     }
 }
+impl core::fmt::Debug for Cluster2 {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("Cluster2")
+                .field("fog_lights_enabled", &self.fog_lights_enabled())
+                .field("tpms_warning_light_enabled", &self.tpms_warning_light_enabled())
+                .field("rear_fog_lights_enabled", &self.rear_fog_lights_enabled())
+            .finish()
+        } else {
+            f.debug_tuple("Cluster2").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// cabin
 ///
@@ -4610,6 +4880,26 @@ impl embedded_can::Frame for Cabin {
         &self.raw
     }
 }
+impl core::fmt::Debug for Cabin {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("Cabin")
+                .field("dimmer_max_brightness_enabled", &self.dimmer_max_brightness_enabled())
+                .field("headlight_dimmer_enabled", &self.headlight_dimmer_enabled())
+                .field("left_front_door_open", &self.left_front_door_open())
+                .field("left_rear_door_open", &self.left_rear_door_open())
+                .field("right_front_door_open", &self.right_front_door_open())
+                .field("right_rear_door_open", &self.right_rear_door_open())
+                .field("trunk_open", &self.trunk_open())
+                .field("left_front_door_locked", &self.left_front_door_locked())
+                .field("right_front_door_locked", &self.right_front_door_locked())
+            .finish()
+        } else {
+            f.debug_tuple("Cabin").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// dimmer_and_hood
 ///
@@ -4775,8 +5065,22 @@ impl embedded_can::Frame for DimmerAndHood {
         &self.raw
     }
 }
+impl core::fmt::Debug for DimmerAndHood {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("DimmerAndHood")
+                .field("dimmer_dial_value", &self.dimmer_dial_value())
+                .field("hood_open", &self.hood_open())
+            .finish()
+        } else {
+            f.debug_tuple("DimmerAndHood").field(&self.raw).finish()
+        }
+    }
+}
+
 /// Defined values for dimmer_dial_value
 #[derive(Clone, Copy, PartialEq)]
+#[derive(Debug)]
 #[derive(Serialize)]
 #[derive(Deserialize)]
 pub enum DimmerAndHoodDimmerDialValue {
@@ -4924,8 +5228,21 @@ impl embedded_can::Frame for DashStateVerify {
         &self.raw
     }
 }
+impl core::fmt::Debug for DashStateVerify {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("DashStateVerify")
+                .field("units", &self.units())
+            .finish()
+        } else {
+            f.debug_tuple("DashStateVerify").field(&self.raw).finish()
+        }
+    }
+}
+
 /// Defined values for UNITS
 #[derive(Clone, Copy, PartialEq)]
+#[derive(Debug)]
 #[derive(Serialize)]
 #[derive(Deserialize)]
 pub enum DashStateVerifyUnits {
@@ -5066,6 +5383,18 @@ impl embedded_can::Frame for Odometer {
         &self.raw
     }
 }
+impl core::fmt::Debug for Odometer {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("Odometer")
+                .field("odometer", &self.odometer())
+            .finish()
+        } else {
+            f.debug_tuple("Odometer").field(&self.raw).finish()
+        }
+    }
+}
+
 
 /// tpms
 ///
@@ -5322,6 +5651,21 @@ impl embedded_can::Frame for Tpms {
         &self.raw
     }
 }
+impl core::fmt::Debug for Tpms {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("Tpms")
+                .field("left_front_tire_pressure", &self.left_front_tire_pressure())
+                .field("left_rear_tire_pressure", &self.left_rear_tire_pressure())
+                .field("right_front_tire_pressure", &self.right_front_tire_pressure())
+                .field("right_rear_tire_pressure", &self.right_rear_tire_pressure())
+            .finish()
+        } else {
+            f.debug_tuple("Tpms").field(&self.raw).finish()
+        }
+    }
+}
+
 
 
 /// This is just to make testing easier

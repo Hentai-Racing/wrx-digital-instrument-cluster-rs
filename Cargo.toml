@@ -2,7 +2,7 @@
 name = "wrx-digital-instrument-cluster-rs"
 description = "A digital instrument cluster for the 2018 Subaru WRX"
 repository = "https://github.com/Hentai-Racing/wrx-digital-instrument-cluster-rs"
-version = "0.9.2"                                                                 # Only 1.0.0 when all factory features exist
+version = "0.9.4"                                                                 # Only 1.0.0 when all factory features exist
 authors = ["Bryce Happel Walton <brycewaltonmail@gmail.com>"]
 edition = "2024"
 build = "build.rs"
@@ -13,10 +13,6 @@ readme = "README.md"
 default = ["slint/backend-winit-wayland", "slint/renderer-skia-opengl", "slcan"]
 kms = ["slint/backend-linuxkms", "slint/renderer-skia-opengl"]
 apalis_imx8 = ["dep:gpio-cdev", "kms"]
-network = ["dep:reqwest"]
-three-d = [
-    "dep:three-d",
-] # https://github.com/slint-ui/slint/issues/7845 skia does not work well with opengl context sharing, and femtovg doesn't work well in general
 slcan = ["dep:slcan", "dep:serial"]
 
 [dependencies]
@@ -40,16 +36,11 @@ tokio = { version = "*", features = [
     "macros",
 ], default-features = false }
 crossbeam-channel = "*"
-image = "*"
 
 # feature deps
 gpio-cdev = { version = "*", optional = true, features = ["async-tokio"] }
-three-d = { git = "https://github.com/asny/three-d.git", optional = true }
 serial = { version = "*", optional = true }
 slcan = { git = "https://github.com/bryce-happel-walton/slcan.git", optional = true }
-
-# feature deps network
-reqwest = { version = "*", optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 socketcan = "*"

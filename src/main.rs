@@ -237,19 +237,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     application_state.set_virtual_cluster(virtual_cluster);
     application_state.set_debug_mode(cfg!(debug_assertions));
-    application_state.set_cfg_network(cfg!(feature = "network"));
-    application_state.set_cfg_three_d(cfg!(feature = "three-d"));
-
-    let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data);
-    ui_data_bridge.run();
 
     let serdes_manager = Arc::new(RwLock::new(SerdesManager::new(ui.as_weak())));
 
-    match serdes_manager.write() {
-        Ok(mut serdes_manager) => serdes_manager.load_from_fs()?,
-        _ => {}
+    if let Ok(mut serdes_manager) = serdes_manager.write() {
+        serdes_manager.load_from_fs()?;
     }
     user_settings_bridge::bridge_settings(ui.as_weak(), serdes_manager.clone());
+
+    if let Ok(serdes_manager) = serdes_manager.read() {
+        let unit_system_parameter = serdes_manager.user_settings.general.unit_system.clone();
+        let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data, unit_system_parameter);
+        ui_data_bridge.run();
+    }
 
     if virtual_cluster {
         let running_simulation_clone = running_simulation.clone();
@@ -276,69 +276,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         debug_menu_state.on_debug_suspend(|| println!("DEBUG: DO SUSPEND"));
     }
 
-    #[cfg(feature = "three-d")]
-    {
-        use crate::ui::three_d_underlay::ModelContainer;
-
-        let weak_app = ui.as_weak();
-        let mut model_container: Option<ModelContainer> = None;
-        let render_notifier = ui
-            .window()
-            .set_rendering_notifier(move |state, graphics_api| match state {
-                slint::RenderingState::RenderingSetup => {
-                    let gl_context = match graphics_api {
-                        slint::GraphicsAPI::NativeOpenGL { get_proc_address } => unsafe {
-                            three_d::context::Context::from_loader_function_cstr(get_proc_address)
-                        },
-                        _ => return,
-                    };
-
-                    if let (Ok(context), Some(app)) = (
-                        three_d::Context::from_gl_context(Arc::new(gl_context)),
-                        weak_app.upgrade(),
-                    ) {
-                        model_container = Some(ModelContainer::new(
-                            context, 0, 0, 1,
-                            1, // app.get_threed_widget_x() as _,
-                              // app.get_threed_widget_y() as _,
-                              // app.get_threed_widget_width() as _,
-                              // app.get_threed_widget_height() as _,
-                        ));
-                    }
-                }
-                slint::RenderingState::BeforeRendering => {
-                    if let (Some(model_container), Some(app)) =
-                        (&mut model_container, weak_app.upgrade())
-                    {
-                        if app.get_threed_widget_visible() {
-                            let (width, height) =
-                                (app.window().size().width, app.window().size().height);
-
-                            let image = model_container.render(
-                                0, 0, 1,
-                                1, // app.get_threed_widget_x() as _,
-                                  // app.get_threed_widget_y() as _,
-                                  // app.get_threed_widget_width() as _,
-                                  // app.get_threed_widget_height() as _,
-                            );
-
-                            // app.set_threed_widget_texture(image);
-                            app.window().request_redraw();
-                        }
-                    }
-                }
-                _ => {}
-            });
-
-        if let Err(e) = render_notifier {
-            println!("Error setting rendering notifier: {e:?}");
-        }
-    }
-
     runners.push(running_simulation);
-
-    #[cfg(feature = "network")]
-    let _navmap = crate::ui::navmap::NavMap::new(ui.as_weak());
 
     // main loop
 

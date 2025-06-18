@@ -1,6 +1,6 @@
 use crate::can::can_mux_manager::{MuxContext, MuxParseError, MuxParseResult};
 use crate::can::messages::wrx_2018::{self, EngineMtGear, Messages};
-use crate::data::data_parameter::DataParameter;
+use crate::data::parameters::DataParameter;
 use crate::data::units::{Unit, UnitSystem};
 
 use embedded_can::Frame;
@@ -142,7 +142,6 @@ macro_rules! CarData {
     }
 }
 
-// TODO: make a hashmap or something so all the parameters can be displayed in slint as a list
 // TODO: add additional parameters that are not attached to DBC
 
 CarData! {

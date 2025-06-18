@@ -1,4 +1,4 @@
-use crate::data::data_parameter::DataParameter;
+use crate::data::parameters::FieldParameter;
 use crate::data::units::UnitSystem;
 use crate::slint_generatedApp::App;
 
@@ -13,12 +13,12 @@ use toml;
 
 #[derive(Serialize, Deserialize)]
 pub struct ThemeSettings {
-    pub selected_theme: String,
+    pub selected_theme: FieldParameter<String>,
 }
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct GeneralSettings {
-    pub unit_system: UnitSystem,
+    pub unit_system: FieldParameter<UnitSystem>,
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -30,15 +30,16 @@ pub struct UserSettings {
 impl Default for ThemeSettings {
     fn default() -> Self {
         Self {
-            selected_theme: "Default".into(),
+            // TODO: change themes to enum and default there
+            selected_theme: String::from("Default").into(),
         }
     }
 }
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct StaticCarData {
-    vin: String,
-    odometer: u32,
+    vin: FieldParameter<String>,
+    odometer: FieldParameter<u32>,
 }
 
 #[derive(Default)]

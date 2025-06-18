@@ -6,7 +6,6 @@ import { SUnitSystem } from "data/units.slint";
 import { ApplicationState } from "application/application_state.slint";
 import { GlobalThemeData } from "themes/themes.slint";
 import { ThemeLoader } from "themes/theme_loader_gen.slint";
-import { MapTile, NavMapProperties } from "components/navmap.slint";
 import { CanDisplay, SCanFrameDisplay } from "components/can_display.slint";
 
 // themes
@@ -27,9 +26,9 @@ import "../../resources/fonts/JetBrainsMono/fonts/ttf/JetBrainsMono-Regular.ttf"
 import { Button } from "std-widgets.slint";
 
 // Export types
-export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, SUnitSystem, MapTile, SCanFrameDisplay }
+export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, SUnitSystem, SCanFrameDisplay }
 // Export globals
-export { ApplicationState, SCarData, DebugMenuState, GlobalThemeData, NavMapProperties, CanDisplay }
+export { ApplicationState, SCarData, DebugMenuState, GlobalThemeData, CanDisplay }
 
 export component App inherits Window {
     // todo: move three-d stuff to global-singleton thing like navmap and settings

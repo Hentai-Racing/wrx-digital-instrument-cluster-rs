@@ -95,7 +95,7 @@ export component SettingsMenu inherits Rectangle {
                 alignment: center;
                 padding: 2px;
 
-                label := Text {
+                Text {
                     text: "Units";
                 }
 
@@ -105,6 +105,15 @@ export component SettingsMenu inherits Rectangle {
                     clicked => {
                         ApplicationState.update_user_unit(ApplicationState.user_unit == SUnitSystem.USCS ? SUnitSystem.SI : SUnitSystem.USCS);
                     }
+                }
+            }
+
+            if ApplicationState.virtual_cluster: simulation-toggle-button := Button {
+                height: 30px;
+                text: "Toggle Simulation";
+
+                clicked => {
+                    ApplicationState.toggle_simulation();
                 }
             }
         }
