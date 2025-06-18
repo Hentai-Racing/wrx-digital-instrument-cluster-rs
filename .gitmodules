@@ -6,4 +6,4 @@
 	url = https://github.com/JetBrains/JetBrainsMono.git
 [submodule "resources/database/can/CAN-database"]
 	path = resources/database/can/CAN-database
-	url = git@github.com:Hentai-Racing/CAN-database.git
+	url = https://github.com/Hentai-Racing/CAN-database.git
