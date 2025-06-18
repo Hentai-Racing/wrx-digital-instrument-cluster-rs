@@ -51,6 +51,7 @@ dbc-codegen = { git = "https://github.com/bryce-happel-walton/dbc-codegen.git", 
     "std",
 ] } #* https://github.com/technocreatives/dbc-codegen/pull/97
 syn = "*"
+walkdir = "*"
 
 [profile.apalis_imx8]
 inherits = "release"

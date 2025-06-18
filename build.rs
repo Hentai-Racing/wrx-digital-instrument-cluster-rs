@@ -1,8 +1,10 @@
+use std::ffi::OsStr;
 use std::fs::{self, File};
 use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::Command;
 use syn;
+use walkdir::WalkDir;
 
 const SLINT_PATH: &str = "src/slint-ui"; // path to the directory that contains `main.slint`
 
@@ -23,14 +25,13 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut mod_file = File::create(rs_messages_mod_dir)?;
 
-    for entry in fs::read_dir(dbc_file_dir)? {
+    for entry in WalkDir::new(dbc_file_dir) {
         let entry = entry?;
         let file_name = entry.file_name();
-        let dbc_name = file_name.as_os_str().to_str().unwrap();
         let entry_path = entry.path();
-        let entry_ext = entry_path.extension().unwrap().to_str().unwrap();
 
-        if entry_ext == "dbc" {
+        if entry_path.extension() == Some(OsStr::new("dbc")) {
+            let dbc_name = file_name.to_str().unwrap();
             println!("cargo:rerun-if-changed={}", entry_path.to_str().unwrap());
 
             let stem = entry_path
@@ -63,7 +64,8 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
             //     .arg(out_file_path)
             //     .status()?;
 
-            mod_file.write_all(format!("pub mod {stem};\n").as_bytes())?;
+            mod_file
+                .write_all(format!("pub mod {stem}; // {}\n", entry_path.display()).as_bytes())?;
         }
     }
 
