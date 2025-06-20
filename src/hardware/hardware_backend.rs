@@ -47,8 +47,11 @@ impl HardwareBackend {
                     let chip = Chip::new("/dev/gpiochip0");
 
                     if let Some(mut device) = device {
+                        println!("device");
                         if let Ok(mut chip) = chip {
+                            println!("chip");
                             if let Ok(line) = chip.get_line(8) {
+                                println!("line");
                                 let mut events = AsyncLineEventHandle::new(
                                     line.events(
                                         LineRequestFlags::INPUT,
@@ -60,6 +63,7 @@ impl HardwareBackend {
                                 .unwrap();
 
                                 while let Some(event) = events.next().await {
+                                    println!("event");
                                     if let Ok(event) = event {
                                         match event.event_type() {
                                             gpio_cdev::EventType::FallingEdge => {
