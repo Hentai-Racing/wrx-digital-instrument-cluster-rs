@@ -6,7 +6,7 @@ import { ApplicationState } from "../application/application_state.slint";
 import { CanDisplayWidget } from "can_display.slint";
 
 
-global WidgetContainerState {
+export global WidgetContainerState {
     in property <duration> page-animation-duration: 150ms;
 
     in-out property <int> current-page: 0;
@@ -33,18 +33,7 @@ component Widget {
 
 export component WidgetContainer inherits Rectangle {
     init => {
-        WidgetContainerState.num-pages = 1;
-    }
-
-    FocusScope {
-        key-pressed(event) => {
-            if ((event.text == Key.UpArrow) && (WidgetContainerState.current-page < (WidgetContainerState.num-pages - 1))) {
-                WidgetContainerState.current-page += 1;
-            } else if ((event.text == Key.DownArrow) && (WidgetContainerState.current-page > 0)) {
-                WidgetContainerState.current-page -= 1;
-            }
-            accept
-        }
+        WidgetContainerState.num-pages = 0;
     }
 
     out property <length> buffer: 2.5px;
@@ -63,7 +52,8 @@ export component WidgetContainer inherits Rectangle {
                     width: indicator-width;
 
                     Text {
-                        text: i;
+                        color: white;
+                        text: i + 1;
                     }
 
                     TouchArea {
@@ -97,7 +87,7 @@ export component WidgetContainer inherits Rectangle {
                     }
                 }
 
-                Widget {
+                settings-menu-widget := Widget {
                     VerticalLayout {
                         padding: 20px;
 

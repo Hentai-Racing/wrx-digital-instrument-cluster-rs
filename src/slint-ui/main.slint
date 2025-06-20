@@ -7,6 +7,7 @@ import { ApplicationState } from "application/application_state.slint";
 import { GlobalThemeData } from "themes/themes.slint";
 import { ThemeLoader } from "themes/theme_loader_gen.slint";
 import { CanDisplay, SCanFrameDisplay } from "components/can_display.slint";
+import { WidgetContainerState } from "components/widget_container.slint";
 
 // themes
 import { DefaultTheme } from "themes/default/theme_main.slint";
@@ -28,7 +29,7 @@ import { Button } from "std-widgets.slint";
 // Export types
 export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, SUnitSystem, SCanFrameDisplay }
 // Export globals
-export { ApplicationState, SCarData, DebugMenuState, GlobalThemeData, CanDisplay }
+export { ApplicationState, SCarData, DebugMenuState, GlobalThemeData, CanDisplay, WidgetContainerState }
 
 export component App inherits Window {
     // todo: move three-d stuff to global-singleton thing like navmap and settings
@@ -44,10 +45,25 @@ export component App inherits Window {
 
     title: "WRX Digital Instrument Cluster";
 
-    preferred-width: 1920px;
-    preferred-height: 720px;
+    preferred-width: 2400px;
+    preferred-height: 900px;
 
     background: black;
+
+    FocusScope {
+        key-pressed(event) => {
+            if ((event.text == Key.UpArrow) && (WidgetContainerState.current-page < (WidgetContainerState.num-pages - 1))) {
+                WidgetContainerState.current-page += 1
+            } else if ((event.text == Key.DownArrow) && (WidgetContainerState.current-page > 0)) {
+                WidgetContainerState.current-page -= 1
+            }
+            accept
+        }
+
+        init => {
+            self.focus()
+        }
+    }
 
     ThemeLoader { }
 
