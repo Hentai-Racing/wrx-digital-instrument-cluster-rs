@@ -276,6 +276,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     #[cfg(not(feature = "apalis_imx8"))]
     {
+        use crate::hardware::hardware_backend;
+
+        let hardware_backend =
+            hardware_backend::HardwareBackend::new(hardware_backend::Backend::None);
         debug_menu_state.on_debug_suspend(|| println!("DEBUG: DO SUSPEND"));
     }
 

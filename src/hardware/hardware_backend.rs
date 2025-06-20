@@ -13,6 +13,7 @@ pub struct HardwareBackend {
     backend: Backend,
 }
 
+#[cfg(feature = "apalis_imx8")]
 fn create_uinput_dev(name: String) -> Result<uinput::Device, Box<dyn std::error::Error>> {
     use uinput::event::keyboard::Key;
 
@@ -31,23 +32,19 @@ impl HardwareBackend {
         match &backend {
             #[cfg(feature = "apalis_imx8")]
             Backend::ApalisIMX8(_) => {
-                spawn(async {
-                    use futures::stream::StreamExt;
-                    use gpio_cdev::{
-                        AsyncLineEventHandle, Chip, EventRequestFlags, LineRequestFlags,
-                    };
-                    use uinput::event::keyboard::Key;
+                let gpio_1 = FieldParameter::<bool>::new(false);
 
-                    let device = create_uinput_dev(format!(
-                        "{}-apalis_imx8-keyboard",
-                        env!("CARGO_PKG_NAME")
-                    ))
-                    .ok();
+                {
+                    let mut gpio_1 = gpio_1.clone();
+                    spawn(async move {
+                        println!("Apalis IMX8 hardware interface backend");
+                        use futures::stream::StreamExt;
+                        use gpio_cdev::{
+                            AsyncLineEventHandle, Chip, EventRequestFlags, LineRequestFlags,
+                        };
 
-                    let chip = Chip::new("/dev/gpiochip0");
+                        let chip = Chip::new("/dev/gpiochip0");
 
-                    if let Some(mut device) = device {
-                        println!("device");
                         if let Ok(mut chip) = chip {
                             println!("chip");
                             if let Ok(line) = chip.get_line(8) {
@@ -67,10 +64,10 @@ impl HardwareBackend {
                                     if let Ok(event) = event {
                                         match event.event_type() {
                                             gpio_cdev::EventType::FallingEdge => {
-                                                let _ = device.press(&Key::Up);
+                                                gpio_1.set_value(false);
                                             }
                                             gpio_cdev::EventType::RisingEdge => {
-                                                let _ = device.release(&Key::Down);
+                                                gpio_1.set_value(true);
                                             }
                                         }
 
@@ -79,10 +76,47 @@ impl HardwareBackend {
                                 }
                             }
                         }
-                    }
+                    });
+                }
+
+                {
+                    let gpio_1 = gpio_1.clone();
+                    spawn(async move {
+                        use uinput::event::keyboard::Key;
+
+                        let device = create_uinput_dev(format!(
+                            "{}-apalis_imx8-keyboard",
+                            env!("CARGO_PKG_NAME")
+                        ))
+                        .ok();
+
+                        if let Some(mut device) = device {
+                            let mut gpio_1_watch = gpio_1.watch();
+                            loop {
+                                use tokio::select;
+
+                                select! {
+                                    Ok(_) = gpio_1_watch.changed() => {
+                                        let value = *gpio_1_watch.borrow_and_update();
+
+                                        if value {
+                                            let _ = device.press(&Key::Up);
+                                        } else {
+                                            let _ = device.release(&Key::Up);
+                                        }
+                                    },
+                                    else => {break;}
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            _ => {
+                spawn(async {
+                    println!("Normal hardware interface backend");
                 });
             }
-            _ => {}
         }
 
         Self { backend }
