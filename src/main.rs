@@ -263,13 +263,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(feature = "apalis_imx8")]
     {
-        use crate::hardware::apalis_imx8::ApalisIMX8;
+        use crate::hardware::{apalis_imx8::ApalisIMX8, hardware_backend};
 
         let device = ApalisIMX8::new();
 
-        debug_menu_state.on_debug_suspend(move || {
-            device.power_suspend();
-        });
+        let hardware_backend =
+            hardware_backend::HardwareBackend::new(hardware_backend::Backend::ApalisIMX8(device));
+
+        // debug_menu_state.on_debug_suspend(move || {
+        //     device.power_suspend();
+        // });
     }
     #[cfg(not(feature = "apalis_imx8"))]
     {
