@@ -12,7 +12,7 @@ readme = "README.md"
 [features]
 default = ["wayland", "slcan"]
 wayland = ["slint/backend-winit-wayland", "slint/renderer-skia-opengl"]
-apalis_imx8 = ["dep:gpio-cdev"]
+apalis_imx8 = ["dep:gpio-cdev", "dep:uinput"]
 slcan = ["dep:slcan", "dep:serial"]
 
 [dependencies]
@@ -39,6 +39,7 @@ crossbeam-channel = "*"
 
 # feature deps
 gpio-cdev = { version = "*", optional = true, features = ["async-tokio"] }
+uinput = { version = "*", optional = true }
 serial = { version = "*", optional = true }
 slcan = { git = "https://github.com/bryce-happel-walton/slcan.git", optional = true }
 

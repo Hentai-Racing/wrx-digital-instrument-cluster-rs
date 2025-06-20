@@ -1,4 +1,4 @@
-use gpio_cdev::{Chip, Line};
+use gpio_cdev::{Chip, EventRequestFlags, Line, LineRequestFlags};
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::process;
@@ -6,28 +6,21 @@ use std::process;
 pub struct ApalisIMX8 {}
 
 pub enum ApalisIMX8GPIO {
-    GPIO1,     // LSIO.GPIO0.IO08
-    GPIO2,     // LSIO.GPIO0.IO09
-    GPIO3,     // LSIO.GPIO0.IO12
-    GPIO4,     // LSIO.GPIO0.IO13
-    GPIO7,     // LSIO.GPIO3.IO26
-    GPIO8,     // LSIO.GPIO3.IO09
-    Wake1Mico, // LSIO.GPIO2.IO20
+    GPIO1(Chip),     // LSIO.GPIO0.IO08
+    GPIO2(Chip),     // LSIO.GPIO0.IO09
+    GPIO3(Chip),     // LSIO.GPIO0.IO12
+    GPIO4(Chip),     // LSIO.GPIO0.IO13
+    GPIO7(Chip),     // LSIO.GPIO3.IO26
+    GPIO8(Chip),     // LSIO.GPIO3.IO09
+    Wake1Mico(Chip), // LSIO.GPIO2.IO20
 }
 
-// gpiodetect DOES NOT MATCH DOCUMENTATION
-// gpio chip 2 line 8 gpio1 // MXM3_1/GPIO1
-// gpio chip 2 line 9 gpio2
-// gpio chip 2 line 12 gpio3
-// gpio chip 2 line 13 gpio4
-// gpio chip 5 line 26 gpio7
-// gpio chip 5 line 28 gpio8 // gpio fan
-// gpio chip 6 line 1 gpio5
-// gpio chip 6 line 2 gpio6
-// gpio chip 4 line 20 wake1mico
-
-// GPIO5,     // LSIO.GPIO4.IO01 // flexcan2rx
-// GPIO6,     // LSIO.GPIO4.IO02 // flexcan2tx
+const GPIO1: u32 = 8;
+// const GPIO2: u32 = 9;
+// const GPIO3: u32 = 12;
+// const GPIO4: u32 = 13;
+// const GPIO7: u32 = 26;
+// const GPIO8: u32 = 9;
 
 impl ApalisIMX8 {
     pub fn new() -> Self {
@@ -71,6 +64,22 @@ impl ApalisIMX8 {
             }
             _ => {}
         };
+    }
+
+    pub fn monitor_gpio1(&self) {
+        let chip = Chip::new("/dev/gpiochip0");
+
+        if let Ok(mut chip) = chip {
+            if let Ok(line) = chip.get_line(GPIO1) {
+                // while let Ok(event) = line.events(
+                //     LineRequestFlags::INPUT,
+                //     EventRequestFlags::FALLING_EDGE,
+                //     env!("CARGO_PKG_NAME"),
+                // ) {
+                //     println!("{event:?}");
+                // }
+            }
+        }
     }
 }
 
