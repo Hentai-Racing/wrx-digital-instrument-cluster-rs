@@ -32,7 +32,7 @@ const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
 const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let cli = clap::Command::new("")
+    let cli = clap::Command::new("").version(env!("CARGO_PKG_VERSION"))
         .args([
             #[cfg(target_os = "linux")]
             clap::arg!(-v --virtual "Runs the application in virtual mode using socketcan vcan")
