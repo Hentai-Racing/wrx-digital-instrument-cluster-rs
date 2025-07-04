@@ -4,9 +4,9 @@ version = 4
 
 [[package]]
 name = "ab_glyph"
-version = "0.2.29"
+version = "0.2.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec3672c180e71eeaaac3a541fbbc5f5ad4def8b747c595ad30d674e43049f7b0"
+checksum = "1e0f4f6fbdc5ee39f2ede9f5f3ec79477271a6d6a2baff22310d51736bda6cea"
 dependencies = [
  "ab_glyph_rasterizer",
  "owned_ttf_parser",
@@ -14,9 +14,9 @@ dependencies = [
 
 [[package]]
 name = "ab_glyph_rasterizer"
-version = "0.1.8"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c71b1793ee61086797f5c80b6efa2b8ffa6d5dd703f118545808a7f2e27f7046"
+checksum = "b2187590a23ab1e3df8681afdf0987c48504d80291f002fcdb651f0ef5e25169"
 
 [[package]]
 name = "addr2line"
@@ -211,9 +211,9 @@ dependencies = [
 
 [[package]]
 name = "async-channel"
-version = "2.3.1"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89b47800b0be77592da0afd425cc03468052844aff33b84e33cc696f64e77b6a"
+checksum = "16c74e56284d2188cabb6ad99603d1ace887a5d7e7b695d01b728155ed9ed427"
 dependencies = [
  "concurrent-queue",
  "event-listener-strategy",
@@ -383,9 +383,9 @@ dependencies = [
 
 [[package]]
 name = "avif-serialize"
-version = "0.8.3"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98922d6a4cfbcb08820c69d8eeccc05bb1f29bfa06b4f5b1dbfe9a868bd7608e"
+checksum = "2ea8ef51aced2b9191c08197f55450d830876d9933f8f48a429b354f1d496b42"
 dependencies = [
  "arrayvec",
 ]
@@ -423,9 +423,9 @@ dependencies = [
 
 [[package]]
 name = "bindgen"
-version = "0.71.1"
+version = "0.72.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f58bf3d7db68cfbac37cfc485a8d711e87e064c3d0fe0435b92f7a407f9d6b3"
+checksum = "4f72209734318d0b619a5e0f5129918b848c416e122a3c4ce054e03cb87b726f"
 dependencies = [
  "bitflags 2.9.1",
  "cexpr",
@@ -528,9 +528,9 @@ checksum = "56ed6191a7e78c36abdb16ab65341eefd73d64d303fffccdbb00d51e4205967b"
 
 [[package]]
 name = "bumpalo"
-version = "3.18.1"
+version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "793db76d6187cd04dff33004d8e6c9cc4e05cd330500379d2394209271b4aeee"
+checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
 
 [[package]]
 name = "by_address"
@@ -637,9 +637,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.27"
+version = "1.2.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d487aa071b5f64da6f19a3e848e3578944b726ee5a4854b82172f02aa876bfdc"
+checksum = "4ad45f4f74e4e20eaa392913b7b33a7091c87e59628f4dd27888205ad888843c"
 dependencies = [
  "jobserver",
  "libc",
@@ -815,7 +815,7 @@ dependencies = [
 [[package]]
 name = "const-field-offset"
 version = "0.1.5"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "const-field-offset-macro",
  "field-offset",
@@ -824,7 +824,7 @@ dependencies = [
 [[package]]
 name = "const-field-offset-macro"
 version = "0.1.5"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -984,9 +984,9 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "crunchy"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43da5946c66ffcc7745f48db692ffbb10a83bfe0afd96235c5c2a4fb23994929"
+checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
 name = "cursor-icon"
@@ -1607,9 +1607,9 @@ dependencies = [
 
 [[package]]
 name = "gif"
-version = "0.13.1"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fb2d69b19215e18bb912fa30f7ce15846e301408695e44e0ef719f1da9e19f2"
+checksum = "4ae047235e33e2829703574b54fdec96bfbad892062d97fed2f76022287de61b"
 dependencies = [
  "color_quant",
  "weezl",
@@ -1777,8 +1777,8 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "i-slint-backend-linuxkms"
-version = "1.12.1"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+version = "1.13.0"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "calloop 0.14.2",
  "drm 0.14.1",
@@ -1796,8 +1796,8 @@ dependencies = [
 
 [[package]]
 name = "i-slint-backend-selector"
-version = "1.12.1"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+version = "1.13.0"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "cfg-if 1.0.1",
  "i-slint-backend-linuxkms",
@@ -1810,8 +1810,8 @@ dependencies = [
 
 [[package]]
 name = "i-slint-backend-winit"
-version = "1.12.1"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+version = "1.13.0"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "cfg-if 1.0.1",
  "cfg_aliases",
@@ -1841,8 +1841,8 @@ dependencies = [
 
 [[package]]
 name = "i-slint-common"
-version = "1.12.1"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+version = "1.13.0"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "cfg-if 1.0.1",
  "derive_more",
@@ -1853,8 +1853,8 @@ dependencies = [
 
 [[package]]
 name = "i-slint-compiler"
-version = "1.12.1"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+version = "1.13.0"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "by_address",
  "codemap",
@@ -1882,8 +1882,8 @@ dependencies = [
 
 [[package]]
 name = "i-slint-core"
-version = "1.12.1"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+version = "1.13.0"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "auto_enums",
  "bitflags 2.9.1",
@@ -1925,8 +1925,8 @@ dependencies = [
 
 [[package]]
 name = "i-slint-core-macros"
-version = "1.12.1"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+version = "1.13.0"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "quote",
  "serde_json",
@@ -1935,8 +1935,8 @@ dependencies = [
 
 [[package]]
 name = "i-slint-renderer-skia"
-version = "1.12.1"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+version = "1.13.0"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "bytemuck",
  "cfg-if 1.0.1",
@@ -2144,9 +2144,9 @@ checksum = "d0263a3d970d5c054ed9312c0057b4f3bde9c0b33836d3637361d4a9e6e7a408"
 
 [[package]]
 name = "indexmap"
-version = "2.9.0"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cea70ddb795996207ad57735b50c5982d8844f38ba9ee5f1aedcfb708a2aa11e"
+checksum = "fe4cd85333e22411419a0bcae1297d25e58c9443848b11dc6a86fefe8c78a661"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.4",
@@ -2200,6 +2200,17 @@ dependencies = [
  "hermit-abi 0.3.9",
  "libc",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "io-uring"
+version = "0.7.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b86e202f00093dcba4275d4636b93ef9dd75d025ae560d2521b45ea28ab49013"
+dependencies = [
+ "bitflags 2.9.1",
+ "cfg-if 1.0.1",
+ "libc",
 ]
 
 [[package]]
@@ -2299,9 +2310,9 @@ dependencies = [
 
 [[package]]
 name = "jpeg-decoder"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5d4a7da358eff58addd2877a45865158f0d78c911d43a5784ceb7bbf52833b0"
+checksum = "00810f1d8b74be64b13dbf3db89ac67740615d6c891f0e7b6179326533011a07"
 
 [[package]]
 name = "js-sys"
@@ -2360,9 +2371,9 @@ checksum = "1171693293099992e19cddea4e8b849964e9846f4acee11b3948bcc337be8776"
 
 [[package]]
 name = "libfuzzer-sys"
-version = "0.4.9"
+version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf78f52d400cf2d84a3a973a78a592b4adc535739e0a5597a0da6f0c357adc75"
+checksum = "5037190e1f70cbeef565bd267599242926f724d3b8a9f510fd7e0b540cfa4404"
 dependencies = [
  "arbitrary",
  "cc",
@@ -2386,9 +2397,9 @@ checksum = "f9fbbcab51052fe104eb5e5d351cf728d30a5be1fe14d9be8a3b097481fb97de"
 
 [[package]]
 name = "libredox"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0ff37bd590ca25063e35af745c343cb7a0271906fb7b37e4813e8f79f00268d"
+checksum = "1580801010e535496706ba011c15f8532df6b42297d2e471fec38ceadd8c0638"
 dependencies = [
  "bitflags 2.9.1",
  "libc",
@@ -2786,18 +2797,19 @@ dependencies = [
 
 [[package]]
 name = "num_enum"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e613fc340b2220f734a8595782c551f1250e969d87d3be1ae0579e8d4065179"
+checksum = "a973b4e44ce6cad84ce69d797acf9a044532e4184c4f267913d1b546a0727b7a"
 dependencies = [
  "num_enum_derive",
+ "rustversion",
 ]
 
 [[package]]
 name = "num_enum_derive"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af1844ef2428cc3e1cb900be36181049ef3d3193c63e43026cfe202983b27a56"
+checksum = "77e878c846a8abae00dd069496dbe8751b16ac1c3d6bd2a7283a938e8228f90d"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -3364,18 +3376,18 @@ dependencies = [
 
 [[package]]
 name = "profiling"
-version = "1.0.16"
+version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afbdc74edc00b6f6a218ca6a5364d6226a259d4b8ea1af4a0ea063f27e179f4d"
+checksum = "3eb8486b569e12e2c32ad3e204dbaba5e4b5b216e9367044f25f1dba42341773"
 dependencies = [
  "profiling-procmacros",
 ]
 
 [[package]]
 name = "profiling-procmacros"
-version = "1.0.16"
+version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a65f2e60fbf1063868558d69c6beacf412dc755f9fc020f514b7955fc914fe30"
+checksum = "52717f9a02b6965224f95ca2a81e2e0c5c43baacd28ca057577988930b6c3d5b"
 dependencies = [
  "quote",
  "syn 2.0.104",
@@ -3433,18 +3445,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
 dependencies = [
  "libc",
- "rand_chacha 0.3.1",
- "rand_core 0.6.4",
-]
-
-[[package]]
-name = "rand"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fbfd9d094a40bf3ae768db9361049ace4c0e04a4fd6b359518bd7b73a73dd97"
-dependencies = [
- "rand_chacha 0.9.0",
- "rand_core 0.9.3",
+ "rand_chacha",
+ "rand_core",
 ]
 
 [[package]]
@@ -3454,17 +3456,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
 dependencies = [
  "ppv-lite86",
- "rand_core 0.6.4",
-]
-
-[[package]]
-name = "rand_chacha"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3022b5f1df60f26e1ffddd6c66e8aa15de382ae63b3a0c1bfc0e4d3e3f325cb"
-dependencies = [
- "ppv-lite86",
- "rand_core 0.9.3",
+ "rand_core",
 ]
 
 [[package]]
@@ -3474,15 +3466,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 dependencies = [
  "getrandom 0.2.16",
-]
-
-[[package]]
-name = "rand_core"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
-dependencies = [
- "getrandom 0.3.3",
 ]
 
 [[package]]
@@ -3511,8 +3494,8 @@ dependencies = [
  "once_cell",
  "paste",
  "profiling",
- "rand 0.8.5",
- "rand_chacha 0.3.1",
+ "rand",
+ "rand_chacha",
  "simd_helpers",
  "system-deps",
  "thiserror 1.0.69",
@@ -3943,15 +3926,16 @@ checksum = "56199f7ddabf13fe5074ce809e7d3f42b42ae711800501b5b16ea82ad029c39d"
 
 [[package]]
 name = "skia-bindings"
-version = "0.86.1"
+version = "0.87.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2bf215f640b53293844d441e93448b437ca4937595f60e3317fbb03d7ac6783"
+checksum = "704242769235d2ffe66a2a0a3002661262fc4af08d32807c362d7b0160ee703c"
 dependencies = [
  "bindgen",
  "cc",
  "flate2",
  "heck 0.5.0",
  "lazy_static",
+ "pkg-config",
  "regex",
  "serde_json",
  "tar",
@@ -3960,9 +3944,9 @@ dependencies = [
 
 [[package]]
 name = "skia-safe"
-version = "0.86.1"
+version = "0.87.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e372258f52414e04de007326fa497581617c9fa872a3225dca5e42212723c426"
+checksum = "0f7d94f3e7537c71ad4cf132eb26e3be8c8a886ed3649c4525c089041fc312b2"
 dependencies = [
  "bitflags 2.9.1",
  "lazy_static",
@@ -3988,8 +3972,8 @@ dependencies = [
 
 [[package]]
 name = "slint"
-version = "1.12.1"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+version = "1.13.0"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "const-field-offset",
  "i-slint-backend-selector",
@@ -4005,8 +3989,8 @@ dependencies = [
 
 [[package]]
 name = "slint-build"
-version = "1.12.1"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+version = "1.13.0"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "derive_more",
  "i-slint-compiler",
@@ -4016,8 +4000,8 @@ dependencies = [
 
 [[package]]
 name = "slint-macros"
-version = "1.12.1"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+version = "1.13.0"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "i-slint-compiler",
  "proc-macro2",
@@ -4440,14 +4424,16 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.45.1"
+version = "1.46.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75ef51a33ef1da925cea3e4eb122833cb377c61439ca401b770f54902b806779"
+checksum = "1140bb80481756a8cbe10541f37433b459c5aa1e727b4c020fbfebdc25bf3ec4"
 dependencies = [
  "backtrace",
+ "io-uring",
  "libc",
  "mio",
  "pin-project-lite",
+ "slab",
  "socket2",
  "tokio-macros",
  "windows-sys 0.52.0",
@@ -4777,7 +4763,7 @@ checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
 [[package]]
 name = "vtable"
 version = "0.3.0"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "const-field-offset",
  "portable-atomic",
@@ -4788,7 +4774,7 @@ dependencies = [
 [[package]]
 name = "vtable-macro"
 version = "0.3.0"
-source = "git+https://github.com/slint-ui/slint.git#069313f39ee17b2d681c9ebde3d6a00a7be23afc"
+source = "git+https://github.com/slint-ui/slint.git#b4186e6648571fd60e5f672669b0a5cb38513f8b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5529,7 +5515,7 @@ checksum = "ea2f10b9bb0928dfb1b42b65e1f9e36f7f54dbdf08457afefb38afcdec4fa2bb"
 
 [[package]]
 name = "wrx-digital-instrument-cluster-rs"
-version = "0.9.6-apalis"
+version = "0.9.7-apalis"
 dependencies = [
  "async-compat",
  "bitvec",
@@ -5540,7 +5526,7 @@ dependencies = [
  "futures",
  "gpio-cdev",
  "paste",
- "rand 0.9.1",
+ "rand",
  "serde",
  "serde_bytes",
  "serial",
@@ -5548,7 +5534,7 @@ dependencies = [
  "slint",
  "slint-build",
  "socketcan",
- "syn 2.0.104",
+ "syn 1.0.109",
  "tokio",
  "toml",
  "uinput",
@@ -5566,9 +5552,9 @@ dependencies = [
 
 [[package]]
 name = "xattr"
-version = "1.5.0"
+version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d65cbf2f12c15564212d48f4e3dfb87923d25d611f2aed18f4cb23f0413d89e"
+checksum = "af3a19837351dc82ba89f8a125e22a3c475f05aba604acc023d62b2739ae2909"
 dependencies = [
  "libc",
  "rustix 1.0.7",
@@ -5576,9 +5562,9 @@ dependencies = [
 
 [[package]]
 name = "xcursor"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "635887f4315a33cb714eb059bdbd7c1c92bfa71bc5b9d5115460502f788c2ab5"
+checksum = "bec9e4a500ca8864c5b47b8b482a73d62e4237670e5b5f1d6b9e3cae50f28f2b"
 
 [[package]]
 name = "xkbcommon"
@@ -5797,9 +5783,9 @@ dependencies = [
 
 [[package]]
 name = "zune-jpeg"
-version = "0.4.17"
+version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f6fe2e33d02a98ee64423802e16df3de99c43e5cf5ff983767e1128b394c8ac"
+checksum = "2c9e525af0a6a658e031e95f14b7f889976b74a11ba0eca5a5fc9ac8a1c43a6a"
 dependencies = [
  "zune-core",
 ]

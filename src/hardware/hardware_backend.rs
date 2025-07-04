@@ -37,7 +37,6 @@ impl HardwareBackend {
                 {
                     let mut gpio_1 = gpio_1.clone();
                     spawn(async move {
-                        println!("Apalis IMX8 hardware interface backend");
                         use futures::stream::StreamExt;
                         use gpio_cdev::{
                             AsyncLineEventHandle, Chip, EventRequestFlags, LineRequestFlags,
@@ -46,35 +45,7 @@ impl HardwareBackend {
                         let chip = Chip::new("/dev/gpiochip0");
 
                         if let Ok(mut chip) = chip {
-                            println!("chip");
-                            if let Ok(line) = chip.get_line(8) {
-                                println!("line");
-                                let mut events = AsyncLineEventHandle::new(
-                                    line.events(
-                                        LineRequestFlags::INPUT,
-                                        EventRequestFlags::BOTH_EDGES,
-                                        "gpioevents",
-                                    )
-                                    .unwrap(),
-                                )
-                                .unwrap();
-
-                                while let Some(event) = events.next().await {
-                                    println!("event");
-                                    if let Ok(event) = event {
-                                        match event.event_type() {
-                                            gpio_cdev::EventType::FallingEdge => {
-                                                gpio_1.set_value(false);
-                                            }
-                                            gpio_cdev::EventType::RisingEdge => {
-                                                gpio_1.set_value(true);
-                                            }
-                                        }
-
-                                        println!("GPIO Event: {:?}", event);
-                                    }
-                                }
-                            }
+                            if let Ok(line) = chip.get_line(8) {}
                         }
                     });
                 }
@@ -112,11 +83,7 @@ impl HardwareBackend {
                     });
                 }
             }
-            _ => {
-                spawn(async {
-                    println!("Normal hardware interface backend");
-                });
-            }
+            _ => {}
         }
 
         Self { backend }
