@@ -36,7 +36,7 @@ component PillGaugeContainer inherits Rectangle {
     in property <SFDataParameter> data_parameter <=> gauge.data_parameter;
     in property <SideAlignment> symbol-alignment: SideAlignment.right;
 
-    height: 18px;
+    height: 26px;
 
     symbol := SymbolLight {
         scale: 30%;
@@ -86,8 +86,8 @@ export component TrackTheme inherits Rectangle {
 
             private property <length> biglabel-x-offset: 25px;
 
-            Rectangle {
-                width: 30%;
+            left-center-section := Rectangle {
+                width: 35%;
 
                 gear-indicator := Text {
                     y: 160px;
@@ -119,13 +119,11 @@ export component TrackTheme inherits Rectangle {
                 alignment: center;
                 padding: 20px;
 
-                WidgetContainer {
-                    width: 56%;
-                }
+                WidgetContainer { }
             }
 
-            Rectangle {
-                width: 30%;
+            right-center-section := Rectangle {
+                width: 35%;
 
                 speedometer-label := Text {
                     y: gear-indicator.y;
@@ -160,7 +158,7 @@ export component TrackTheme inherits Rectangle {
                 spacing: 6px;
                 padding-left: 100px;
                 padding-right: 20px;
-                padding-bottom: 15px;
+                padding-bottom: 25px;
                 alignment: end;
 
                 PillGaugeContainer {
@@ -177,14 +175,15 @@ export component TrackTheme inherits Rectangle {
             }
 
             odometer-layout := VerticalLayout {
-                alignment: LayoutAlignment.end;
+                alignment: end;
+                padding-bottom: left-gauges.padding-bottom;
 
                 odometer-section := Rectangle {
                     odometer-label := Text {
                         color: white;
                         text: floor(SCarData.odometer.value);
                         font-size: 40px;
-                        vertical-alignment: center;
+                        vertical-alignment: bottom;
                         horizontal-alignment: center;
                     }
 
