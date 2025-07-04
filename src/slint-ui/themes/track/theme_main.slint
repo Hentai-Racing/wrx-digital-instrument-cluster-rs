@@ -90,11 +90,11 @@ export component TrackTheme inherits Rectangle {
                 width: 30%;
 
                 gear-indicator := Text {
-                    y: 65px;
+                    y: 160px;
                     x: parent.width - self.width - biglabel-x-offset;
                     color: white;
                     text: SCarData.mt_gear.value;
-                    font-size: 75px;
+                    font-size: 85px;
 
                     vertical-alignment: TextVerticalAlignment.center;
                     horizontal-alignment: TextHorizontalAlignment.center;
@@ -117,9 +117,11 @@ export component TrackTheme inherits Rectangle {
 
             HorizontalLayout {
                 alignment: center;
-                padding: 10px;
+                padding: 20px;
 
-                WidgetContainer { }
+                WidgetContainer {
+                    width: 56%;
+                }
             }
 
             Rectangle {
@@ -131,7 +133,7 @@ export component TrackTheme inherits Rectangle {
 
                     text: round(SCarData.vehicle_speed.value);
                     color: white;
-                    font-size: 60px;
+                    font-size: 80px;
 
                     vertical-alignment: TextVerticalAlignment.center;
                     horizontal-alignment: TextHorizontalAlignment.center;
