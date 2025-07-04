@@ -66,12 +66,14 @@ impl SerdesManager {
     }
 
     pub fn get_config_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
-        let exe_dir = env::current_exe()?
-            .parent()
-            .map(|x| x.to_path_buf())
-            .unwrap();
+        let exe_dir = Some(env::current_exe()?.to_path_buf()).unwrap();
 
-        let config_dir = exe_dir.join("config");
+        println!("{:?}", exe_dir);
+
+        let config_dir = exe_dir.parent().unwrap().join(format!(
+            "{}-config/",
+            exe_dir.file_name().unwrap().display()
+        ));
         match fs::create_dir(&config_dir) {
             Err(ref e) if e.kind() == io::ErrorKind::AlreadyExists => (),
             Err(e) => return Err(e.into()),
