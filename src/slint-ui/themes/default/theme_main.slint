@@ -208,9 +208,9 @@ export component DefaultTheme inherits Rectangle {
                 }
 
                 mt-gear-label := Text {
-                    text: SCarData.reverse_sw.value ? "R" : (SCarData.mt_clutch_sw.value ? " " : SCarData.mt_gear.value);
-                    color: white;
-                    font-size: 65px;
+                    text: SCarData.reverse_sw.value ? "R" : SCarData.mt_gear.value;
+                    color: SCarData.mt_clutch_sw.value ? white.transparentize(70%) : white;
+                    font-size: 75px;
 
                     x: tachometer.x + tachometer.width / 2 - self.width / 2;
                     y: tachometer.y + tachometer.height / 2 - self.height / 2;
@@ -404,7 +404,7 @@ export component DefaultTheme inherits Rectangle {
                         text: round(SCarData.vehicle_speed.value);
                         width: parent.width;
                         color: white;
-                        font-size: 55px;
+                        font-size: 70px;
 
                         vertical-alignment: TextVerticalAlignment.center;
                         horizontal-alignment: TextHorizontalAlignment.center;
@@ -619,8 +619,7 @@ export component DefaultTheme inherits Rectangle {
         }
 
         bottom-span := PrimarySection {
-            height: odometer-text.font-size * 150%;
-
+            height: 8%;
             HorizontalLayout {
                 alignment: center;
                 odometer-text-section := Rectangle {
@@ -629,7 +628,7 @@ export component DefaultTheme inherits Rectangle {
                     odometer-text := Text {
                         color: white;
                         text: floor(SCarData.odometer.value);
-                        font-size: 40px;
+                        font-size: 47.5px;
                         vertical-alignment: center;
                         horizontal-alignment: center;
                     }
