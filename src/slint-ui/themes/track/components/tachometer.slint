@@ -25,7 +25,7 @@ component TachVerticalLine {
 
 component DecorationBar inherits Rectangle {
     width: 100%;
-    height: 1px;
+    height: 3px;
     background: transparent;
 
     center-bar := Rectangle {
@@ -56,7 +56,7 @@ export component Tachometer inherits Rectangle {
     in property <int> max-rpm: SCarData.engine_rpm.max;
     in property <int> rpm-denominator: 1000;
     in property <float> redline: 6600;
-    in property <length> major-tick-thickness: 2.5px;
+    in property <length> major-tick-thickness: 3px;
 
     in property <int> minor-tick-lines: 1;
     in property <length> minor-tick-thickness: major-tick-thickness * 60%;

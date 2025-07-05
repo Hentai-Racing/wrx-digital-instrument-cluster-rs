@@ -26,7 +26,7 @@ export component RoadIndicatorWidget inherits Rectangle {
     property <brush> brush-fill-warn-approach: @linear-gradient(0deg, #00000000 bottom-gradient, SymbolProperties.symbol_color_yellow 20%, lane-color 25%, #00000000 top-gradient);
     property <brush> brush-fill-normal: @linear-gradient(0deg, #00000000 bottom-gradient, lane-color 20%, lane-color 35%, #00000000 top-gradient);
 
-    property <bool> bsd_enabled: SCarData.rcta_enabled.value;
+    property <bool> bsd_enabled: !SCarData.rcta_disabled.value;
 
     lane-left := Path {
         viewbox-height: parent.height / 1px;

@@ -139,7 +139,7 @@ export component DefaultTheme inherits Rectangle {
                     end: -180deg + angle_offset;
 
                     needle-inner-radius: self.width / 2.45;
-                    needle-thickness: 1deg;
+                    needle-thickness: 2deg;
 
                     progress: SCarData.engine_coolant_temp.value / (SCarData.engine_coolant_temp.max != 0 ? SCarData.engine_coolant_temp.max : (SCarData.engine_coolant_temp.value * 2));
                     needle-sweep-color: self.progress >= ((self.angle_range - redline) / self.angle-range) ? red : (self.progress <= (blueline / self.angle-range) ? blue : SymbolProperties.symbol_color_white);
@@ -335,7 +335,7 @@ export component DefaultTheme inherits Rectangle {
                     source: @image-url("../../../../resources/images/rcta-warning-light-off.png");
                     colorize: SymbolProperties.symbol-color-yellow;
 
-                    visible: !SCarData.rcta_enabled.value;
+                    visible: SCarData.rcta_disabled.value;
                 }
 
                 srs-airbag-system-warning-light := GaugeAttachedSymbol {

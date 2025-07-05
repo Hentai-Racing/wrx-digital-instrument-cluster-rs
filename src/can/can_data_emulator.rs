@@ -175,7 +175,7 @@ pub fn run_can_data_emulator(
             let bsd_left_approaching = rand::rng().random_bool(0.5);
             let bsd_right_adjacent = rand::rng().random_bool(0.5);
             let bsd_right_approaching = rand::rng().random_bool(0.5);
-            let rcta_enabled = rand::rng().random_bool(0.5);
+            let rcta_disabled = rand::rng().random_bool(0.5);
             let rcta_left = rand::rng().random_bool(0.5);
             let rcta_right = rand::rng().random_bool(0.5);
             let bsdrcta_frame = wrx_2018::BsdRcta::new(
@@ -183,7 +183,7 @@ pub fn run_can_data_emulator(
                 bsd_left_approaching,
                 bsd_right_adjacent,
                 bsd_right_approaching,
-                rcta_enabled,
+                rcta_disabled,
                 rcta_left,
                 rcta_right,
             )

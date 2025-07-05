@@ -68,8 +68,6 @@ impl SerdesManager {
     pub fn get_config_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
         let exe_dir = Some(env::current_exe()?.to_path_buf()).unwrap();
 
-        println!("{:?}", exe_dir);
-
         let config_dir = exe_dir.parent().unwrap().join(format!(
             "{}-config/",
             exe_dir.file_name().unwrap().display()

@@ -14,7 +14,6 @@ pub struct DataParameter<T> {
     changed: watch::Sender<T>,
 }
 
-/// Serializes to and from `value`
 #[derive(Clone)]
 pub struct FieldParameter<T> {
     value: T,
@@ -109,7 +108,7 @@ where
     T: Clone + Default + Serialize + PartialEq,
 {
     pub fn new(value: T) -> Self {
-        let (changed, _) = watch::channel(Default::default());
+        let (changed, _) = watch::channel(value.clone());
 
         Self { value, changed }
     }

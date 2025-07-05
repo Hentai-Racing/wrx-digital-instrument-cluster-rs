@@ -221,7 +221,7 @@ CarData! {
     };
 
     BsdRcta => {
-        rcta_enabled: bool,
+        rcta_disabled: bool,
         rcta_left: bool,
         rcta_right: bool,
         bsd_left_adjacent: bool,

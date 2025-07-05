@@ -2523,13 +2523,13 @@ impl BsdRcta {
     
     
     /// Construct new bsd_rcta from values
-    pub fn new(bsd_left_adjacent: bool, bsd_left_approaching: bool, bsd_right_adjacent: bool, bsd_right_approaching: bool, rcta_enabled: bool, rcta_left: bool, rcta_right: bool) -> Result<Self, CanError> {
+    pub fn new(bsd_left_adjacent: bool, bsd_left_approaching: bool, bsd_right_adjacent: bool, bsd_right_approaching: bool, rcta_disabled: bool, rcta_left: bool, rcta_right: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_bsd_left_adjacent(bsd_left_adjacent)?;
         res.set_bsd_left_approaching(bsd_left_approaching)?;
         res.set_bsd_right_adjacent(bsd_right_adjacent)?;
         res.set_bsd_right_approaching(bsd_right_approaching)?;
-        res.set_rcta_enabled(rcta_enabled)?;
+        res.set_rcta_disabled(rcta_disabled)?;
         res.set_rcta_left(rcta_left)?;
         res.set_rcta_right(rcta_right)?;
         Ok(res)
@@ -2676,35 +2676,35 @@ impl BsdRcta {
         Ok(())
     }
     
-    /// rcta_enabled
+    /// rcta_disabled
     ///
     /// - Min: 0
     /// - Max: 1
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn rcta_enabled(&self) -> bool {
-        self.rcta_enabled_raw()
+    pub fn rcta_disabled(&self) -> bool {
+        self.rcta_disabled_raw()
     }
     
-    /// Get raw value of rcta_enabled
+    /// Get raw value of rcta_disabled
     ///
     /// - Start bit: 5
     /// - Signal size: 1 bits
-    /// - Factor: 1
-    /// - Offset: 0
+    /// - Factor: -1
+    /// - Offset: 1
     /// - Byte order: LittleEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn rcta_enabled_raw(&self) -> bool {
+    pub fn rcta_disabled_raw(&self) -> bool {
         let signal = self.raw.view_bits::<Lsb0>()[5..6].load_le::<u8>();
         
-        signal == 1
+        signal == 0
     }
     
-    /// Set value of rcta_enabled
+    /// Set value of rcta_disabled
     #[inline(always)]
-    pub fn set_rcta_enabled(&mut self, value: bool) -> Result<(), CanError> {
+    pub fn set_rcta_disabled(&mut self, value: bool) -> Result<(), CanError> {
         let value = value as u8;
         self.raw.view_bits_mut::<Lsb0>()[5..6].store_le(value);
         Ok(())
@@ -2836,7 +2836,7 @@ impl core::fmt::Debug for BsdRcta {
                 .field("bsd_left_approaching", &self.bsd_left_approaching())
                 .field("bsd_right_adjacent", &self.bsd_right_adjacent())
                 .field("bsd_right_approaching", &self.bsd_right_approaching())
-                .field("rcta_enabled", &self.rcta_enabled())
+                .field("rcta_disabled", &self.rcta_disabled())
                 .field("rcta_left", &self.rcta_left())
                 .field("rcta_right", &self.rcta_right())
             .finish()
