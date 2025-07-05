@@ -8,7 +8,7 @@
 
 //! Message definitions from file `"WRX_2018.dbc"`
 //!
-//! - Version: `Version("0.6.0")`
+//! - Version: `Version("0.7.0")`
 
 use core::ops::BitOr;
 use bitvec::prelude::*;

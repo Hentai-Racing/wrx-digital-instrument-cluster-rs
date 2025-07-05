@@ -9,6 +9,7 @@ import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
 
 import { Button, VerticalBox, ComboBox } from "std-widgets.slint";
 
+import { ThemeParams } from "../themes.slint";
 import { InstrumentGauge, GaugeArc } from "components/instrument_gauge.slint";
 import { RoadIndicatorWidget } from "components/road_indicators.slint";
 import { DebugMenuWidget, DebugMenuState } from "../../components/debug.slint";
@@ -20,8 +21,7 @@ import { ThemeSelectorWidget } from "../themes.slint";
 import { WidgetContainer } from "../../components/widget_container.slint";
 
 global DefaultThemeParams {
-    property <string> default-font-family:  "Montserrat";
-    property <int> default-font-weight: 400;
+    out property <ThemeParams> default-theme-params: { font-family: "Montserrat", font-weight: 400 };
 }
 
 component PrimarySection inherits Rectangle {
@@ -354,14 +354,7 @@ export component DefaultTheme inherits Rectangle {
             }
 
             mid-tri := PrimarySection {
-                WidgetContainer {
-                    border-radius: 5px;
-                    x: self.buffer / 2;
-                    y: self.buffer / 2;
-
-                    width: parent.width - self.buffer;
-                    height: parent.height - self.buffer;
-                }
+                WidgetContainer { }
             }
 
             right-tri := PrimarySection {

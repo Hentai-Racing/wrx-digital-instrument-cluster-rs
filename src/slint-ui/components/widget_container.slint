@@ -1,4 +1,4 @@
-import { Button } from "std-widgets.slint";
+import { Button, ScrollView } from "std-widgets.slint";
 
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import { RoadIndicatorWidget } from "../themes/default/components/road_indicators.slint";
@@ -24,7 +24,6 @@ component Widget {
         self.page-number = WidgetContainerState.num-pages - 1;
         WidgetContainerState.num-pages += 1;
     }
-
     height: 100%;
     width: 100%;
 
@@ -35,30 +34,34 @@ export component WidgetContainer inherits Rectangle {
     init => {
         WidgetContainerState.num-pages = 0;
     }
-
-    out property <length> buffer: 2.5px;
-
     background: transparent;
+    width: 500px;
+    height: 600px;
+    border-radius: 5px;
 
     VerticalLayout {
         center-widget-container-indicator := Rectangle {
+            clip: true;
             property <length> indicator-width: self.height;
 
-            HorizontalLayout {
-                alignment: center;
-                spacing: 5px;
-                for i in WidgetContainerState.num-pages: Rectangle {
-                    background: black;
-                    width: indicator-width;
+            ScrollView {
+                horizontal-scrollbar-policy: ScrollBarPolicy.always-off;
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: 5px;
+                    for i in WidgetContainerState.num-pages: Rectangle {
+                        background: black;
+                        width: indicator-width;
 
-                    Text {
-                        color: white;
-                        text: i + 1;
-                    }
+                        Text {
+                            color: white;
+                            text: i + 1;
+                        }
 
-                    TouchArea {
-                        clicked => {
-                            WidgetContainerState.change-page(i);
+                        TouchArea {
+                            clicked => {
+                                WidgetContainerState.change-page(i);
+                            }
                         }
                     }
                 }
