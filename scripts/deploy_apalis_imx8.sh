@@ -28,7 +28,7 @@ echo "[3/5] Killing existing process on apalis-board..."
 ssh -F "$SSH_CONFIG" apalis-board "killall $APPLICATION_NAME || true" > /dev/null 2>&1
 
 echo "[4/5] Copying binary to board..."
-scp -F "$SSH_CONFIG" target/aarch64-unknown-linux-gnu/apalis_imx8/$APPLICATION_NAME apalis-board:/bin/ > /dev/null 2>&1
+scp -F "$SSH_CONFIG" target/aarch64-unknown-linux-gnu/debug/$APPLICATION_NAME apalis-board:/bin/
 
 echo "[5/5] Starting new process on board..."
 ssh -F "$SSH_CONFIG" apalis-board  "export WAYLAND_DISPLAY=/run/wayland-0; nohup /bin/$APPLICATION_NAME >/tmp/$APPLICATION_NAME.log 2>&1 &" > /dev/null 2>&1

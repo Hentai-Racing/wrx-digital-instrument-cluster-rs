@@ -160,7 +160,7 @@ CarData! {
         <Pressure> engine_boost_pressure: f32,
         cruise_control_enabled: bool,
         cruise_control_set_enabled: bool,
-        /* <Speed:USCS> */ cruise_control_speed: u8,
+        /* <Speed:USCS> */ cruise_control_speed: u8 = 20,
     };
 
     EngineWarningLights => {
