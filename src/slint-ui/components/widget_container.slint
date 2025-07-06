@@ -34,7 +34,7 @@ export component WidgetContainer inherits Rectangle {
     init => {
         WidgetContainerState.num-pages = 0;
     }
-    background: transparent;
+    background: ApplicationState.debug-mode ? purple : transparent;
     width: 500px;
     height: 600px;
     border-radius: 5px;
@@ -50,7 +50,7 @@ export component WidgetContainer inherits Rectangle {
                     alignment: center;
                     spacing: 5px;
                     for i in WidgetContainerState.num-pages: Rectangle {
-                        background: black;
+                        background: transparent;
                         width: indicator-width;
 
                         Text {
