@@ -51,13 +51,11 @@ export component App inherits Window {
             }
             accept
         }
-
         init => {
             self.focus()
         }
+        ThemeLoader { }
     }
-
-    ThemeLoader { }
 
     settings-menu := SettingsMenu {
         open-height: root.height * 0.6;

@@ -1,7 +1,6 @@
 use crate::data::parameters::FieldParameter;
 #[cfg(feature = "apalis_imx8")]
 use crate::hardware::apalis_imx8;
-use tokio::spawn;
 
 pub enum Backend {
     #[cfg(feature = "apalis_imx8")]
@@ -36,7 +35,7 @@ impl HardwareBackend {
 
                 {
                     let mut gpio_1 = gpio_1.clone();
-                    spawn(async move {
+                    tokio::spawn(async move {
                         use futures::stream::StreamExt;
                         use gpio_cdev::{
                             AsyncLineEventHandle, Chip, EventRequestFlags, LineRequestFlags,
@@ -52,7 +51,7 @@ impl HardwareBackend {
 
                 {
                     let gpio_1 = gpio_1.clone();
-                    spawn(async move {
+                    tokio::spawn(async move {
                         use uinput::event::keyboard::Key;
 
                         let device = create_uinput_dev(format!(

@@ -288,7 +288,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // main loop
 
     let weak_ui = ui.as_weak();
-    theme_handler::handle_theme(weak_ui);
+    // theme_handler::handle_theme(weak_ui);
 
     ui.run()?;
 

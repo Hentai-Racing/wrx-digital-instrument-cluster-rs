@@ -219,14 +219,18 @@ export component DefaultTheme inherits Rectangle {
                     horizontal-alignment: TextHorizontalAlignment.center;
                 }
 
-                parking-brake-warning := SymbolLight {
-                    scale: 1.2;
+                parking-brake-warning := Text {
+                    text: "BRAKE";
+                    font-size: 45px;
+                    letter-spacing: -2px;
+                    font-weight: 500;
 
-                    y: tachometer.y + tachometer.height * 65%;
+                    y: tachometer.y + tachometer.height * 62.5%;
 
-                    source: @image-url("../../../../resources/images/brake-warning-indicator-light-letters-only.png");
-                    colorize: SymbolProperties.symbol_color_red;
+                    vertical-alignment: TextVerticalAlignment.center;
+                    horizontal-alignment: TextHorizontalAlignment.center;
 
+                    color: SymbolProperties.symbol_color_red;
                     visible: SCarData.handbrake_sw.value;
                 }
 
@@ -247,8 +251,6 @@ export component DefaultTheme inherits Rectangle {
                 highbeam-indicator := GaugeAttachedSymbol {
                     source: @image-url("../../../../resources/images/highbeam-indicator-light.png");
                     colorize: SymbolProperties.symbol_color_blue;
-
-                    property <length> test: left-turn-signal.x - self.width;
 
                     angle: left-turn-signal.angle + SymbolProperties.symbol_angle_padding;
 
@@ -332,7 +334,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: 180deg + 40deg;
 
-                    source: @image-url("../../../../resources/images/rcta-warning-light-off.png");
+                    source: @image-url("../../../../resources/images-svg/rcta-warning-light-off.svg");
                     colorize: SymbolProperties.symbol-color-yellow;
 
                     visible: SCarData.rcta_disabled.value;
@@ -429,17 +431,18 @@ export component DefaultTheme inherits Rectangle {
 
                     cruise-control-image := SymbolLight {
                         colorize: SCarData.cruise_control_set_enabled.value ? SymbolProperties.symbol_color_green : SymbolProperties.symbol_color_white;
-                        source: @image-url("../../../../resources/images/cruise-control-indicator-light.png");
+                        source: @image-url("../../../../resources/images-svg/cruise-control-indicator-light.svg");
 
-                        y: speedometer-label.y - self.height - 6px;
+                        y: speedometer-label.y - self.height;
 
                         cruise-control-speed-label := Text {
                             text: round(SCarData.cruise_control_speed.value);
                             color: cruise-control-image.colorize;
                             font-size: 35px;
+                            font-weight: 500;
 
-                            x: parent.width + 5px;
-                            y: parent.height / 2 - self.height / 2 + 6px;
+                            x: parent.width + 3px;
+                            y: parent.height / 2 - self.height / 2;
 
                             vertical-alignment: TextVerticalAlignment.center;
                             horizontal-alignment: TextHorizontalAlignment.left;

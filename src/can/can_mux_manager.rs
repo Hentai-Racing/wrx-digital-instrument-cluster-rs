@@ -203,11 +203,7 @@ impl MuxContext {
                         Err(MuxParseError::ConsecutiveFrameNoPriorData)
                     }
                 }
-                ISOTPFrameType::FlowControlFrame => {
-                    Ok(MuxParseResult::AwaitingReceiveAck)
-                    // used mostly for receiving ack frames when sending data
-                    // TODO: we're not sending data right now, so don't care about this
-                }
+                ISOTPFrameType::FlowControlFrame => Ok(MuxParseResult::AwaitingReceiveAck),
             }
         } else {
             Err(MuxParseError::InvalidISOTPFrameType)

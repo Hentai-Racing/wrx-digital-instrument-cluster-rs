@@ -95,7 +95,6 @@ impl SCarDataBridge {
         this
     }
 
-    // TODO: auto generate this somewhere else, maybe in CarData itself
     bridge! {
         engine_rpm: SIDataParameter,
         mt_gear: SStrDataParameter,

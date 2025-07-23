@@ -142,8 +142,6 @@ macro_rules! CarData {
     }
 }
 
-// TODO: add additional parameters that are not attached to DBC
-
 CarData! {
     {
         pub obd_mux_context: MuxContext
