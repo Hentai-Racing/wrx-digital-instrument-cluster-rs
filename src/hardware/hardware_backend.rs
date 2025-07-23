@@ -36,15 +36,70 @@ impl HardwareBackend {
                 {
                     let mut gpio_1 = gpio_1.clone();
                     tokio::spawn(async move {
-                        use futures::stream::StreamExt;
-                        use gpio_cdev::{
-                            AsyncLineEventHandle, Chip, EventRequestFlags, LineRequestFlags,
+                        use gpio_cdev::{Chip, EventRequestFlags, EventType, LineRequestFlags};
+                        use std::os::unix::io::AsRawFd;
+                        use tokio::io::unix::AsyncFd;
+
+                        let mut chip = match Chip::new("/dev/gpiochip0") {
+                            Ok(chip) => chip,
+                            Err(e) => {
+                                eprintln!("chip error: {e}");
+                                return;
+                            }
                         };
 
-                        let chip = Chip::new("/dev/gpiochip0");
+                        let line = match chip.get_line(8) {
+                            Ok(line) => line,
+                            Err(e) => {
+                                eprintln!("line error: {e}");
+                                return;
+                            }
+                        };
 
-                        if let Ok(mut chip) = chip {
-                            if let Ok(line) = chip.get_line(8) {}
+                        let mut event_handle = match line.events(
+                            LineRequestFlags::INPUT,
+                            EventRequestFlags::BOTH_EDGES,
+                            "gpio-async",
+                        ) {
+                            Ok(event_handle) => event_handle,
+                            Err(e) => {
+                                eprintln!("event request error: {e}");
+                                return;
+                            }
+                        };
+
+                        let async_fd = match AsyncFd::new(event_handle.as_raw_fd()) {
+                            Ok(fd) => fd,
+                            Err(e) => {
+                                eprintln!("async fd error: {e}");
+                                return;
+                            }
+                        };
+
+                        loop {
+                            match async_fd.readable().await {
+                                Ok(mut guard) => {
+                                    match event_handle.get_event() {
+                                        Ok(event) => match event.event_type() {
+                                            EventType::RisingEdge => {
+                                                gpio_1.set_value(true);
+                                            }
+                                            EventType::FallingEdge => {
+                                                gpio_1.set_value(false);
+                                            }
+                                        },
+                                        Err(e) => {
+                                            eprintln!("event read error: {e}");
+                                        }
+                                    }
+
+                                    guard.clear_ready();
+                                }
+                                Err(e) => {
+                                    eprintln!("await error: {e}");
+                                    break;
+                                }
+                            }
                         }
                     });
                 }
@@ -54,29 +109,38 @@ impl HardwareBackend {
                     tokio::spawn(async move {
                         use uinput::event::keyboard::Key;
 
-                        let device = create_uinput_dev(format!(
+                        let mut device = match create_uinput_dev(format!(
                             "{}-apalis_imx8-keyboard",
                             env!("CARGO_PKG_NAME")
-                        ))
-                        .ok();
+                        )) {
+                            Ok(device) => device,
+                            Err(e) => {
+                                eprintln!("event request error: {e}");
+                                return;
+                            }
+                        };
 
-                        if let Some(mut device) = device {
-                            let mut gpio_1_watch = gpio_1.watch();
-                            loop {
-                                use tokio::select;
+                        let mut gpio_1_watch = gpio_1.watch();
+                        loop {
+                            use tokio::select;
 
-                                select! {
-                                    Ok(_) = gpio_1_watch.changed() => {
-                                        let value = *gpio_1_watch.borrow_and_update();
+                            select! {
+                                Ok(_) = gpio_1_watch.changed() => {
+                                    let value = *gpio_1_watch.borrow_and_update();
 
-                                        if value {
-                                            let _ = device.press(&Key::Up);
-                                        } else {
-                                            let _ = device.release(&Key::Up);
-                                        }
-                                    },
-                                    else => {break;}
-                                }
+                                    if value {
+                                        let _ = device.press(&Key::Up);
+                                        println!("fake keyboard press");
+                                    } else {
+                                        let _ = device.release(&Key::Up);
+                                        println!("fake keyboard release");
+                                    }
+                                },
+                                else => {break;}
+                            }
+
+                            if let Err(e) = device.synchronize() {
+                                eprintln!("Failed to synchronize uinput device: {e}");
                             }
                         }
                     });

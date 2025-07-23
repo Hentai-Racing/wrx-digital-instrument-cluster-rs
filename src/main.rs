@@ -11,7 +11,7 @@ use crate::can::can_data_emulator::run_can_data_emulator;
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
 use crate::data::car_data::{CarData, ParseResult};
 use crate::ui::car_data_bridge::SCarDataBridge;
-use crate::ui::{can_display::CanFrameDisplay, theme_handler, user_settings_bridge};
+use crate::ui::{can_display::CanFrameDisplay, user_settings_bridge};
 
 use std::collections::VecDeque;
 use std::env;
