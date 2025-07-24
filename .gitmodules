@@ -1,9 +1,12 @@
 [submodule "resources/fonts/Montserrat"]
 	path = resources/fonts/Montserrat
 	url = https://github.com/JulietaUla/Montserrat.git
+	fetchRecurseSubmodules = on-demand
 [submodule "resources/fonts/JetBrainsMono"]
 	path = resources/fonts/JetBrainsMono
 	url = https://github.com/JetBrains/JetBrainsMono.git
+	fetchRecurseSubmodules = on-demand
 [submodule "resources/database/can/CAN-database"]
 	path = resources/database/can/CAN-database
 	url = https://github.com/Hentai-Racing/CAN-database.git
+	fetchRecurseSubmodules = on-demand
