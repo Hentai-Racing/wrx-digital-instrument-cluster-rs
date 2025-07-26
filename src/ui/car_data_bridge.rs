@@ -95,7 +95,6 @@ impl SCarDataBridge {
         this
     }
 
-    // TODO: auto generate this somewhere else, maybe in CarData itself
     bridge! {
         engine_rpm: SIDataParameter,
         mt_gear: SStrDataParameter,
@@ -143,7 +142,7 @@ impl SCarDataBridge {
         active_tq_vectoring_enabled: SBDataParameter,
         traction_control_disabled: SBDataParameter,
 
-        rcta_enabled: SBDataParameter,
+        rcta_disabled: SBDataParameter,
         rcta_left: SBDataParameter,
         rcta_right: SBDataParameter,
         bsd_left_adjacent: SBDataParameter,

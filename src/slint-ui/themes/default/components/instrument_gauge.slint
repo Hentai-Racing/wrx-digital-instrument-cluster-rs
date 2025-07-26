@@ -193,7 +193,8 @@ export component InstrumentGauge inherits Rectangle {
 
     property <float> gradient-start: (needle_inner_radius * 1.4) / self.width;
     property <float> gradient-pre-end: (100 - ((100 - gradient-start) / ((100 + gradient-start) / 2))) / 100;
-    in property <brush> needle-sweep-fill: @radial-gradient(circle, #00000000 gradient-start, needle-sweep-color.darker(25%).transparentize(50%) gradient-pre-end);
+    
+    in property <brush> needle-sweep-fill: @radial-gradient(circle, #00000000 gradient-start, needle-sweep-color.darker(25%).transparentize(40%) gradient-pre-end);
 
     in property <[InstrumentGaugeRegion]> regions: [
         {
@@ -294,8 +295,8 @@ export component InstrumentGauge inherits Rectangle {
         property <angle> rotation: parent.start + parent.scaled-progress;
         property <length> outer-radius: self.width / 2;
         property <length> inner-radius: self.width / 4;
-        property <angle> thickness: 2deg;
-        property <float> inner-point-offset: 3;
+        property <angle> thickness: 3.5deg;
+        property <float> inner-point-offset: 8;
 
         fill: white;
 

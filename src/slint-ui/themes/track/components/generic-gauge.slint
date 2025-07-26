@@ -1,4 +1,7 @@
 import { SFDataParameter, SIDataParameter } from "../../../data/data_parameter.slint";
+import { SymbolLight } from "../../default/theme_main.slint";
+import { SymbolProperties } from "../../default/symbol_properties.slint";
+
 
 export component PillGauge {
     in property <SFDataParameter> data_parameter;
@@ -123,4 +126,34 @@ export component PillGauge {
     }
 
     @children
+}
+
+export enum SideAlignment {
+    right,
+    left
+}
+
+export component PillGaugeContainer inherits Rectangle {
+    in property <image> image <=> symbol.source;
+    in property <float> image-scale <=> symbol.scale;
+    in property <SFDataParameter> data_parameter <=> gauge.data_parameter;
+    in property <SideAlignment> symbol-alignment: SideAlignment.right;
+
+    height: 26px;
+
+    symbol := SymbolLight {
+        scale: 30%;
+        colorize: SymbolProperties.symbol_color_white;
+
+        x: symbol-alignment == SideAlignment.right ? root.width - self.width : 0;
+    }
+
+    gauge := PillGauge {
+        private property <color> needle-sweep-color:  SymbolProperties.symbol_color_white;
+
+        width: root.width - symbol.width;
+        height: 100%;
+
+        x: symbol-alignment == SideAlignment.right ? 0 : root.width - self.width;
+    }
 }

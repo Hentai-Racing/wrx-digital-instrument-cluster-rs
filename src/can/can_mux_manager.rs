@@ -2,10 +2,18 @@
 use bitvec::order::Msb0;
 use bitvec::vec::BitVec;
 use embedded_can::{Frame, Id};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Ord)]
 #[repr(u8)]
+#[derive(Debug, TryFromPrimitive, IntoPrimitive)]
+pub enum S9VehicleInformation {
+    PIDs = 0x0,
+    VIN = 0x2,
+}
+
+#[repr(u8)]
+#[derive(Debug, Clone, TryFromPrimitive, IntoPrimitive, PartialEq, Eq)]
 pub enum OBD2Service {
     CurrentData = 0x1,
     FreezeFrame = 0x2,
@@ -17,6 +25,15 @@ pub enum OBD2Service {
     Control = 0x8,
     VehicleInformation = 0x9,
     PermanentDTCs = 0xA,
+}
+
+#[repr(u8)]
+#[derive(Debug, IntoPrimitive)]
+pub enum ISOTPFrameType {
+    SingleFrame = 0x0,
+    FirstFrame = 0x1,
+    ConsecutiveFrame = 0x2,
+    FlowControlFrame = 0x30,
 }
 
 #[derive(Debug)]
@@ -34,14 +51,6 @@ pub enum MuxParseResult {
     AwaitingBroadcastAck,
     AwaitingReceiveAck,
     ConsecutiveFrameContinue,
-}
-
-#[repr(u8)]
-pub enum ISOTPFrameType {
-    SingleFrame = 0x0,
-    FirstFrame = 0x1,
-    ConsecutiveFrame = 0x2,
-    FlowControlFrame = 0x30,
 }
 
 #[derive(Debug, Clone)]
@@ -102,12 +111,7 @@ impl MuxContext {
     }
 
     pub fn parse_frame(&mut self, frame: &impl Frame) -> Result<MuxParseResult, MuxParseError> {
-        let raw_id: u32 = match frame.id() {
-            Id::Standard(raw) => raw.as_raw().into(),
-            Id::Extended(raw) => raw.as_raw().into(),
-        };
-
-        if matches!(raw_id, 0x7E0 | 0x7DF | (0x7e1..=0x7ef)) {
+        if matches!(raw_id(frame.id()), 0x7E0 | 0x7DF | (0x7e1..=0x7ef)) {
             self.parse_isotp_frame(frame)
         } else {
             Ok(MuxParseResult::None)
@@ -162,7 +166,6 @@ impl MuxContext {
                     Ok(MuxParseResult::AwaitingBroadcastAck)
                 }
                 ISOTPFrameType::ConsecutiveFrame => {
-                    println!("Received consecutive frame");
                     let frame_num = payload[0] & 0xF;
 
                     if let Some((mux_id, mux_payload)) = self.mux_data.iter_mut().next_back() {
@@ -203,11 +206,7 @@ impl MuxContext {
                         Err(MuxParseError::ConsecutiveFrameNoPriorData)
                     }
                 }
-                ISOTPFrameType::FlowControlFrame => {
-                    Ok(MuxParseResult::AwaitingReceiveAck)
-                    // used mostly for receiving ack frames when sending data
-                    // TODO: we're not sending data right now, so don't care about this
-                }
+                ISOTPFrameType::FlowControlFrame => Ok(MuxParseResult::AwaitingReceiveAck),
             }
         } else {
             Err(MuxParseError::InvalidISOTPFrameType)
@@ -220,31 +219,38 @@ impl MuxContext {
             if mux_payload.data_complete {
                 match OBD2Service::try_from(mux_id.mode) {
                     Ok(service) => match service {
-                        OBD2Service::VehicleInformation => match mux_id.pid {
-                            // TODO: remove this and make it parameterized
-                            0x00 => {
-                                println!("S9 PIDS Supported:");
+                        OBD2Service::VehicleInformation => {
+                            if let Ok(vehicle_information) =
+                                S9VehicleInformation::try_from(mux_id.pid)
+                            {
+                                match vehicle_information {
+                                    // TODO: remove this and make it parameterized
+                                    S9VehicleInformation::PIDs => {
+                                        println!("S9 PIDS Supported:");
 
-                                let bits =
-                                    BitVec::<u8, Msb0>::from_vec(mux_payload.data.to_owned());
+                                        let bits = BitVec::<u8, Msb0>::from_vec(
+                                            mux_payload.data.to_owned(),
+                                        );
 
-                                // let mut pids: BTreeMap<u32, bool> = BTreeMap::new();
-                                for (i, bit) in bits.iter().enumerate() {
-                                    let pid = i as u32 + 1;
-                                    let value = *bit;
-                                    // pids.insert(pid, value);
+                                        // let mut pids: BTreeMap<u32, bool> = BTreeMap::new();
+                                        for (i, bit) in bits.iter().enumerate() {
+                                            let pid = i as u32 + 1;
+                                            let value = *bit;
+                                            // pids.insert(pid, value);
 
-                                    print!("{pid:02X}: {value}; ")
+                                            print!("{pid:02X}: {value}; ")
+                                        }
+
+                                        println!();
+                                    }
+                                    S9VehicleInformation::VIN => {
+                                        let vin =
+                                            String::from_utf8_lossy(&mux_payload.data).into_owned();
+                                        println!("VIN: {:?}", vin);
+                                    }
                                 }
-
-                                println!("")
                             }
-                            0x02 => {
-                                let vin = String::from_utf8_lossy(&mux_payload.data).into_owned();
-                                println!("VIN: {:?}", vin);
-                            }
-                            _ => {}
-                        },
+                        }
                         OBD2Service::CurrentData => match mux_id.pid {
                             0x00 => {} // PIDS supported
                             0x01 => {} // monitor status since dtc cleared
@@ -334,7 +340,7 @@ impl Frame for ISOTPAckFrame {
 /// use to search for known patterns in unknown signals
 /// TODO: just use bitvec
 #[allow(unused)]
-fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
+pub fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
     let search_len = pattern.ilog2() + 1;
     let mut current = 0u64;
 
@@ -352,35 +358,6 @@ fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
     false
 }
 
-// Trait Implementations
-
-impl TryFrom<u8> for OBD2Service {
-    type Error = ();
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0x1 => Ok(Self::CurrentData),
-            0x2 => Ok(Self::FreezeFrame),
-            0x3 => Ok(Self::StoredDTCs),
-            0x4 => Ok(Self::ClearDTCs),
-            0x5 => Ok(Self::TestResultsNonCan),
-            0x6 => Ok(Self::TestResultsCan),
-            0x7 => Ok(Self::PendingDTCs),
-            0x8 => Ok(Self::Control),
-            0x9 => Ok(Self::VehicleInformation),
-            0xA => Ok(Self::PermanentDTCs),
-            _ => Err(()),
-        }
-    }
-}
-
-impl Into<u8> for OBD2Service {
-    fn into(self) -> u8 {
-        self as u8
-    }
-}
-
-impl Eq for OBD2Service {}
-
 impl TryFrom<u8> for ISOTPFrameType {
     type Error = ();
     fn try_from(value: u8) -> Result<Self, Self::Error> {
@@ -391,12 +368,6 @@ impl TryFrom<u8> for ISOTPFrameType {
             0x3 => Ok(Self::FlowControlFrame),
             _ => Err(()),
         }
-    }
-}
-
-impl Into<u8> for ISOTPFrameType {
-    fn into(self) -> u8 {
-        self as u8
     }
 }
 

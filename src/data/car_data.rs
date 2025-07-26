@@ -142,8 +142,6 @@ macro_rules! CarData {
     }
 }
 
-// TODO: add additional parameters that are not attached to DBC
-
 CarData! {
     {
         pub obd_mux_context: MuxContext
@@ -160,7 +158,7 @@ CarData! {
         <Pressure> engine_boost_pressure: f32,
         cruise_control_enabled: bool,
         cruise_control_set_enabled: bool,
-        /* <Speed:USCS> */ cruise_control_speed: u8,
+        /* <Speed:USCS> */ cruise_control_speed: u8 = 20,
     };
 
     EngineWarningLights => {
@@ -221,7 +219,7 @@ CarData! {
     };
 
     BsdRcta => {
-        rcta_enabled: bool,
+        rcta_disabled: bool,
         rcta_left: bool,
         rcta_right: bool,
         bsd_left_adjacent: bool,

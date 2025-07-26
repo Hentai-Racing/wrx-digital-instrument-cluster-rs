@@ -11,7 +11,7 @@ use crate::can::can_data_emulator::run_can_data_emulator;
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
 use crate::data::car_data::{CarData, ParseResult};
 use crate::ui::car_data_bridge::SCarDataBridge;
-use crate::ui::{can_display::CanFrameDisplay, theme_handler, user_settings_bridge};
+use crate::ui::{can_display::CanFrameDisplay, user_settings_bridge};
 
 use std::collections::VecDeque;
 use std::env;
@@ -32,7 +32,7 @@ const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
 const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let cli = clap::Command::new("")
+    let cli = clap::Command::new("").version(env!("CARGO_PKG_VERSION"))
         .args([
             #[cfg(target_os = "linux")]
             clap::arg!(-v --virtual "Runs the application in virtual mode using socketcan vcan")
@@ -263,16 +263,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(feature = "apalis_imx8")]
     {
-        use crate::hardware::apalis_imx8::ApalisIMX8;
+        use crate::hardware::{apalis_imx8::ApalisIMX8, hardware_backend};
 
         let device = ApalisIMX8::new();
 
-        debug_menu_state.on_debug_suspend(move || {
-            device.power_suspend();
-        });
+        let hardware_backend =
+            hardware_backend::HardwareBackend::new(hardware_backend::Backend::ApalisIMX8(device));
+
+        // debug_menu_state.on_debug_suspend(move || {
+        //     device.power_suspend();
+        // });
     }
     #[cfg(not(feature = "apalis_imx8"))]
     {
+        use crate::hardware::hardware_backend;
+
+        let hardware_backend =
+            hardware_backend::HardwareBackend::new(hardware_backend::Backend::None);
         debug_menu_state.on_debug_suspend(|| println!("DEBUG: DO SUSPEND"));
     }
 
@@ -281,7 +288,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // main loop
 
     let weak_ui = ui.as_weak();
-    theme_handler::handle_theme(weak_ui);
+    // theme_handler::handle_theme(weak_ui);
 
     ui.run()?;
 

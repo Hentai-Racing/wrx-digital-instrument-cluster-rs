@@ -32,14 +32,6 @@ export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, S
 export { ApplicationState, SCarData, DebugMenuState, GlobalThemeData, CanDisplay, WidgetContainerState }
 
 export component App inherits Window {
-    // todo: move three-d stuff to global-singleton thing like navmap and settings
-    // in property <image> threed-widget-texture <=> threed-container-image.source;
-    // out property <length> threed-widget-width: threed-container-image.width;
-    // out property <length> threed-widget-height: threed-container-image.height;
-    // out property <length> threed-widget-x: threed-container-image.absolute-position.x;
-    // out property <length> threed-widget-y: threed-container-image.absolute-position.y;
-    // out property <bool> threed-widget-visible: center-widget-container.current-page == 2;
-
     default-font-family: "Montserrat";
     default-font-weight: 400;
 
@@ -63,9 +55,8 @@ export component App inherits Window {
         init => {
             self.focus()
         }
+        ThemeLoader { }
     }
-
-    ThemeLoader { }
 
     settings-menu := SettingsMenu {
         open-height: root.height * 0.6;

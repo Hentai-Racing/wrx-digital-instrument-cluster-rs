@@ -11,6 +11,11 @@ export global GlobalThemeData {
     callback theme-changed(string);
 }
 
+export struct ThemeParams {
+    font-family: string,
+    font-weight: int,
+}
+
 export component ThemeSelectorWidget {
     HorizontalLayout {
         alignment: center;
