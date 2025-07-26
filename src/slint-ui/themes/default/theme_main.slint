@@ -616,6 +616,19 @@ export component DefaultTheme inherits Rectangle {
 
                     visible: SCarData.active_tq_vectoring_enabled.value;
                 }
+
+                tpms-warning-light-enabled-indicator := GaugeAttachedSymbol {
+                    center-radius: speedometer.width / 2;
+                    center-x: speedometer.x + speedometer.width / 2;
+                    center-y: speedometer.y + speedometer.height / 2;
+
+                    angle: vdc-off-warning-indicator.angle - SymbolProperties.symbol_angle_padding * 2;
+
+                    source: @image-url("../../../../resources/images/tpms-warning-light.png");
+                    colorize: SymbolProperties.symbol-color-yellow;
+
+                    visible: SCarData.tpms_warning_light_enabled.value;
+                }
             }
         }
 
