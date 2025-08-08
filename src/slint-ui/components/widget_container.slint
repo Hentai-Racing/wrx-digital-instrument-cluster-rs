@@ -5,36 +5,92 @@ import { RoadIndicatorWidget } from "../themes/default/components/road_indicator
 import { ApplicationState } from "../application/application_state.slint";
 import { CanDisplayWidget } from "can_display.slint";
 
-
+// TODO: This global has become a vital part of controlling the UI, so it should be moved to application_state and renamed appropriately
 export global WidgetContainerState {
     in property <duration> page-animation-duration: 150ms;
 
     in-out property <int> current-page: 0;
     in property <int> num-pages: 0;
+    in-out property <int> focused-page: -1; // -1 if not entered
 
     public function change-page(to-page: int) {
-        current-page = to-page;
+        if to-page != current-page {
+            current-page = to-page;
+            self.exit-page();
+        }
+    }
+
+    public function focus-page() {
+        self.focused-page = self.current-page;
+    }
+
+    public function exit-page() {
+        self.focused-page = -1;
     }
 }
 
 component Widget {
-    out property <int> page-number;
-
-    init => {
-        self.page-number = WidgetContainerState.num-pages - 1;
-        WidgetContainerState.num-pages += 1;
-    }
     height: 100%;
     width: 100%;
 
-    @children
+    out property <int> page-number;
+    in-out property <bool> focusable: false;
+    property <bool> has-exit-strategy: false;
+    out property <bool> has-focus: WidgetContainerState.focused-page == self.page-number;
+
+    private property <length> exit-stategy-height: 25px;
+
+    callback key-pressed(KeyEvent) -> EventResult;
+    callback key-released(KeyEvent) -> EventResult;
+    callback focus-gained(FocusReason);
+    callback focus-lost(FocusReason);
+
+    init => {
+        self.page-number = WidgetContainerState.num-pages;
+        WidgetContainerState.num-pages += 1;
+    }
+    if WidgetContainerState.focused-page == self.page-number: FocusScope {
+        key-pressed(event) => root.key-pressed(event);
+        key-released(event) => root.key-released(event);
+        focus-gained(reason) => root.focus-gained(reason);
+        focus-lost(reason) => root.focus-lost(reason);
+        init => {
+            if root.focusable {
+                self.focus();
+            } else {
+                WidgetContainerState.focused-page = -1;
+            }
+        }
+    }
+
+    VerticalLayout {
+        alignment: LayoutAlignment.end;
+
+        Rectangle {
+            clip: true;
+            height: (root.has-focus && !root.has-exit-strategy) ? root.height - exit-stategy-height : root.height;
+            @children
+        }
+
+        if (root.has-focus && !root.has-exit-strategy): exit-stategy := Button { //! safety mechanism to prevent user soft-lock
+            height: exit-stategy-height;
+            text: "Back";
+
+            clicked => {
+                WidgetContainerState.exit-page();
+            }
+        }
+    }
+}
+
+component FocusableWidget inherits Widget {
+    focusable: true;
 }
 
 export component WidgetContainer inherits Rectangle {
     init => {
         WidgetContainerState.num-pages = 0;
     }
-    
     background: ApplicationState.debug-mode ? purple : transparent;
     width: 500px;
     height: 600px;
@@ -91,12 +147,15 @@ export component WidgetContainer inherits Rectangle {
                     }
                 }
 
-                settings-menu-widget := Widget {
+                settings-menu-widget := FocusableWidget {
+                    focus-gained => {
+                        settings-button.focus();
+                    }
                     VerticalLayout {
                         padding: 20px;
 
                         Rectangle {
-                            Button {
+                            settings-button := Button {
                                 height: 25px;
                                 x: parent.width / 2 - self.width / 2;
 
@@ -118,7 +177,7 @@ export component WidgetContainer inherits Rectangle {
                     }
                 }
 
-                if ApplicationState.debug-mode: Widget {
+                if ApplicationState.debug-mode: FocusableWidget {
                     DebugMenuWidget {
                         height: 100%;
                         width: 100%;

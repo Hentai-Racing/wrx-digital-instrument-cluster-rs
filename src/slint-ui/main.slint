@@ -42,22 +42,30 @@ export component App inherits Window {
 
     background: black;
 
-    FocusScope {
+    if (WidgetContainerState.focused-page == -1): FocusScope {
         key-pressed(event) => {
-            if ((event.text == Key.UpArrow) && (WidgetContainerState.current-page < (WidgetContainerState.num-pages - 1))) {
-                WidgetContainerState.current-page += 1
-            } else if ((event.text == Key.DownArrow) && (WidgetContainerState.current-page > 0)) {
-                WidgetContainerState.current-page -= 1
+            if WidgetContainerState.focused-page != -1 {
+            } else {
+                if ((event.text == Key.UpArrow) && (WidgetContainerState.current-page < (WidgetContainerState.num-pages - 1))) {
+                    WidgetContainerState.current-page += 1
+                } else if ((event.text == Key.DownArrow) && (WidgetContainerState.current-page > 0)) {
+                    WidgetContainerState.current-page -= 1
+                } else if (event.text == Key.Return) {
+                    WidgetContainerState.focus-page()
+                }
             }
-            accept
-        }
 
+            accept // always accept to prevent user traveling somewhere without controls
+        }
         init => {
+            ApplicationState.settings-menu-visible = false;
             self.focus()
         }
-        ThemeLoader { }
     }
 
+    ThemeLoader { }
+
+    // TODO: make settings menu always take focus if it is visible
     settings-menu := SettingsMenu {
         open-height: root.height * 0.6;
         open-width: root.width * 0.75;
