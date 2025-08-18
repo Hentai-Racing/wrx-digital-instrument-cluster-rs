@@ -31,13 +31,12 @@ export component ThemeSelectorWidget {
             width: 125px;
 
             model: GlobalThemeData.themes;
-            current-value: GlobalThemeData.current-theme;
-
             enabled: GlobalThemeData.themes.length > 1;
 
-            selected(current-value) => {
-                GlobalThemeData.theme-changed(current-value);
-                GlobalThemeData.current-theme = current-value;
+            current-value <=> GlobalThemeData.current-theme;
+
+            changed current-value => {
+                GlobalThemeData.theme-changed(self.current-value);
             }
         }
     }

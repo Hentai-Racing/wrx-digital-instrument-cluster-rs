@@ -1,5 +1,6 @@
 import { DebugMenuWidget, DebugMenuState } from "components/debug.slint";
 import { SettingsMenu, UserSettings } from "components/settings.slint";
+import { ControlledFocusScope } from "components/controlled_focus_scope.slint";
 import { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter } from "data/data_parameter.slint";
 import { SCarData } from "data/car_data.slint";
 import { SUnitSystem } from "data/units.slint";
@@ -42,28 +43,7 @@ export component App inherits Window {
 
     background: black;
 
-    if (WidgetContainerState.focused-page == -1): FocusScope {
-        key-pressed(event) => {
-            if WidgetContainerState.focused-page != -1 {
-            } else {
-                if ((event.text == Key.UpArrow) && (WidgetContainerState.current-page < (WidgetContainerState.num-pages - 1))) {
-                    WidgetContainerState.current-page += 1
-                } else if ((event.text == Key.DownArrow) && (WidgetContainerState.current-page > 0)) {
-                    WidgetContainerState.current-page -= 1
-                } else if (event.text == Key.Return) {
-                    WidgetContainerState.focus-page()
-                }
-            }
-
-            accept // always accept to prevent user traveling somewhere without controls
-        }
-        init => {
-            ApplicationState.settings-menu-visible = false;
-            self.focus()
-        }
-    }
-
-    ThemeLoader { }
+    theme-loader := ThemeLoader { }
 
     // TODO: make settings menu always take focus if it is visible
     settings-menu := SettingsMenu {

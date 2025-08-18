@@ -3,6 +3,7 @@ import { Button, ScrollView } from "std-widgets.slint";
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import { RoadIndicatorWidget } from "../themes/default/components/road_indicators.slint";
 import { ApplicationState } from "../application/application_state.slint";
+import { ControlledFocusScope } from "../components/controlled_focus_scope.slint";
 import { CanDisplayWidget } from "can_display.slint";
 
 // TODO: This global has become a vital part of controlling the UI, so it should be moved to application_state and renamed appropriately
@@ -49,7 +50,7 @@ component Widget {
         self.page-number = WidgetContainerState.num-pages;
         WidgetContainerState.num-pages += 1;
     }
-    if WidgetContainerState.focused-page == self.page-number: FocusScope {
+    if WidgetContainerState.focused-page == self.page-number: ControlledFocusScope {
         key-pressed(event) => root.key-pressed(event);
         key-released(event) => root.key-released(event);
         focus-gained(reason) => root.focus-gained(reason);
@@ -91,6 +92,27 @@ export component WidgetContainer inherits Rectangle {
     init => {
         WidgetContainerState.num-pages = 0;
     }
+    if (WidgetContainerState.focused-page == -1): ControlledFocusScope {
+        key-pressed(event) => {
+            if WidgetContainerState.focused-page != -1 {
+            } else {
+                if ((event.text == Key.UpArrow) && (WidgetContainerState.current-page < (WidgetContainerState.num-pages - 1))) {
+                    WidgetContainerState.current-page += 1
+                } else if ((event.text == Key.DownArrow) && (WidgetContainerState.current-page > 0)) {
+                    WidgetContainerState.current-page -= 1
+                } else if (event.text == Key.Return) {
+                    WidgetContainerState.focus-page()
+                }
+            }
+
+            accept // always accept to prevent user traveling somewhere without controls
+        }
+        init => {
+            ApplicationState.settings-menu-visible = false;
+            self.focus()
+        }
+    }
+
     background: ApplicationState.debug-mode ? purple : transparent;
     width: 500px;
     height: 600px;
