@@ -43,14 +43,6 @@ export component App inherits Window {
 
     background: black;
 
-    theme-loader := ThemeLoader { }
-
-    // TODO: make settings menu always take focus if it is visible
-    settings-menu := SettingsMenu {
-        open-height: root.height * 0.6;
-        open-width: root.width * 0.75;
-
-        parent-height: root.height;
-        parent-width: root.width;
-    }
+    if ApplicationState.settings-menu-visible: settings-menu := SettingsMenu { }
+    if !ApplicationState.settings-menu-visible: theme-loader := ThemeLoader { }
 }

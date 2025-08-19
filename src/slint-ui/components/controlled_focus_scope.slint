@@ -1,3 +1,41 @@
+import { Button } from "std-widgets.slint";
+
 import { ApplicationState } from "../application/application_state.slint";
 
-export component ControlledFocusScope inherits FocusScope { }
+export component ControlledFocusScope {
+    in-out property <bool> force-exit-strategy: true;
+    in-out property <bool> force-focus: true;
+    height <=> exit-strategy.height;
+
+    callback exit-triggered();
+    callback key-pressed(KeyEvent) -> EventResult;
+    callback key-released(KeyEvent) -> EventResult;
+    callback focus-gained(FocusReason);
+    callback focus-lost(FocusReason);
+
+    FocusScope {
+        key-pressed(event) => root.key-pressed(event);
+        key-released(event) => root.key-released(event);
+        focus-lost(reason) => root.focus-lost(reason);
+        init => {
+            if force-focus {
+                self.focus();
+            }
+        }
+        focus-gained(reason) => {
+            if root.force-exit-strategy {
+                exit-strategy.focus();
+            }
+            root.focus-gained(reason);
+        };
+
+        exit-strategy := Button {
+            visible: root.force-exit-strategy;
+            enabled: root.force-exit-strategy;
+            text: "Back";
+            clicked => {
+                root.exit-triggered();
+            }
+        }
+    }
+}

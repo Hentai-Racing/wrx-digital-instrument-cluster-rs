@@ -36,10 +36,10 @@ component Widget {
 
     out property <int> page-number;
     in-out property <bool> focusable: false;
-    property <bool> has-exit-strategy: false;
     out property <bool> has-focus: WidgetContainerState.focused-page == self.page-number;
 
-    private property <length> exit-stategy-height: 25px;
+    in-out property <bool> force-exit-strategy: true;
+    private property <length> exit-stategy-height;
 
     callback key-pressed(KeyEvent) -> EventResult;
     callback key-released(KeyEvent) -> EventResult;
@@ -50,37 +50,31 @@ component Widget {
         self.page-number = WidgetContainerState.num-pages;
         WidgetContainerState.num-pages += 1;
     }
-    if WidgetContainerState.focused-page == self.page-number: ControlledFocusScope {
+    changed has-focus => {
+        if !focusable && has-focus {
+            WidgetContainerState.focused-page = -1
+        }
+    }
+
+    if root.focusable && root.has-focus: focus := ControlledFocusScope {
+        force-exit-strategy <=> root.force-exit-strategy;
+        y: root.height - self.height;
+
+        init => {
+            root.exit-stategy-height = self.height;
+        }
         key-pressed(event) => root.key-pressed(event);
         key-released(event) => root.key-released(event);
         focus-gained(reason) => root.focus-gained(reason);
         focus-lost(reason) => root.focus-lost(reason);
-        init => {
-            if root.focusable {
-                self.focus();
-            } else {
-                WidgetContainerState.focused-page = -1;
-            }
-        }
+        exit-triggered => WidgetContainerState.exit-page();
     }
 
-    VerticalLayout {
-        alignment: LayoutAlignment.end;
-
-        Rectangle {
-            clip: true;
-            height: (root.has-focus && !root.has-exit-strategy) ? root.height - exit-stategy-height : root.height;
-            @children
-        }
-
-        if (root.has-focus && !root.has-exit-strategy): exit-stategy := Button { //! safety mechanism to prevent user soft-lock
-            height: exit-stategy-height;
-            text: "Back";
-
-            clicked => {
-                WidgetContainerState.exit-page();
-            }
-        }
+    Rectangle {
+        y: 0;
+        clip: true;
+        height: (root.has-focus && root.force-exit-strategy) ? root.height - exit-stategy-height : root.height;
+        @children
     }
 }
 
@@ -93,6 +87,7 @@ export component WidgetContainer inherits Rectangle {
         WidgetContainerState.num-pages = 0;
     }
     if (WidgetContainerState.focused-page == -1): ControlledFocusScope {
+        force-exit-strategy: false;
         key-pressed(event) => {
             if WidgetContainerState.focused-page != -1 {
             } else {
@@ -106,10 +101,6 @@ export component WidgetContainer inherits Rectangle {
             }
 
             accept // always accept to prevent user traveling somewhere without controls
-        }
-        init => {
-            ApplicationState.settings-menu-visible = false;
-            self.focus()
         }
     }
 
@@ -170,9 +161,6 @@ export component WidgetContainer inherits Rectangle {
                 }
 
                 settings-menu-widget := FocusableWidget {
-                    focus-gained => {
-                        settings-button.focus();
-                    }
                     VerticalLayout {
                         padding: 20px;
 

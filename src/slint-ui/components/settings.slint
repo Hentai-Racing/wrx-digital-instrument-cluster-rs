@@ -2,119 +2,56 @@ import { Button } from "std-widgets.slint";
 import { ApplicationState } from "../application/application_state.slint";
 import { SUnitSystem } from "../data/units.slint";
 import { ThemeSelectorWidget } from "../themes/themes.slint";
+import { ControlledFocusScope } from "controlled_focus_scope.slint";
 
 export global UserSettings { } // TODO
 
 export component SettingsMenu inherits Rectangle {
-    in property <brush> background-color: ApplicationState.debug-mode ? purple : black;
     in-out property <bool> open <=> ApplicationState.settings-menu-visible;
-    property <duration> open-animation-duration: 60ms;
 
-    in-out property <length> parent-width;
-    in-out property <length> parent-height;
+    VerticalLayout {
+        alignment: center;
+        spacing: 10px;
 
-    in-out property <length> open-width;
-    in-out property <length> open-height;
-
-    background: background-color;
-
-    clip: true;
-
-    visible: self.y <= -self.height ? false : true;
-
-    states [
-        opened when open: {
-            width: root.open-width;
-            height: root.open-height;
-            background: background-color;
-            y: parent-height / 2 - open-height / 2;
-            in {
-                animate y { duration: 0; }
-            }
-            out {
-                animate width, height, background { duration: open-animation-duration; }
-            }
+        theme-setting-widget := ThemeSelectorWidget {
+            width: 100%;
+            height: 30px;
         }
-        closed when !open: {
-            width: root.open-width * 65%;
-            height: root.open-height * 85%;
-            background: transparent;
-            y: -self.height; // move offscreen since `visible` can't be animated
-            in {
-                animate y {
-                    delay: open-animation-duration;
-                    duration: 0;
-                }
-            }
-            out {
-                animate width, height, background { duration: open-animation-duration; }
-            }
-        }
-    ]
 
-    changed background => {
-        if self.background.alpha >= 1 {
-            main.show();
-        } else {
-            main.close();
-        }
-    }
+        user-unit-setting := HorizontalLayout {
+            height: 30px;
+            alignment: center;
+            padding: 2px;
 
-    main := PopupWindow {
-        width: root.width;
-        height: root.height;
-        close-policy: PopupClosePolicy.no-auto-close;
-
-        @children
-
-        VerticalLayout {
-            spacing: 10px;
-
-            Rectangle {
-                height: 30px;
-                width: 50px;
-
-                Button {
-                    text: "Exit";
-
-                    init => {
-                        self.focus();
-                    }
-                    clicked => {
-                        root.open = false;
-                    }
-                }
+            Text {
+                vertical-alignment: center;
+                text: "Units";
             }
 
-            theme-setting-widget := ThemeSelectorWidget {
-                width: 100%;
-                height: 30px;
-            }
-
-            user-unit-setting := HorizontalLayout {
-                height: 30px;
-                alignment: center;
-                padding: 2px;
-
-                Text {
-                    text: "Units";
-                }
-
-                Button {
-                    text: ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI";
-
-                    clicked => {
-                        ApplicationState.update_user_unit(ApplicationState.user_unit == SUnitSystem.USCS ? SUnitSystem.SI : SUnitSystem.USCS);
-                    }
-                }
-            }
-
-            if ApplicationState.virtual_cluster: simulation-toggle-button := Button {
-                height: 30px;
-                text: "Toggle Simulation";
+            Button {
+                text: ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI";
 
                 clicked => {
-                    ApplicationState.toggle_simulation();
+                    ApplicationState.update_user_unit(ApplicationState.user_unit == SUnitSystem.USCS ? SUnitSystem.SI : SUnitSystem.USCS);
+                }
+            }
+        }
+
+        if ApplicationState.virtual_cluster: simulation-toggle-button := Button {
+            height: 30px;
+            text: "Toggle Simulation";
+
+            clicked => {
+                ApplicationState.toggle_simulation();
+            }
+        }
+        HorizontalLayout {
+            alignment: center;
+            height: 30px;
+
+            ControlledFocusScope {
+                exit-triggered => {
+                    ApplicationState.settings-menu-visible = false;
                 }
             }
         }
