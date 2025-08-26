@@ -1,6 +1,7 @@
 use crate::{App, CanDisplay, SCanFrameDisplay};
 use embedded_can::{Frame, Id};
 use slint::{ComponentHandle, Model, ModelRc, SharedString, VecModel, Weak};
+use std::cmp::max;
 
 pub struct CanFrameDisplay {
     ui: Weak<App>,
@@ -84,6 +85,7 @@ impl CanFrameDisplay {
             }
 
             can_display.set_CanFrames(display_frames);
+            can_display.set_highest_dlc(max(frame_dlc as i32, can_display.get_highest_dlc()));
         });
     }
 }

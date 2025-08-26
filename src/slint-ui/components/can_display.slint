@@ -12,18 +12,24 @@ export struct SCanFrameDisplay {
 export global CanDisplay {
     in-out property <bool> running: false;
     in-out property <[SCanFrameDisplay]> CanFrames: [];
+    in-out property <int> highest-dlc;
 }
 
 component TableRect inherits Rectangle {
     in property <string> text <=> label.text;
+    in property <TextHorizontalAlignment> text-horizontal-alignment <=> label.horizontal-alignment;
+    in property <TextVerticalAlignment> text-vertical-alignment <=> label.vertical-alignment;
     in property <length> post-padding: 20px;
     in property <length> vertical-padding: 10px;
     in property <length> pre-padding: 4px;
     in property <length> font-size: 12px;
 
+    height: 30px;
+
+    @children
+
     VerticalLayout {
         Rectangle {
-            background: transparent;
             height: root.vertical-padding / 2;
         }
 
@@ -31,139 +37,128 @@ component TableRect inherits Rectangle {
             alignment: LayoutAlignment.start;
 
             Rectangle {
-                background: transparent;
                 width: root.pre-padding;
             }
 
             label := Text {
                 font-size: root.font-size;
                 font-family: "JetBrains Mono";
+                color: white;
                 horizontal-alignment: left;
+                vertical-alignment: center;
             }
 
             Rectangle {
-                background: transparent;
                 width <=> root.post-padding;
             }
         }
 
         Rectangle {
-            background: transparent;
             height: root.vertical-padding / 2;
         }
     }
 }
 
 component TableHeaderRect inherits TableRect {
-    background: gray.darker(95%);
+    height: 100%;
     vertical-padding: 20px;
     font-size: 13.5px;
 }
 
 export component CanDisplayWidget inherits Rectangle {
     in-out property <bool> running <=> CanDisplay.running;
+
     clip: true;
 
-    width: 1920px;
-    height: 720px;
+    header-background := Rectangle {
+        width: header-layout.width;
+        height: header-layout.height;
+        x: header-layout.x;
+        y: header-layout.y;
+        background: gray.darker(95%);
+    }
 
     header-layout := HorizontalLayout {
+        y: 0;
+        height: 35px;
         alignment: LayoutAlignment.start;
-        spacing: 0px;
 
-        id-column-header := VerticalLayout {
-            alignment: id-column.alignment;
-
-            id-header-label := TableHeaderRect {
-                text: "ID";
-            }
+        id-header-label := TableHeaderRect {
+            text: "ID";
         }
 
-        dlc-column-header := VerticalLayout {
-            alignment: dlc-column.alignment;
-
-            dlc-header-label := TableHeaderRect {
-                text: "DLC";
-            }
+        dlc-header-label := TableHeaderRect {
+            text: "DLC";
         }
 
-        data-column-header := VerticalLayout {
-            width: 100%;
-            alignment: data-column.alignment;
-
-            data-header-label := TableHeaderRect {
-                text: "Data";
-            }
+        data-header-label := TableHeaderRect {
+            text: "Data";
         }
     }
 
     ScrollView {
-        width: 100%;
-        y: id-header-label.height;
-        height: root.height - id-header-label.height;
+        y: header-layout.height;
+        height: root.height - header-layout.height;
+
+        VerticalLayout {
+            for frame_display[i] in CanDisplay.CanFrames: TableRect {
+                background: mod(i, 2) == 1 ? black : #1b1b1b;
+            }
+        }
 
         layout := HorizontalLayout {
             alignment: LayoutAlignment.start;
             spacing: 0px;
             padding: 0px;
 
-            id-column := VerticalLayout {
-                width: id-column-header.width;
+            VerticalLayout {
                 alignment: LayoutAlignment.start;
-                spacing: 0px;
-                padding: 0px;
 
-                for frame_display[i] in CanDisplay.CanFrames: TableRect {
-                    background: gray.darker(mod(i, 2) == 1 ? 10% : 30%);
-                    text: frame-display.formatted_id;
-                }
-            }
+                for frame-display[i] in CanDisplay.CanFrames: HorizontalLayout {
+                    alignment: LayoutAlignment.start;
 
-            dlc-column := VerticalLayout {
-                width: dlc-column-header.width;
-                alignment: LayoutAlignment.start;
-                spacing: 0px;
-                padding: 0px;
+                    TableRect {
+                        text: frame-display.formatted_id;
+                        width: id-header-label.width;
+                    }
 
-                for frame_display[i] in CanDisplay.CanFrames: TableRect {
-                    background: gray.darker(mod(i, 2) == 1 ? 10% : 30%);
+                    TableRect {
+                        text: frame-display.dlc;
+                        width: dlc-header-label.width;
+                    }
 
-                    text: frame-display.dlc;
-                }
-            }
+                    for data-byte[j] in frame-display.dlc: TableRect {
+                        text: frame-display.data[j];
 
-            data-column := VerticalLayout {
-                width: 100%;
-                alignment: LayoutAlignment.start;
-                spacing: 0px;
-                padding: 0px;
-
-                for frame_display[i] in CanDisplay.CanFrames: Rectangle {
-                    background: gray.darker(mod(i, 2) == 1 ? 10% : 30%);
-
-                    HorizontalLayout {
-                        alignment: LayoutAlignment.start;
-
+                        function byte-clicked() {
+                            frame-display.bit_display[j] = !frame-display.bit_display[j];
+                        }
+                        property <bool> has-focus <=> i-focus.has-focus;
+                        property <bool> has-hover <=> i-touch.has-hover;
                         Rectangle {
+                            border-color: has-focus ? blue : turquoise;
+                            border-width: 4px;
                             background: transparent;
-                            width: data-header-label.pre-padding;
+                            visible: has-focus || has-hover;
                         }
 
-                        for byte[i] in frame-display.dlc: TableRect {
-                            background: frame-display.byte_changes[i] ? green : transparent;
-                            post-padding: 6px;
-                            // pre-padding: self.post-padding;
+                        i-touch := TouchArea {
+                            width: 100%;
+                            height: 100%;
 
-                            Button {
-                                width: 100%;
-                                clicked => {
-                                    frame-display.bit_display[i] = !frame-display.bit_display[i]
+                            clicked => byte-clicked();
+
+                            forward-focus: i-focus;
+                        }
+
+                        i-focus := FocusScope {
+                            width: 0px;
+                            key-pressed(event) => {
+                                if event.text == Key.Return {
+                                    byte-clicked();
+                                    accept
                                 }
-                            }
-
-                            Text {
-                                text: frame-display.data[i];
-                                font-family: "JetBrains Mono";
+                                reject
                             }
                         }
                     }
