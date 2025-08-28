@@ -236,9 +236,9 @@ dependencies = [
 
 [[package]]
 name = "async-executor"
-version = "1.13.2"
+version = "1.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb812ffb58524bdd10860d7d974e2f01cc0950c2438a74ee5ec2e2280c6c4ffa"
+checksum = "497c00e0fd83a72a79a39fcbd8e3e2f055d6f6c7e025f3b3d91f4f8e76527fb8"
 dependencies = [
  "async-task",
  "concurrent-queue",
@@ -441,9 +441,9 @@ dependencies = [
 
 [[package]]
 name = "bit_field"
-version = "0.10.2"
+version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc827186963e592360843fb5ba4b973e145841266c1357f7180c43526f2e5b61"
+checksum = "1e4b40c7323adcfc0a41c4b88143ed58346ff65a288fc144329c5c45e05d70c6"
 
 [[package]]
 name = "bitflags"
@@ -723,18 +723,18 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.45"
+version = "4.5.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fc0e74a703892159f5ae7d3aac52c8e6c392f5ae5f359c70b5881d60aaac318"
+checksum = "2c5e4fcf9c21d2e544ca1ee9d8552de13019a42aa7dbf32747fa7aaf1df76e57"
 dependencies = [
  "clap_builder",
 ]
 
 [[package]]
 name = "clap_builder"
-version = "4.5.44"
+version = "4.5.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3e7f4214277f3c7aa526a59dd3fbe306a370daee1f8b7b8c987069cd8e888a8"
+checksum = "fecb53a0e6fcfb055f686001bc2e2592fa527efaf38dbe81a6a9563562e57d41"
 dependencies = [
  "anstream",
  "anstyle",
@@ -813,7 +813,7 @@ dependencies = [
 [[package]]
 name = "const-field-offset"
 version = "0.1.5"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "const-field-offset-macro",
  "field-offset",
@@ -822,7 +822,7 @@ dependencies = [
 [[package]]
 name = "const-field-offset-macro"
 version = "0.1.5"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1776,7 +1776,7 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 [[package]]
 name = "i-slint-backend-linuxkms"
 version = "1.13.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "calloop 0.14.3",
  "drm 0.14.1",
@@ -1795,7 +1795,7 @@ dependencies = [
 [[package]]
 name = "i-slint-backend-selector"
 version = "1.13.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "cfg-if 1.0.3",
  "i-slint-backend-linuxkms",
@@ -1809,7 +1809,7 @@ dependencies = [
 [[package]]
 name = "i-slint-backend-winit"
 version = "1.13.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "cfg-if 1.0.3",
  "cfg_aliases",
@@ -1841,7 +1841,7 @@ dependencies = [
 [[package]]
 name = "i-slint-common"
 version = "1.13.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "cfg-if 1.0.3",
  "derive_more",
@@ -1853,7 +1853,7 @@ dependencies = [
 [[package]]
 name = "i-slint-compiler"
 version = "1.13.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "by_address",
  "codemap",
@@ -1882,7 +1882,7 @@ dependencies = [
 [[package]]
 name = "i-slint-core"
 version = "1.13.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "auto_enums",
  "bitflags 2.9.3",
@@ -1925,7 +1925,7 @@ dependencies = [
 [[package]]
 name = "i-slint-core-macros"
 version = "1.13.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "quote",
  "serde_json",
@@ -1935,7 +1935,7 @@ dependencies = [
 [[package]]
 name = "i-slint-renderer-skia"
 version = "1.13.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "bytemuck",
  "cfg-if 1.0.3",
@@ -2124,9 +2124,9 @@ dependencies = [
 
 [[package]]
 name = "image-webp"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6970fe7a5300b4b42e62c52efa0187540a5bef546c60edaf554ef595d2e6f0b"
+checksum = "525e9ff3e1a4be2fbea1fdf0e98686a6d98b4d8f937e1bf7402245af1909e8c3"
 dependencies = [
  "byteorder-lite",
  "quick-error",
@@ -4013,7 +4013,7 @@ dependencies = [
 [[package]]
 name = "slint"
 version = "1.13.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "const-field-offset",
  "i-slint-backend-selector",
@@ -4030,7 +4030,7 @@ dependencies = [
 [[package]]
 name = "slint-build"
 version = "1.13.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "derive_more",
  "i-slint-compiler",
@@ -4041,7 +4041,7 @@ dependencies = [
 [[package]]
 name = "slint-macros"
 version = "1.13.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "i-slint-compiler",
  "proc-macro2",
@@ -4865,7 +4865,7 @@ checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
 [[package]]
 name = "vtable"
 version = "0.3.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "const-field-offset",
  "portable-atomic",
@@ -4876,7 +4876,7 @@ dependencies = [
 [[package]]
 name = "vtable-macro"
 version = "0.3.0"
-source = "git+https://github.com/slint-ui/slint.git#d6846c352a2dc618d3155a3b530eeef0db6bdf89"
+source = "git+https://github.com/slint-ui/slint.git#f07f3ec3c3a3b0a2ea752af3d75e3be2d38eacab"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5682,7 +5682,7 @@ checksum = "ea2f10b9bb0928dfb1b42b65e1f9e36f7f54dbdf08457afefb38afcdec4fa2bb"
 
 [[package]]
 name = "wrx-digital-instrument-cluster-rs"
-version = "0.11.5"
+version = "0.11.6"
 dependencies = [
  "async-compat",
  "bitvec",
