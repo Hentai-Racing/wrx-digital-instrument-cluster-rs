@@ -2,12 +2,18 @@ import { Button } from "std-widgets.slint";
 import { ApplicationState } from "../application/application_state.slint";
 import { SUnitSystem } from "../data/units.slint";
 import { ThemeSelectorWidget } from "../themes/themes.slint";
-import { ControlledFocusScope } from "controlled_focus_scope.slint";
+import { ControlledFocusScope, ControlledFocusDomain } from "controlled_focus_scope.slint";
 
 export global UserSettings { } // TODO
 
-export component SettingsMenu inherits Rectangle {
+export component SettingsMenu inherits ControlledFocusDomain {
     in-out property <bool> open <=> ApplicationState.settings-menu-visible;
+
+    exited => {
+        ApplicationState.settings-menu-visible = false;
+    }
+
+    nav-front-forward => theme-setting-widget.focus();
 
     VerticalLayout {
         alignment: center;
@@ -37,27 +43,14 @@ export component SettingsMenu inherits Rectangle {
             }
         }
 
-        if ApplicationState.virtual_cluster: simulation-toggle-button := HorizontalLayout {
+        if ApplicationState.virtual_cluster: simulation-toggle-button := Rectangle {
             height: 30px;
 
-            Rectangle {
-                Button {
-                    text: "Toggle Simulation";
+            Button {
+                text: "Toggle Simulation";
 
-                    clicked => {
-                        ApplicationState.toggle_simulation();
-                    }
-                }
-            }
-        }
-
-        HorizontalLayout {
-            alignment: center;
-            height: 30px;
-
-            ControlledFocusScope {
-                exit-triggered => {
-                    ApplicationState.settings-menu-visible = false;
+                clicked => {
+                    ApplicationState.toggle_simulation();
                 }
             }
         }

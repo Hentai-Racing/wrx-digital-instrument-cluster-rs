@@ -3,10 +3,9 @@ import { Button, ScrollView } from "std-widgets.slint";
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import { RoadIndicatorWidget } from "../themes/default/components/road_indicators.slint";
 import { ApplicationState } from "../application/application_state.slint";
-import { ControlledFocusScope } from "../components/controlled_focus_scope.slint";
+import { ControlledFocusScope, ControlledFocusDomain } from "../components/controlled_focus_scope.slint";
 import { CanDisplayWidget } from "can_display.slint";
 
-// TODO: This global has become a vital part of controlling the UI, so it should be moved to application_state and renamed appropriately
 export global WidgetContainerState {
     in property <duration> page-animation-duration: 150ms;
 
@@ -21,7 +20,8 @@ export global WidgetContainerState {
         }
     }
 
-    public function focus-page() {
+    public function focus-page(to-page: int) {
+        self.change-page(to-page);
         self.focused-page = self.current-page;
     }
 
@@ -30,107 +30,109 @@ export global WidgetContainerState {
     }
 }
 
-component Widget {
-    height: 100%;
-    width: 100%;
-
-    out property <int> page-number;
+component Widget inherits ControlledFocusDomain {
     in-out property <bool> focusable: false;
+    out property <int> page-number;
     out property <bool> has-focus: WidgetContainerState.focused-page == self.page-number;
 
-    in-out property <bool> force-exit-strategy: true;
-    private property <length> exit-stategy-height;
+    force-exit-strategy: focusable && true;
+    force-focus: false;
 
-    callback key-pressed(KeyEvent) -> EventResult;
-    callback key-released(KeyEvent) -> EventResult;
-    callback focus-gained(FocusReason);
-    callback focus-lost(FocusReason);
+    changed has-focus => {
+        if focusable && has-focus {
+            self.enter-domain();
+        } else {
+            WidgetContainerState.focused-page = -1;
+        }
+    }
 
     init => {
         self.page-number = WidgetContainerState.num-pages;
         WidgetContainerState.num-pages += 1;
     }
-    changed has-focus => {
-        if !focusable && has-focus {
-            WidgetContainerState.focused-page = -1
-        }
-    }
 
-    if root.focusable && root.has-focus: focus := ControlledFocusScope {
-        force-exit-strategy <=> root.force-exit-strategy;
-        y: root.height - self.height;
-
-        init => {
-            root.exit-stategy-height = self.height;
-        }
-        key-pressed(event) => root.key-pressed(event);
-        key-released(event) => root.key-released(event);
-        focus-gained(reason) => root.focus-gained(reason);
-        focus-lost(reason) => root.focus-lost(reason);
-        exit-triggered => WidgetContainerState.exit-page();
-    }
-
-    Rectangle {
-        y: 0;
-        clip: true;
-        height: (root.has-focus && root.force-exit-strategy) ? root.height - exit-stategy-height : root.height;
-        @children
-    }
+    exited => WidgetContainerState.exit-page();
 }
 
 component FocusableWidget inherits Widget {
     focusable: true;
 }
 
-export component WidgetContainer inherits Rectangle {
+export component WidgetContainer {
+    width: 500px;
+    height: 600px;
+    forward-focus: i-domain;
+
     init => {
         WidgetContainerState.num-pages = 0;
     }
-    if (WidgetContainerState.focused-page == -1): ControlledFocusScope {
-        force-exit-strategy: false;
-        key-pressed(event) => {
-            if WidgetContainerState.focused-page != -1 {
-            } else {
-                if ((event.text == Key.UpArrow) && (WidgetContainerState.current-page < (WidgetContainerState.num-pages - 1))) {
-                    WidgetContainerState.current-page += 1
-                } else if ((event.text == Key.DownArrow) && (WidgetContainerState.current-page > 0)) {
-                    WidgetContainerState.current-page -= 1
-                } else if (event.text == Key.Return) {
-                    WidgetContainerState.focus-page()
-                }
-            }
-
-            accept // always accept to prevent user traveling somewhere without controls
-        }
-    }
-
-    background: ApplicationState.debug-mode ? purple : transparent;
-    width: 500px;
-    height: 600px;
-    border-radius: 5px;
 
     VerticalLayout {
-        center-widget-container-indicator := Rectangle {
-            clip: true;
+        center-widget-container-indicator := ScrollView {
             property <length> indicator-width: self.height;
 
-            ScrollView {
-                horizontal-scrollbar-policy: ScrollBarPolicy.always-off;
+            i-domain := ControlledFocusDomain {
+                force-exit-strategy: false;
+                force-focus: true;
+
+                private property <int> return-page;
+
+                nav-front-forward => WidgetContainerState.change-page(0);
+                nav-end-backward => WidgetContainerState.change-page(WidgetContainerState.num-pages - 1);
+                domain-returned => WidgetContainerState.change-page(return-page);
+
                 HorizontalLayout {
                     alignment: center;
-                    spacing: 5px;
+                    spacing: 10px;
+
                     for i in WidgetContainerState.num-pages: Rectangle {
-                        background: transparent;
+                        private property <bool> has-view: WidgetContainerState.current-page == i;
+                        private property <bool> domain-active: i-domain.domain-active;
+
                         width: indicator-width;
+                        forward-focus: i-focus;
+
+                        function attempt-focus() {
+                            if domain-active && has-view {
+                                self.focus();
+                            }
+                        }
+
+                        changed has-view => {
+                            attempt-focus();
+                        }
+
+                        changed domain-active => {
+                            attempt-focus();
+                        }
+
+                        init => {
+                            if i == 0 && domain-active {
+                                self.focus();
+                            }
+                        }
+
+                        Rectangle {
+                            background: darkblue;
+                            visible: has-view;
+                        }
 
                         Text {
                             color: white;
                             text: i + 1;
                         }
 
-                        TouchArea {
-                            clicked => {
-                                WidgetContainerState.change-page(i);
+                        i-focus := ControlledFocusScope {
+                            force-focus: false;
+
+                            focus-gained => {
+                                if !has-view { // prevent dirty-ing the number and causing recursion
+                                    WidgetContainerState.change-page(i);
+                                }
+                            }
+                            activated => {
+                                return-page = i;
+                                WidgetContainerState.focus-page(i);
                             }
                         }
                     }
@@ -161,6 +163,10 @@ export component WidgetContainer inherits Rectangle {
                 }
 
                 settings-menu-widget := FocusableWidget {
+                    nav-front-forward => {
+                        settings-button.focus()
+                    }
+                    forward-focus: settings-button;
                     VerticalLayout {
                         padding: 20px;
 
@@ -188,7 +194,11 @@ export component WidgetContainer inherits Rectangle {
                 }
 
                 if ApplicationState.debug-mode: FocusableWidget {
-                    DebugMenuWidget {
+                    nav-front-forward => {
+                        debug-menu-widget.focus()
+                    }
+                    forward-focus: debug-menu-widget;
+                    debug-menu-widget := DebugMenuWidget {
                         height: 100%;
                         width: 100%;
                     }
