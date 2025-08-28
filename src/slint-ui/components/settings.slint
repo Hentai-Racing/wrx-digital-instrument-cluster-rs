@@ -11,7 +11,7 @@ export component SettingsMenu inherits Rectangle {
 
     VerticalLayout {
         alignment: center;
-        spacing: 10px;
+        spacing: 15px;
 
         theme-setting-widget := ThemeSelectorWidget {
             width: 100%;
@@ -37,14 +37,20 @@ export component SettingsMenu inherits Rectangle {
             }
         }
 
-        if ApplicationState.virtual_cluster: simulation-toggle-button := Button {
+        if ApplicationState.virtual_cluster: simulation-toggle-button := HorizontalLayout {
             height: 30px;
-            text: "Toggle Simulation";
 
-            clicked => {
-                ApplicationState.toggle_simulation();
+            Rectangle {
+                Button {
+                    text: "Toggle Simulation";
+
+                    clicked => {
+                        ApplicationState.toggle_simulation();
+                    }
+                }
             }
         }
+
         HorizontalLayout {
             alignment: center;
             height: 30px;

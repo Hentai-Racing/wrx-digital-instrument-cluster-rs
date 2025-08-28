@@ -1,4 +1,4 @@
-import { ScrollView, Button } from "std-widgets.slint";
+import { ScrollView, Button, StandardTableView } from "std-widgets.slint";
 
 export struct SCanFrameDisplay {
     id: int,
@@ -67,6 +67,7 @@ component TableHeaderRect inherits TableRect {
 
 export component CanDisplayWidget inherits Rectangle {
     in-out property <bool> running <=> CanDisplay.running;
+    private property <[length]> data-col-widths;
 
     clip: true;
 
@@ -101,7 +102,7 @@ export component CanDisplayWidget inherits Rectangle {
         height: root.height - header-layout.height;
 
         VerticalLayout {
-            for frame_display[i] in CanDisplay.CanFrames: TableRect {
+            for frame_display[i] in CanDisplay.CanFrames: Rectangle {
                 background: mod(i, 2) == 1 ? black : #1b1b1b;
             }
         }
@@ -112,54 +113,53 @@ export component CanDisplayWidget inherits Rectangle {
             padding: 0px;
 
             VerticalLayout {
-                alignment: LayoutAlignment.start;
+                width: id-header-label.width;
+                for frame-display[i] in CanDisplay.CanFrames: TableRect {
+                    text: frame-display.formatted_id;
+                }
+            }
 
-                for frame-display[i] in CanDisplay.CanFrames: HorizontalLayout {
-                    alignment: LayoutAlignment.start;
+            VerticalLayout {
+                width: dlc-header-label.width;
+                for frame-display[i] in CanDisplay.CanFrames: TableRect {
+                    text: frame-display.dlc;
+                }
+            }
 
-                    TableRect {
-                        text: frame-display.formatted_id;
-                        width: id-header-label.width;
+            for data_col[i] in CanDisplay.highest-dlc: VerticalLayout {
+                for frame-display[j] in CanDisplay.CanFrames: TableRect {
+                    text: i < frame-display.dlc ? frame-display.data[i] : "";
+                    visible: i < frame-display.dlc;
+
+                    function byte-clicked() {
+                        frame-display.bit_display[i] = !frame-display.bit_display[i];
+                    }
+                    property <bool> has-focus <=> i-focus.has-focus;
+                    property <bool> has-hover <=> i-touch.has-hover;
+                    Rectangle {
+                        border-color: has-focus ? blue : turquoise;
+                        border-width: 4px;
+                        background: transparent;
+                        visible: has-focus || has-hover;
                     }
 
-                    TableRect {
-                        text: frame-display.dlc;
-                        width: dlc-header-label.width;
+                    i-touch := TouchArea {
+                        width: 100%;
+                        height: 100%;
+
+                        clicked => byte-clicked();
+
+                        forward-focus: i-focus;
                     }
 
-                    for data-byte[j] in frame-display.dlc: TableRect {
-                        text: frame-display.data[j];
-
-                        function byte-clicked() {
-                            frame-display.bit_display[j] = !frame-display.bit_display[j];
-                        }
-                        property <bool> has-focus <=> i-focus.has-focus;
-                        property <bool> has-hover <=> i-touch.has-hover;
-                        Rectangle {
-                            border-color: has-focus ? blue : turquoise;
-                            border-width: 4px;
-                            background: transparent;
-                            visible: has-focus || has-hover;
-                        }
-
-                        i-touch := TouchArea {
-                            width: 100%;
-                            height: 100%;
-
-                            clicked => byte-clicked();
-
-                            forward-focus: i-focus;
-                        }
-
-                        i-focus := FocusScope {
-                            width: 0px;
-                            key-pressed(event) => {
-                                if event.text == Key.Return {
-                                    byte-clicked();
-                                    accept
-                                }
-                                reject
+                    i-focus := FocusScope {
+                        width: 0px;
+                        key-pressed(event) => {
+                            if event.text == Key.Return {
+                                byte-clicked();
+                                accept
                             }
+                            reject
                         }
                     }
                 }
