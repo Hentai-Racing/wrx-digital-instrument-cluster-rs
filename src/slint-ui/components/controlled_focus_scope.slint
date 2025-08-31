@@ -2,19 +2,42 @@ import { Button } from "std-widgets.slint";
 
 import { ApplicationState } from "../application/application_state.slint";
 
-global DomainState {
-    in-out property <int> num-layers: 1;
-    in-out property <int> current-layer: 0;
-    in-out property <int> last-layer: 0;
+export global FocusState {
+    out property <int> num-focuses: 1;
+    out property <int> current-focus: 0;
 
-    public function create-domain-layer() -> int {
-        num-layers += 1;
-        num-layers - 1
+    out property <length> focus-x;
+    out property <length> focus-y;
+    out property <length> focus-width;
+    out property <length> focus-height;
+
+    public function create-focus-id() -> int {
+        num-focuses += 1;
+        num-focuses - 1
+    }
+
+    public function force-focus(id: int) {
+        current-focus = id;
+    }
+
+    pure public function has-focus(id: int) -> bool {
+        self.current-focus == id
+    }
+}
+
+export global DomainState {
+    out property <int> num-domains: 1;
+    out property <int> current-layer: 0;
+    out property <int> last-layer: 0;
+
+    public function create-domain-id() -> int {
+        num-domains += 1;
+        num-domains - 1
     }
 
     public function enter-domain(domain-layer: int) {
-        DomainState.last-layer = DomainState.current-layer;
-        DomainState.current-layer = domain-layer;
+        self.last-layer = self.current-layer;
+        self.current-layer = domain-layer;
     }
 
     public function domain-exit(domain-layer: int) -> bool {
@@ -30,6 +53,12 @@ export component ControlledFocusScope {
     in-out property <bool> force-focus: true;
     in-out property <bool> enabled <=> i-focus.enabled;
 
+    out property <bool> has-focus <=> i-focus.has-focus;
+    out property <bool> has-hover <=> i-touch.has-hover;
+    out property <int> focus-id;
+
+    private property <bool> i-has-focus: FocusState.has-focus(self.focus-id);
+
     callback key-pressed(KeyEvent) -> EventResult;
     callback key-released(KeyEvent) -> EventResult;
     callback focus-gained(FocusReason);
@@ -38,10 +67,20 @@ export component ControlledFocusScope {
 
     forward-focus: i-focus;
 
-    i-touch := TouchArea {
-        enabled: i-focus.enabled;
+    changed i-has-focus => {
+        if root.enabled && root.i-has-focus && !root.has-focus {
+            self.focus();
+        }
+    }
 
-        clicked => i-focus.focus();
+    init => {
+        self.focus-id = FocusState.create-focus-id();
+    }
+
+    i-touch := TouchArea {
+        enabled: root.enabled;
+
+        clicked => root.focus();
         double-clicked => root.activated();
     }
 
@@ -116,7 +155,7 @@ export component ControlledFocusDomain {
     }
 
     init => {
-        self.domain-layer = DomainState.create-domain-layer();
+        self.domain-layer = DomainState.create-domain-id();
 
         if force-focus {
             enter-domain();

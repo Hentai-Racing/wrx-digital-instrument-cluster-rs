@@ -3,7 +3,7 @@ import { Button, ScrollView } from "std-widgets.slint";
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import { RoadIndicatorWidget } from "../themes/default/components/road_indicators.slint";
 import { ApplicationState } from "../application/application_state.slint";
-import { ControlledFocusScope, ControlledFocusDomain } from "../components/controlled_focus_scope.slint";
+import { ControlledFocusScope, ControlledFocusDomain, FocusState } from "../components/controlled_focus_scope.slint";
 import { CanDisplayWidget } from "can_display.slint";
 
 export global WidgetContainerState {
@@ -123,17 +123,18 @@ export component WidgetContainer {
                         }
 
                         i-focus := ControlledFocusScope {
+                            // TODO: something else is taking touch input
+
                             force-focus: false;
 
                             focus-gained => {
+                                return-page = i;
                                 if !has-view { // prevent dirty-ing the number and causing recursion
                                     WidgetContainerState.change-page(i);
                                 }
                             }
-                            activated => {
-                                return-page = i;
-                                WidgetContainerState.focus-page(i);
-                            }
+
+                            activated => WidgetContainerState.focus-page(i);
                         }
                     }
                 }
@@ -166,7 +167,7 @@ export component WidgetContainer {
                     nav-front-forward => {
                         settings-button.focus()
                     }
-                    forward-focus: settings-button;
+
                     VerticalLayout {
                         padding: 20px;
 
@@ -186,7 +187,10 @@ export component WidgetContainer {
                 }
 
                 FocusableWidget {
-                    CanDisplayWidget {
+                    nav-front-forward => FocusState.force-focus(can-display-widget.first-focus-id);
+                    nav-end-backward => FocusState.force-focus(can-display-widget.last-focus-id);
+
+                    can-display-widget := CanDisplayWidget {
                         running: WidgetContainerState.current-page == parent.page-number;
                         height: 100%;
                         width: 100%;
@@ -197,7 +201,7 @@ export component WidgetContainer {
                     nav-front-forward => {
                         debug-menu-widget.focus()
                     }
-                    forward-focus: debug-menu-widget;
+
                     debug-menu-widget := DebugMenuWidget {
                         height: 100%;
                         width: 100%;

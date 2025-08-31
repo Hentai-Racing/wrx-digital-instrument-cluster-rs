@@ -6,9 +6,8 @@ export global DebugMenuState {
     callback can-write-test();
 }
 
-export component DebugMenuWidget inherits Rectangle {
+export component DebugMenuWidget {
     forward-focus: suspend-button;
-    background: purple;
 
     GridLayout {
         padding: 10px;

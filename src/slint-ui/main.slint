@@ -43,6 +43,7 @@ export component App inherits Window {
 
     background: black;
 
+    // TODO: revert settings menu to appear as a "floating window"
     if ApplicationState.settings-menu-visible: settings-menu := SettingsMenu { }
     if !ApplicationState.settings-menu-visible: theme-loader := ThemeLoader { }
 }

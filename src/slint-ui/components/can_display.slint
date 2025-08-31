@@ -1,5 +1,7 @@
 import { ScrollView, Button, StandardTableView } from "std-widgets.slint";
 
+import { ControlledFocusScope } from "../components/controlled_focus_scope.slint";
+
 export struct SCanFrameDisplay {
     id: int,
     formatted_id: string,
@@ -67,7 +69,9 @@ component TableHeaderRect inherits TableRect {
 
 export component CanDisplayWidget inherits Rectangle {
     in-out property <bool> running <=> CanDisplay.running;
-    private property <[length]> data-col-widths;
+
+    out property <int> first-focus-id;
+    out property <int> last-focus-id;
 
     clip: true;
 
@@ -103,7 +107,7 @@ export component CanDisplayWidget inherits Rectangle {
 
         VerticalLayout {
             for frame_display[i] in CanDisplay.CanFrames: Rectangle {
-                background: mod(i, 2) == 1 ? black : #1b1b1b;
+                background: mod(i, 2) == 1 ? transparent : #ffffff30;
             }
         }
 
@@ -134,32 +138,24 @@ export component CanDisplayWidget inherits Rectangle {
                     function byte-clicked() {
                         frame-display.bit_display[i] = !frame-display.bit_display[i];
                     }
-                    property <bool> has-focus <=> i-focus.has-focus;
-                    property <bool> has-hover <=> i-touch.has-hover;
+
                     Rectangle {
-                        border-color: has-focus ? blue : turquoise;
+                        border-color: i-focus.has-focus ? blue : turquoise;
                         border-width: 4px;
                         background: transparent;
-                        visible: has-focus || has-hover;
+                        visible: i-focus.has-focus || i-focus.has-hover;
                     }
 
-                    i-touch := TouchArea {
-                        width: 100%;
-                        height: 100%;
+                    i-focus := ControlledFocusScope {
+                        force-focus: false;
 
-                        clicked => byte-clicked();
-
-                        forward-focus: i-focus;
-                    }
-
-                    i-focus := FocusScope {
-                        width: 0px;
-                        key-pressed(event) => {
-                            if event.text == Key.Return {
-                                byte-clicked();
-                                accept
+                        activated => byte-clicked();
+                        init => {
+                            if (i == 0) && (j == 0) {
+                                root.first-focus-id = self.focus-id;
+                            } else if i == (CanDisplay.highest-dlc - 1) && (j == (CanDisplay.CanFrames.length - 1)) {
+                                root.last-focus-id = self.focus-id;
                             }
-                            reject
                         }
                     }
                 }
