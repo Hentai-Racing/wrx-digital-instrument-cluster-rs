@@ -95,7 +95,7 @@ macro_rules! HandleSignalProcess {
 /// }
 ///```
 ///
-/// Note: ```bool``` data types default to true unless otherwise stated
+/// Note: ```bool``` data types default to `true` unless otherwise stated
 ///
 macro_rules! CarData {
     { {$( $visible:vis $struct_param:ident: $struct_param_ty:ty ),+}; $($msg:ident => { $($(<$unit:path$(:$unit_system:path)?>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; } => {

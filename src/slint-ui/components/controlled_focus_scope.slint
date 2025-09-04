@@ -164,6 +164,7 @@ export component ControlledFocusDomain {
 
     pre-nav-lock := FocusScope {
         enabled: root.domain-active;
+        width: 0;
 
         focus-gained(reason) => {
             if reason == FocusReason.tab-navigation {
@@ -197,6 +198,7 @@ export component ControlledFocusDomain {
 
     post-nav-lock := FocusScope {
         enabled: root.domain-active;
+        width: 0;
 
         focus-gained(reason) => {
             if reason == FocusReason.tab-navigation {

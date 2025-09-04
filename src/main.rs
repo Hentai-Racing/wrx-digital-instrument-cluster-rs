@@ -253,6 +253,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     user_settings_bridge::bridge_settings(ui.as_weak().clone(), serdes_manager.clone());
 
+    {
+        let car_data = car_data.clone();
+        let serdes_manager = serdes_manager.clone();
+        tokio::spawn(async move {
+            use tokio::select;
+
+            let mut watch = car_data.odometer().watch();
+
+            loop {
+                if let Ok(_) = watch.changed().await {
+                    let val = *watch.borrow_and_update();
+
+                    if let Ok(mut serdes_manager) = serdes_manager.try_write() {
+                        serdes_manager
+                            .user_settings
+                            .static_car_data
+                            .odometer
+                            .set_value(val as u32);
+                    }
+                }
+            }
+        });
+    }
+
     let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data, unit_system_parameter);
     ui_data_bridge.run();
 
@@ -292,15 +316,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // main loop
 
+    {
+        use std::time::{Duration, Instant};
+
+        let serdes_manager = serdes_manager.clone();
+        tokio::spawn(async move {
+            let mut now = Instant::now();
+            loop {
+                if now.elapsed() >= Duration::from_secs(30) {
+                    now = Instant::now();
+                    if let Ok(serdes_manager) = serdes_manager.read() {
+                        let _ = serdes_manager.save_to_fs();
+                    }
+                }
+            }
+        });
+    }
+
     ui.run()?;
 
     // cleanup
 
-    match serdes_manager.read() {
-        Ok(serdes_manager) => {
-            serdes_manager.save_to_fs()?;
-        }
-        _ => {}
+    if let Ok(serdes_manager) = serdes_manager.read() {
+        serdes_manager.save_to_fs()?;
     }
 
     for runner in runners {

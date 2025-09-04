@@ -22,8 +22,12 @@ pub struct GeneralSettings {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct UserSettings {
+    #[serde(default)]
     pub theme: ThemeSettings,
+    #[serde(default)]
     pub general: GeneralSettings,
+    #[serde(default)]
+    pub static_car_data: StaticCarData,
 }
 
 impl Default for ThemeSettings {
@@ -37,8 +41,8 @@ impl Default for ThemeSettings {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct StaticCarData {
-    vin: FieldParameter<String>,
-    odometer: FieldParameter<u32>,
+    pub vin: FieldParameter<String>,
+    pub odometer: FieldParameter<u32>,
 }
 
 #[derive(Default)]
@@ -88,7 +92,7 @@ impl SerdesManager {
     }
 
     pub fn load_from_fs(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let user_settings_dir = Self::get_user_settings_dir(&self)?;
+        let user_settings_dir = self.get_user_settings_dir()?;
 
         let user_settings_file = fs::read_to_string(&user_settings_dir)?;
         self.user_settings = toml::from_str(user_settings_file.as_str())?;
@@ -98,7 +102,7 @@ impl SerdesManager {
     }
 
     pub fn save_to_fs(&self) -> Result<SaveStatus, Box<dyn std::error::Error>> {
-        let user_settings_dir = Self::get_user_settings_dir(&self)?;
+        let user_settings_dir = self.get_user_settings_dir()?;
 
         let save_status = match File::options()
             .write(true)

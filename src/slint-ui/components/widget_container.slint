@@ -61,81 +61,78 @@ component FocusableWidget inherits Widget {
 export component WidgetContainer {
     width: 500px;
     height: 600px;
-    forward-focus: i-domain;
+    forward-focus: center-widget-container-indicator;
 
     init => {
         WidgetContainerState.num-pages = 0;
     }
 
     VerticalLayout {
-        center-widget-container-indicator := ScrollView {
+        center-widget-container-indicator := ControlledFocusDomain {
             property <length> indicator-width: self.height;
 
-            i-domain := ControlledFocusDomain {
-                force-exit-strategy: false;
-                force-focus: true;
+            height: 10%;
+            force-exit-strategy: false;
+            force-focus: true;
 
-                private property <int> return-page;
+            private property <int> return-page;
 
-                nav-front-forward => WidgetContainerState.change-page(0);
-                nav-end-backward => WidgetContainerState.change-page(WidgetContainerState.num-pages - 1);
-                domain-returned => WidgetContainerState.change-page(return-page);
+            nav-front-forward => WidgetContainerState.change-page(0);
+            nav-end-backward => WidgetContainerState.change-page(WidgetContainerState.num-pages - 1);
+            domain-returned => WidgetContainerState.change-page(return-page);
 
-                HorizontalLayout {
-                    alignment: center;
-                    spacing: 10px;
+            HorizontalLayout {
+                alignment: center;
+                spacing: 10px;
 
-                    for i in WidgetContainerState.num-pages: Rectangle {
-                        private property <bool> has-view: WidgetContainerState.current-page == i;
-                        private property <bool> domain-active: i-domain.domain-active;
+                for i in WidgetContainerState.num-pages: Rectangle {
+                    private property <bool> has-view: WidgetContainerState.current-page == i;
+                    private property <bool> domain-active: center-widget-container-indicator.domain-active;
 
-                        width: indicator-width;
-                        forward-focus: i-focus;
+                    width: indicator-width;
+                    forward-focus: i-focus;
 
-                        function attempt-focus() {
-                            if domain-active && has-view {
-                                self.focus();
-                            }
+                    function attempt-focus() {
+                        if domain-active && has-view {
+                            self.focus();
                         }
+                    }
 
-                        changed has-view => {
-                            attempt-focus();
+                    changed has-view => {
+                        attempt-focus();
+                    }
+
+                    changed domain-active => {
+                        attempt-focus();
+                    }
+
+                    init => {
+                        if i == 0 && domain-active {
+                            self.focus();
                         }
+                    }
 
-                        changed domain-active => {
-                            attempt-focus();
-                        }
+                    Rectangle {
+                        background: darkblue;
+                        visible: has-view;
+                    }
 
-                        init => {
-                            if i == 0 && domain-active {
-                                self.focus();
-                            }
-                        }
+                    Text {
+                        color: white;
+                        text: i + 1;
+                    }
 
-                        Rectangle {
-                            background: darkblue;
-                            visible: has-view;
-                        }
+                    i-focus := ControlledFocusScope {
+                        force-focus: false;
 
-                        Text {
-                            color: white;
-                            text: i + 1;
-                        }
-
-                        i-focus := ControlledFocusScope {
-                            // TODO: something else is taking touch input
-
-                            force-focus: false;
-
-                            focus-gained => {
-                                return-page = i;
-                                if !has-view { // prevent dirty-ing the number and causing recursion
+                        focus-gained => {
+                            return-page = i;
+                            if !has-view { // prevent dirty-ing the number and causing recursion
                                     WidgetContainerState.change-page(i);
-                                }
                             }
-
-                            activated => WidgetContainerState.focus-page(i);
                         }
+
+                        activated => WidgetContainerState.focus-page(i);
                     }
                 }
             }
