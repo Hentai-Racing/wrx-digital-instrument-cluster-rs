@@ -10,6 +10,8 @@ use crate::can::can_backend::{CanBackend, CanFrame, SelectedCanInterface};
 use crate::can::can_data_emulator::run_can_data_emulator;
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
 use crate::data::car_data::{CarData, ParseResult};
+use crate::data::parameters::FieldParameter;
+use crate::data::units::UnitSystem;
 use crate::ui::car_data_bridge::SCarDataBridge;
 use crate::ui::{can_display::CanFrameDisplay, user_settings_bridge};
 
@@ -238,18 +240,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     application_state.set_virtual_cluster(virtual_cluster);
     application_state.set_debug_mode(cfg!(debug_assertions));
 
-    let serdes_manager = Arc::new(RwLock::new(SerdesManager::new(ui.as_weak())));
+    let serdes_manager = Arc::new(RwLock::new(SerdesManager::default()));
 
     if let Ok(mut serdes_manager) = serdes_manager.write() {
         serdes_manager.load_from_fs()?;
     }
-    user_settings_bridge::bridge_settings(ui.as_weak(), serdes_manager.clone());
 
-    if let Ok(serdes_manager) = serdes_manager.read() {
-        let unit_system_parameter = serdes_manager.user_settings.general.unit_system.clone();
-        let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data, unit_system_parameter);
-        ui_data_bridge.run();
-    }
+    let unit_system_parameter = match serdes_manager.read() {
+        Ok(serdes_manager) => serdes_manager.user_settings.general.unit_system.clone(),
+        _ => FieldParameter::from(UnitSystem::USCS),
+    };
+
+    user_settings_bridge::bridge_settings(ui.as_weak().clone(), serdes_manager.clone());
+
+    let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data, unit_system_parameter);
+    ui_data_bridge.run();
 
     if virtual_cluster {
         let running_simulation_clone = running_simulation.clone();
@@ -286,9 +291,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     runners.push(running_simulation);
 
     // main loop
-
-    let weak_ui = ui.as_weak();
-    // theme_handler::handle_theme(weak_ui);
 
     ui.run()?;
 

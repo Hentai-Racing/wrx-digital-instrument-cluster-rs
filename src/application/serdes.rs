@@ -1,6 +1,5 @@
 use crate::data::parameters::FieldParameter;
 use crate::data::units::UnitSystem;
-use crate::slint_generatedApp::App;
 
 use serde::{Deserialize, Serialize};
 use slint::Weak;
@@ -54,17 +53,9 @@ pub struct SerdesManager {
     loaded: watch::Sender<bool>,
     pub user_settings: UserSettings,
     static_car_data: StaticCarData,
-    app: Weak<App>,
 }
 
 impl SerdesManager {
-    pub fn new(app: Weak<App>) -> Self {
-        Self {
-            app,
-            ..Default::default()
-        }
-    }
-
     pub fn get_config_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
         let exe_dir = Some(env::current_exe()?.to_path_buf()).unwrap();
 
