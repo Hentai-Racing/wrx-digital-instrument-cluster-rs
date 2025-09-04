@@ -1,5 +1,5 @@
 use crate::application::serdes::SerdesManager;
-use crate::slint_generatedApp::{App, ApplicationState, GlobalThemeData};
+use crate::slint_generatedApp::{AccessibilitySettings, App, ApplicationState, GlobalThemeData};
 
 use slint::{ComponentHandle, Weak};
 use std::sync::{Arc, RwLock};
@@ -17,6 +17,7 @@ pub fn bridge_settings(ui: Weak<App>, serdes_manager: Arc<RwLock<SerdesManager>>
 
             let application_state = ui.global::<ApplicationState>();
             let global_theme_data = ui.global::<GlobalThemeData>();
+            let accessibility_settings = ui.global::<AccessibilitySettings>();
 
             if let Ok(serdes_manager) = serdes_manager.read() {
                 global_theme_data.set_current_theme(
@@ -36,11 +37,19 @@ pub fn bridge_settings(ui: Weak<App>, serdes_manager: Arc<RwLock<SerdesManager>>
                         .value()
                         .into(),
                 );
+
+                accessibility_settings.set_animations_enabled(
+                    serdes_manager
+                        .user_settings
+                        .accessibility
+                        .animations_enabled
+                        .value()
+                        .into(),
+                );
             }
 
             {
                 let serdes_manager = serdes_manager.clone();
-
                 application_state.on_update_user_unit(move |value| {
                     if let Ok(mut serdes_manager) = serdes_manager.write() {
                         serdes_manager

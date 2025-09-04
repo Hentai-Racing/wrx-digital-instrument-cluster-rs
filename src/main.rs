@@ -257,8 +257,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let car_data = car_data.clone();
         let serdes_manager = serdes_manager.clone();
         tokio::spawn(async move {
-            use tokio::select;
-
             let mut watch = car_data.odometer().watch();
 
             loop {

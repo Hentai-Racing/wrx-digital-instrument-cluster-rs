@@ -1,8 +1,7 @@
-import { Button } from "std-widgets.slint";
-import { ApplicationState } from "../application/application_state.slint";
+import { ApplicationState, AccessibilitySettings } from "../application/application_state.slint";
 import { SUnitSystem } from "../data/units.slint";
 import { ThemeSelectorWidget } from "../themes/themes.slint";
-import { ControlledFocusScope, ControlledFocusDomain } from "controlled_focus_scope.slint";
+import { Button, ControlledFocusScope, ControlledFocusDomain } from "focus_elements.slint";
 
 export global UserSettings { } // TODO
 
@@ -31,15 +30,32 @@ export component SettingsMenu inherits ControlledFocusDomain {
 
             Text {
                 vertical-alignment: center;
-                text: "Units";
+                text: "Units: ";
             }
 
             Button {
                 text: ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI";
 
-                clicked => {
+                activated => {
                     ApplicationState.update_user_unit(ApplicationState.user_unit == SUnitSystem.USCS ? SUnitSystem.SI : SUnitSystem.USCS);
                 }
+            }
+        }
+
+        accessibility-animation-setting := HorizontalLayout {
+            height: 30px;
+            alignment: center;
+            padding: 2px;
+
+            Text {
+                vertical-alignment: center;
+                text: "Animations: ";
+            }
+
+            Button {
+                text: AccessibilitySettings.animations-enabled ? "Enabled" : "Disabled";
+
+                activated => AccessibilitySettings.set-animations-enabled(!AccessibilitySettings.animations-enabled);
             }
         }
 
@@ -49,7 +65,7 @@ export component SettingsMenu inherits ControlledFocusDomain {
             Button {
                 text: "Toggle Simulation";
 
-                clicked => {
+                activated => {
                     ApplicationState.toggle_simulation();
                 }
             }

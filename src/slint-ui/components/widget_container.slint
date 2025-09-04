@@ -1,9 +1,9 @@
-import { Button, ScrollView } from "std-widgets.slint";
+import { ScrollView } from "std-widgets.slint";
 
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import { RoadIndicatorWidget } from "../themes/default/components/road_indicators.slint";
 import { ApplicationState } from "../application/application_state.slint";
-import { ControlledFocusScope, ControlledFocusDomain, FocusState } from "../components/controlled_focus_scope.slint";
+import { Button, ControlledFocusScope, ControlledFocusDomain, FocusState } from "../components/focus_elements.slint";
 import { CanDisplayWidget } from "can_display.slint";
 
 export global WidgetContainerState {
@@ -93,8 +93,8 @@ export component WidgetContainer {
                     forward-focus: i-focus;
 
                     function attempt-focus() {
-                        if domain-active && has-view {
-                            self.focus();
+                        if domain-active && has-view && !i-focus.has-focus {
+                            i-focus.focus();
                         }
                     }
 
@@ -108,13 +108,8 @@ export component WidgetContainer {
 
                     init => {
                         if i == 0 && domain-active {
-                            self.focus();
+                            i-focus.focus();
                         }
-                    }
-
-                    Rectangle {
-                        background: darkblue;
-                        visible: has-view;
                     }
 
                     Text {
@@ -128,7 +123,7 @@ export component WidgetContainer {
                         focus-gained => {
                             return-page = i;
                             if !has-view { // prevent dirty-ing the number and causing recursion
-                                    WidgetContainerState.change-page(i);
+                                WidgetContainerState.change-page(i);
                             }
                         }
 
@@ -175,7 +170,7 @@ export component WidgetContainer {
 
                                 text: "Open Settings";
 
-                                clicked => {
+                                activated => {
                                     ApplicationState.settings-menu-visible = !ApplicationState.settings-menu-visible;
                                 }
                             }

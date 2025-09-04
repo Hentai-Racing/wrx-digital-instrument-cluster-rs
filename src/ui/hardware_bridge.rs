@@ -1,4 +1,4 @@
-use crate::hardware::hardware_backend::{self, HardwareBackend};
+use crate::hardware::hardware_backend::HardwareBackend;
 
 struct HardwareBridge {
     backend: HardwareBackend,

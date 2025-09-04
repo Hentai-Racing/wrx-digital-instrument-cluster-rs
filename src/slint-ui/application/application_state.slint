@@ -11,3 +11,8 @@ export global ApplicationState {
 
     in-out property <bool> settings-menu-visible: false;
 }
+
+export global AccessibilitySettings {
+    in-out property <bool> animations-enabled: true;
+    callback set-animations-enabled(value: bool);
+}

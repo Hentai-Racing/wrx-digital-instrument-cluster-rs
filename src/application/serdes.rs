@@ -2,7 +2,6 @@ use crate::data::parameters::FieldParameter;
 use crate::data::units::UnitSystem;
 
 use serde::{Deserialize, Serialize};
-use slint::Weak;
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -21,11 +20,18 @@ pub struct GeneralSettings {
 }
 
 #[derive(Serialize, Deserialize, Default)]
+pub struct AccessibilitySettings {
+    pub animations_enabled: FieldParameter<bool>,
+}
+
+#[derive(Serialize, Deserialize, Default)]
 pub struct UserSettings {
     #[serde(default)]
     pub theme: ThemeSettings,
     #[serde(default)]
     pub general: GeneralSettings,
+    #[serde(default)]
+    pub accessibility: AccessibilitySettings,
     #[serde(default)]
     pub static_car_data: StaticCarData,
 }

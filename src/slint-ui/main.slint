@@ -1,10 +1,10 @@
 import { DebugMenuWidget, DebugMenuState } from "components/debug.slint";
 import { SettingsMenu, UserSettings } from "components/settings.slint";
-import { ControlledFocusScope } from "components/controlled_focus_scope.slint";
+import { ControlledFocusScope, ControlledFocusDomain, FocusHoverRect, FocusDomainRect, DebugState } from "components/focus_elements.slint";
 import { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter } from "data/data_parameter.slint";
 import { SCarData } from "data/car_data.slint";
 import { SUnitSystem } from "data/units.slint";
-import { ApplicationState } from "application/application_state.slint";
+import { ApplicationState, AccessibilitySettings } from "application/application_state.slint";
 import { GlobalThemeData } from "themes/themes.slint";
 import { ThemeLoader } from "themes/theme_loader_gen.slint";
 import { CanDisplay, SCanFrameDisplay } from "components/can_display.slint";
@@ -25,12 +25,10 @@ import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
 
 import "../../resources/fonts/JetBrainsMono/fonts/ttf/JetBrainsMono-Regular.ttf";
 
-import { Button } from "std-widgets.slint";
-
 // Export types
 export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, SUnitSystem, SCanFrameDisplay }
 // Export globals
-export { ApplicationState, SCarData, DebugMenuState, GlobalThemeData, CanDisplay, WidgetContainerState }
+export { ApplicationState, AccessibilitySettings, SCarData, DebugMenuState, GlobalThemeData, CanDisplay, WidgetContainerState }
 
 export component App inherits Window {
     default-font-family: "Montserrat";
@@ -46,4 +44,8 @@ export component App inherits Window {
     // TODO: revert settings menu to appear as a "floating window"
     if ApplicationState.settings-menu-visible: settings-menu := SettingsMenu { }
     if !ApplicationState.settings-menu-visible: theme-loader := ThemeLoader { }
+
+    FocusHoverRect { }
+
+    if ApplicationState.debug-mode: DebugState { }
 }

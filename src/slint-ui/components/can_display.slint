@@ -1,6 +1,6 @@
-import { ScrollView, Button, StandardTableView } from "std-widgets.slint";
+import { ScrollView, StandardTableView } from "std-widgets.slint";
 
-import { ControlledFocusScope } from "../components/controlled_focus_scope.slint";
+import { ControlledFocusScope } from "../components/focus_elements.slint";
 
 export struct SCanFrameDisplay {
     id: int,
@@ -80,7 +80,7 @@ export component CanDisplayWidget inherits Rectangle {
         height: header-layout.height;
         x: header-layout.x;
         y: header-layout.y;
-        background: gray.darker(95%);
+        background: #323232cb;
     }
 
     header-layout := HorizontalLayout {
@@ -137,13 +137,6 @@ export component CanDisplayWidget inherits Rectangle {
 
                     function byte-clicked() {
                         frame-display.bit_display[i] = !frame-display.bit_display[i];
-                    }
-
-                    Rectangle {
-                        border-color: i-focus.has-focus ? blue : turquoise;
-                        border-width: 4px;
-                        background: transparent;
-                        visible: i-focus.has-focus || i-focus.has-hover;
                     }
 
                     i-focus := ControlledFocusScope {
