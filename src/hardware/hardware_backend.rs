@@ -18,9 +18,9 @@ fn create_uinput_dev(name: String) -> Result<uinput::Device, Box<dyn std::error:
 
     let dev = uinput::default()?
         .name(name)?
-        .event(Key::Up)?
-        .event(Key::Down)?
-        .event(Key::Enter)?
+        .event(Key::Up)? // todo: tab
+        .event(Key::Down)? // todo: alt+tab
+        .event(Key::Enter)? // todo: space
         .create()?;
 
     Ok(dev)
@@ -129,10 +129,10 @@ impl HardwareBackend {
                                     let value = *gpio_1_watch.borrow_and_update();
 
                                     if value {
-                                        let _ = device.press(&Key::Up);
+                                        let _ = device.press(&Key::Up); // change to tab
                                         println!("fake keyboard press");
                                     } else {
-                                        let _ = device.release(&Key::Up);
+                                        let _ = device.release(&Key::Up); // change to tab
                                         println!("fake keyboard release");
                                     }
                                 },

@@ -36,15 +36,6 @@ pub struct UserSettings {
     pub static_car_data: StaticCarData,
 }
 
-impl Default for ThemeSettings {
-    fn default() -> Self {
-        Self {
-            // TODO: change themes to enum and default there
-            selected_theme: String::from("Default").into(),
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Default)]
 pub struct StaticCarData {
     pub vin: FieldParameter<String>,
@@ -134,5 +125,14 @@ impl SerdesManager {
 
     pub fn loaded(&self) -> watch::Receiver<bool> {
         self.loaded.subscribe()
+    }
+}
+
+impl Default for ThemeSettings {
+    fn default() -> Self {
+        Self {
+            // TODO: change themes to enum and default there
+            selected_theme: String::from("Default").into(),
+        }
     }
 }

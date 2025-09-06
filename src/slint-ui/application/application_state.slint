@@ -13,6 +13,38 @@ export global ApplicationState {
 }
 
 export global AccessibilitySettings {
-    in-out property <bool> animations-enabled: true;
-    callback set-animations-enabled(value: bool);
+    in-out property <bool> animations-enabled;
+    callback update-animations-enabled(bool);
+}
+
+export component ModuleDebug inherits VerticalLayout {
+    Text {
+        color: purple;
+        text: "ApplicationState";
+    }
+
+    Text {
+        color: white;
+        text: ApplicationState.virtual-cluster ? "virtual" : "normal";
+    }
+
+    Text {
+        color: white;
+        text: ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI";
+    }
+
+    Text {
+        color: white;
+        text: ApplicationState.settings-menu-visible ? "true" : "false";
+    }
+
+    Text {
+        color: purple;
+        text: "AccessibilitySettings";
+    }
+
+    Text {
+        color: white;
+        text: AccessibilitySettings.animations-enabled ? "true" : "false";
+    }
 }

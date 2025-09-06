@@ -1,10 +1,11 @@
 use crate::application::serdes::SerdesManager;
 use crate::slint_generatedApp::{AccessibilitySettings, App, ApplicationState, GlobalThemeData};
 
+use paste::paste;
 use slint::{ComponentHandle, Weak};
 use std::sync::{Arc, RwLock};
 
-pub fn bridge_settings(ui: Weak<App>, serdes_manager: Arc<RwLock<SerdesManager>>) {
+pub fn bridge_settings(handle_weak: Weak<App>, serdes_manager: Arc<RwLock<SerdesManager>>) {
     match slint::spawn_local(async_compat::Compat::new(async move {
         if let Ok(serdes_manager) = serdes_manager.read() {
             if let Err(e) = serdes_manager.loaded().wait_for(|loaded| *loaded).await {
@@ -12,85 +13,41 @@ pub fn bridge_settings(ui: Weak<App>, serdes_manager: Arc<RwLock<SerdesManager>>
             }
         }
 
-        if let Some(ui) = ui.upgrade() {
-            let ui_binding = ui.as_weak();
+        macro_rules! bind {
+            {$slint_global:ident.$param:tt <=> $root:ident.$($tail:tt)+} => {{paste!{
+                if let Some(handle) = handle_weak.upgrade() {
+                    let handle_weak = handle_weak.clone();
+                    let root = $root.clone();
+                    let g = handle.global::<$slint_global>();
 
-            let application_state = ui.global::<ApplicationState>();
-            let global_theme_data = ui.global::<GlobalThemeData>();
-            let accessibility_settings = ui.global::<AccessibilitySettings>();
-
-            if let Ok(serdes_manager) = serdes_manager.read() {
-                global_theme_data.set_current_theme(
-                    serdes_manager
-                        .user_settings
-                        .theme
-                        .selected_theme
-                        .value()
-                        .into(),
-                );
-
-                application_state.set_user_unit(
-                    serdes_manager
-                        .user_settings
-                        .general
-                        .unit_system
-                        .value()
-                        .into(),
-                );
-
-                accessibility_settings.set_animations_enabled(
-                    serdes_manager
-                        .user_settings
-                        .accessibility
-                        .animations_enabled
-                        .value()
-                        .into(),
-                );
-            }
-
-            {
-                let serdes_manager = serdes_manager.clone();
-                application_state.on_update_user_unit(move |value| {
-                    if let Ok(mut serdes_manager) = serdes_manager.write() {
-                        serdes_manager
-                            .user_settings
-                            .general
-                            .unit_system
-                            .set_value(value);
+                    if let Ok(root) = root.read() {
+                        g.[<set_ $param>](root.$($tail)+.value().into());
                     }
 
-                    let serdes_manager = serdes_manager.clone();
-                    if let Err(e) = ui_binding.upgrade_in_event_loop(move |ui| {
-                        if let Ok(serdes_manager) = serdes_manager.read() {
-                            let application_state = ui.global::<ApplicationState>();
-                            application_state.set_user_unit(
-                                serdes_manager
-                                    .user_settings
-                                    .general
-                                    .unit_system
-                                    .value()
-                                    .into(),
-                            );
+                    g.[<on_update_ $param>](move |value| {
+                        if let Ok(mut root) = root.write() {
+                            root.$($tail)+.set_value(value);
                         }
-                    }) {
-                        eprintln!("Failed to update application state: {e:?}")
-                    }
-                });
-            }
 
-            {
-                let serdes_manager = serdes_manager.clone();
-                global_theme_data.on_theme_changed(move |value| {
-                    if let Ok(mut serdes_manager) = serdes_manager.write() {
-                        serdes_manager
-                            .user_settings
-                            .theme
-                            .selected_theme
-                            .set_value(value);
-                    }
-                });
-            }
+                        let handle_copy = handle_weak.clone();
+                        let root = root.clone();
+
+                        if let Err(e) = handle_copy.upgrade_in_event_loop(move |handle| {
+                            if let Ok(root) = root.read() {
+                                let g = handle.global::<$slint_global>();
+                                g.[<set_ $param>](root.$($tail)+.value().into());
+                            }
+                        }) {
+                            eprintln!("Failed to update {}: {e:?}", stringify!($slint_global.$param))
+                        };
+                    });
+                }
+            }}};
         }
+
+        bind!(ApplicationState.user_unit <=> serdes_manager.user_settings.general.unit_system);
+        bind!(GlobalThemeData.current_theme <=> serdes_manager.user_settings.theme.selected_theme);
+        bind!(AccessibilitySettings.animations_enabled <=> serdes_manager.user_settings.accessibility.animations_enabled);
     })) {
         Err(e) => eprintln!("Failure in settings loader: {e}"),
         _ => {}

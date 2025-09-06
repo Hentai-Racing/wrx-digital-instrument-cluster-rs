@@ -26,7 +26,18 @@ export global FocusState {
     }
 
     public function set-focus-coords(x: length, y: length, width: length, height: length) {
-        focus-box = { x: x, y: y, width: width, height: height };
+        if self.focus-box.x != x {
+            self.focus-box.x = x;
+        }
+        if self.focus-box.y != y {
+            self.focus-box.y = y;
+        }
+        if self.focus-box.width != width {
+            self.focus-box.width = width;
+        }
+        if self.focus-box.height != height {
+            self.focus-box.height = height;
+        }
     }
 }
 
@@ -35,7 +46,7 @@ export global DomainState {
     out property <int> current-domain: 0;
     out property <int> last-domain: 0;
 
-    out property <FocusBox> focus-box: { x: 0, y: 0, width: 0, height: 0 };
+    in-out property <FocusBox> focus-box: { x: 0, y: 0, width: 0, height: 0 };
 
     public function create-domain-id() -> int {
         num-domains += 1;
@@ -71,13 +82,34 @@ export global DomainState {
     }
 }
 
-component HoverRect inherits Rectangle {
+component AnimatedHoverRect inherits Rectangle {
     background: transparent;
     border-color: white;
     border-width: 2px;
     border-radius: 2px;
 
-    animate x, y, width, height { duration: AccessibilitySettings.animations-enabled ? 60ms : 0ms; }
+    animate x, y, width, height { duration: 60ms; }
+}
+
+export component AnimatedFocusHoverRect inherits AnimatedHoverRect {
+    x: FocusState.focus-box.x;
+    y: FocusState.focus-box.y;
+    width: FocusState.focus-box.width;
+    height: FocusState.focus-box.height;
+}
+
+export component AnimatedFocusDomainRect inherits AnimatedHoverRect {
+    x: DomainState.focus-box.x;
+    y: DomainState.focus-box.y;
+    width: DomainState.focus-box.width;
+    height: DomainState.focus-box.height;
+}
+
+component HoverRect inherits Rectangle {
+    background: transparent;
+    border-color: white;
+    border-width: 2px;
+    border-radius: 2px;
 }
 
 export component FocusHoverRect inherits HoverRect {
@@ -123,12 +155,6 @@ export component ControlledFocusScope inherits Rectangle {
             i-focus.focus();
         }
     }
-
-    // TODO: the box needs to update upon component changes, but absolute-position is buggy
-    // changed x => update-coords();
-    // changed y => update-coords();
-    // changed width => update-coords();
-    // changed height => update-coords();
 
     init => {
         self.focus-id = FocusState.create-focus-id();
@@ -330,82 +356,74 @@ export component Button inherits Rectangle {
     }
 }
 
-export component DebugState {
-    x: 0;
-    y: 0;
-    VerticalLayout {
-        Rectangle {
-            height: 25px;
-        }
+export component ModuleDebug inherits VerticalLayout {
+    Text {
+        color: purple;
+        text: "FocusState";
+    }
 
-        Text {
-            color: purple;
-            text: "FocusState Debug";
-        }
+    Text {
+        color: white;
+        text: FocusState.num-focuses;
+    }
 
-        Text {
-            color: white;
-            text: FocusState.num-focuses;
-        }
+    Text {
+        color: white;
+        text: FocusState.current-focus;
+    }
 
-        Text {
-            color: white;
-            text: FocusState.current-focus;
-        }
+    Text {
+        color: white;
+        text: FocusState.focus-box.x / 1px;
+    }
 
-        Text {
-            color: white;
-            text: FocusState.focus-box.x / 1px;
-        }
+    Text {
+        color: white;
+        text: FocusState.focus-box.y / 1px;
+    }
 
-        Text {
-            color: white;
-            text: FocusState.focus-box.y / 1px;
-        }
+    Text {
+        color: white;
+        text: FocusState.focus-box.width / 1px;
+    }
 
-        Text {
-            color: white;
-            text: FocusState.focus-box.width / 1px;
-        }
+    Text {
+        color: white;
+        text: FocusState.focus-box.height / 1px;
+    }
 
-        Text {
-            color: white;
-            text: FocusState.focus-box.height / 1px;
-        }
+    Text {
+        color: purple;
+        text: "DomainState";
+    }
 
-        Text {
-            color: purple;
-            text: "DomainState Debug";
-        }
+    Text {
+        color: white;
+        text: DomainState.num-domains;
+    }
 
-        Text {
-            color: white;
-            text: DomainState.num-domains;
-        }
+    Text {
+        color: white;
+        text: DomainState.current-domain;
+    }
 
-        Text {
-            color: white;
-            text: DomainState.current-domain;
-        }
+    Text {
+        color: white;
+        text: DomainState.focus-box.x / 1px;
+    }
 
-        Text {
-            color: white;
-            text: DomainState.focus-box.x / 1px;
-        }
+    Text {
+        color: white;
+        text: DomainState.focus-box.y / 1px;
+    }
 
-        Text {
-            color: white;
-            text: DomainState.focus-box.y / 1px;
-        }
+    Text {
+        color: white;
+        text: DomainState.focus-box.width / 1px;
+    }
 
-        Text {
-            color: white;
-            text: DomainState.focus-box.width / 1px;
-        }
-
-        Text {
-            color: white;
-            text: DomainState.focus-box.height / 1px;
-        }
+    Text {
+        color: white;
+        text: DomainState.focus-box.height / 1px;
     }
 }

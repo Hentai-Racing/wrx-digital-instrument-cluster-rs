@@ -8,7 +8,7 @@ import { ComboBox } from "std-widgets.slint";
 export global GlobalThemeData {
     in-out property <[string]> themes; //* set by theme_loader_gen
     in-out property <string> current-theme: "Default";
-    callback theme-changed(string);
+    callback update_current_theme(string);
 }
 
 export struct ThemeParams {
@@ -38,7 +38,7 @@ export component ThemeSelectorWidget {
             current-value <=> GlobalThemeData.current-theme;
 
             changed current-value => {
-                GlobalThemeData.theme-changed(self.current-value);
+                GlobalThemeData.update_current_theme(self.current-value);
             }
         }
     }

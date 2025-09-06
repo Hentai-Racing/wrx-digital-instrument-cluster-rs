@@ -55,7 +55,7 @@ export component SettingsMenu inherits ControlledFocusDomain {
             Button {
                 text: AccessibilitySettings.animations-enabled ? "Enabled" : "Disabled";
 
-                activated => AccessibilitySettings.set-animations-enabled(!AccessibilitySettings.animations-enabled);
+                activated => AccessibilitySettings.update-animations-enabled(!AccessibilitySettings.animations-enabled);
             }
         }
 
