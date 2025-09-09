@@ -9,20 +9,54 @@ use std::path::PathBuf;
 use tokio::sync::watch;
 use toml;
 
-#[derive(Serialize, Deserialize)]
-pub struct ThemeSettings {
-    pub selected_theme: FieldParameter<String>,
+macro_rules! default_value {
+    ($param_default:expr) => {
+        $param_default.into()
+    };
+    () => {
+        Default::default()
+    };
 }
 
-#[derive(Serialize, Deserialize, Default)]
-pub struct GeneralSettings {
-    pub unit_system: FieldParameter<UnitSystem>,
+macro_rules! parameter_struct {
+    ($struct_visibillity:vis $struct_name:ident {$($param_name:tt: $param_type:ty $(= $param_default:expr)?),+ $(,)?}) => {
+        #[derive(Serialize, Deserialize)]
+        $struct_visibillity struct $struct_name {
+            $(pub $param_name: FieldParameter<$param_type>,)*
+        }
+
+        impl Default for $struct_name {
+            fn default() -> Self {
+                Self {
+                    $(
+                        $param_name: default_value!($($param_default)?)
+                    ),*
+                }
+            }
+        }
+    };
 }
 
-#[derive(Serialize, Deserialize, Default)]
-pub struct AccessibilitySettings {
-    pub animations_enabled: FieldParameter<bool>,
-}
+parameter_struct! {pub ThemeSettings {
+    selected_theme: String = String::from("Default"),
+}}
+
+parameter_struct! {pub GeneralSettings {
+    unit_system: UnitSystem,
+}}
+
+parameter_struct! {pub AccessibilitySettings {
+    animations_enabled: bool = true,
+}}
+
+parameter_struct! {pub DebugSessionSettings {
+    debug_highlights: bool = true,
+}}
+
+parameter_struct! {pub StaticCarData {
+    vin: String,
+    odometer: u32,
+}}
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct UserSettings {
@@ -36,10 +70,8 @@ pub struct UserSettings {
     pub static_car_data: StaticCarData,
 }
 
-#[derive(Serialize, Deserialize, Default)]
-pub struct StaticCarData {
-    pub vin: FieldParameter<String>,
-    pub odometer: FieldParameter<u32>,
+pub struct SessionSettings {
+    pub debug_session_settings: DebugSessionSettings,
 }
 
 #[derive(Default)]
@@ -50,13 +82,13 @@ pub enum SaveStatus {
 }
 
 #[derive(Default)]
-pub struct SerdesManager {
+pub struct SettingsManager {
     loaded: watch::Sender<bool>,
     pub user_settings: UserSettings,
     static_car_data: StaticCarData,
 }
 
-impl SerdesManager {
+impl SettingsManager {
     pub fn get_config_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
         let exe_dir = Some(env::current_exe()?.to_path_buf()).unwrap();
 
@@ -125,14 +157,5 @@ impl SerdesManager {
 
     pub fn loaded(&self) -> watch::Receiver<bool> {
         self.loaded.subscribe()
-    }
-}
-
-impl Default for ThemeSettings {
-    fn default() -> Self {
-        Self {
-            // TODO: change themes to enum and default there
-            selected_theme: String::from("Default").into(),
-        }
     }
 }

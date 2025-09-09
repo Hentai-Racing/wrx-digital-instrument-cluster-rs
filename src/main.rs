@@ -4,7 +4,7 @@ mod data;
 mod hardware;
 mod ui;
 
-use application::serdes::SerdesManager;
+use application::settings::SettingsManager;
 
 use crate::can::can_backend::{CanBackend, CanFrame, SelectedCanInterface};
 use crate::can::can_data_emulator::run_can_data_emulator;
@@ -240,7 +240,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     application_state.set_virtual_cluster(virtual_cluster);
     application_state.set_debug_mode(cfg!(debug_assertions));
 
-    let serdes_manager = Arc::new(RwLock::new(SerdesManager::default()));
+    let serdes_manager = Arc::new(RwLock::new(SettingsManager::default()));
 
     if let Ok(mut serdes_manager) = serdes_manager.write() {
         serdes_manager.load_from_fs()?;

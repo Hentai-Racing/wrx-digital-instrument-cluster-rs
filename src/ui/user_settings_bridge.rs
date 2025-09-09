@@ -1,11 +1,11 @@
-use crate::application::serdes::SerdesManager;
+use crate::application::settings::SettingsManager;
 use crate::slint_generatedApp::{AccessibilitySettings, App, ApplicationState, GlobalThemeData};
 
 use paste::paste;
 use slint::{ComponentHandle, Weak};
 use std::sync::{Arc, RwLock};
 
-pub fn bridge_settings(handle_weak: Weak<App>, serdes_manager: Arc<RwLock<SerdesManager>>) {
+pub fn bridge_settings(handle_weak: Weak<App>, serdes_manager: Arc<RwLock<SettingsManager>>) {
     match slint::spawn_local(async_compat::Compat::new(async move {
         if let Ok(serdes_manager) = serdes_manager.read() {
             if let Err(e) = serdes_manager.loaded().wait_for(|loaded| *loaded).await {
