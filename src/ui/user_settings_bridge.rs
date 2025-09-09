@@ -1,15 +1,17 @@
 use crate::application::settings::SettingsManager;
-use crate::slint_generatedApp::{AccessibilitySettings, App, ApplicationState, GlobalThemeData};
+use crate::slint_generatedApp::{
+    AccessibilitySettings, App, ApplicationState, DebugSettings, GlobalThemeData,
+};
 
 use paste::paste;
 use slint::{ComponentHandle, Weak};
 use std::sync::{Arc, RwLock};
 
-pub fn bridge_settings(handle_weak: Weak<App>, serdes_manager: Arc<RwLock<SettingsManager>>) {
+pub fn bridge_settings(handle_weak: Weak<App>, settings_manager: Arc<RwLock<SettingsManager>>) {
     match slint::spawn_local(async_compat::Compat::new(async move {
-        if let Ok(serdes_manager) = serdes_manager.read() {
-            if let Err(e) = serdes_manager.loaded().wait_for(|loaded| *loaded).await {
-                eprintln!("Failed to wait for serdes manager loading: {e}")
+        if let Ok(settings_manager) = settings_manager.read() {
+            if let Err(e) = settings_manager.loaded().wait_for(|loaded| *loaded).await {
+                eprintln!("Failed to wait for settings manager loading: {e}")
             }
         }
 
@@ -45,9 +47,11 @@ pub fn bridge_settings(handle_weak: Weak<App>, serdes_manager: Arc<RwLock<Settin
             }}};
         }
 
-        bind!(ApplicationState.user_unit <=> serdes_manager.user_settings.general.unit_system);
-        bind!(GlobalThemeData.current_theme <=> serdes_manager.user_settings.theme.selected_theme);
-        bind!(AccessibilitySettings.animations_enabled <=> serdes_manager.user_settings.accessibility.animations_enabled);
+        bind!(ApplicationState.user_unit <=> settings_manager.user_settings.general.unit_system);
+        bind!(GlobalThemeData.current_theme <=> settings_manager.user_settings.theme.selected_theme);
+        bind!(AccessibilitySettings.animations_enabled <=> settings_manager.user_settings.accessibility.animations_enabled);
+        bind!(DebugSettings.debug_highlights <=> settings_manager.session_settings.debug_session_settings.debug_highlights);
+        bind!(DebugSettings.debug_overlay_enabled <=> settings_manager.session_settings.debug_session_settings.debug_overlay_enabled);
     })) {
         Err(e) => eprintln!("Failure in settings loader: {e}"),
         _ => {}

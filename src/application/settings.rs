@@ -50,13 +50,19 @@ parameter_struct! {pub AccessibilitySettings {
 }}
 
 parameter_struct! {pub DebugSessionSettings {
-    debug_highlights: bool = true,
+    debug_highlights: bool = false,
+    debug_overlay_enabled: bool = true,
 }}
 
 parameter_struct! {pub StaticCarData {
     vin: String,
     odometer: u32,
 }}
+
+#[derive(Default)]
+pub struct SessionSettings {
+    pub debug_session_settings: DebugSessionSettings,
+}
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct UserSettings {
@@ -70,10 +76,6 @@ pub struct UserSettings {
     pub static_car_data: StaticCarData,
 }
 
-pub struct SessionSettings {
-    pub debug_session_settings: DebugSessionSettings,
-}
-
 #[derive(Default)]
 pub enum SaveStatus {
     #[default]
@@ -85,6 +87,7 @@ pub enum SaveStatus {
 pub struct SettingsManager {
     loaded: watch::Sender<bool>,
     pub user_settings: UserSettings,
+    pub session_settings: SessionSettings,
     static_car_data: StaticCarData,
 }
 

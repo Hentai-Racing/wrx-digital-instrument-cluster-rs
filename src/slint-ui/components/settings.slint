@@ -1,7 +1,7 @@
-import { ApplicationState, AccessibilitySettings } from "../data/application_state.slint";
+import { ApplicationState, AccessibilitySettings, DebugSettings } from "../data/application_state.slint";
 import { SUnitSystem } from "../data/units.slint";
 import { ThemeSelectorWidget } from "../themes/themes.slint";
-import { Button, FocusDomain } from "core.slint";
+import { Button, FocusDomain, ComboBox } from "core.slint";
 
 export global UserSettings { } // TODO
 
@@ -11,7 +11,7 @@ export component SettingsMenu inherits FocusDomain {
     nav-front-forward => theme-setting-widget.focus();
     nav-end-backward => exit-button.focus();
 
-    forward-focus: theme-setting-widget;
+    // forward-focus: theme-setting-widget;
 
     VerticalLayout {
         alignment: center;
@@ -32,11 +32,14 @@ export component SettingsMenu inherits FocusDomain {
                 text: "Units: ";
             }
 
-            Button {
-                text: ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI";
+            ComboBox {
+                model: ["USCS", "SI"];
+                width: 100px;
 
-                activated => {
-                    ApplicationState.update_user_unit(ApplicationState.user_unit == SUnitSystem.USCS ? SUnitSystem.SI : SUnitSystem.USCS);
+                current-value: ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI";
+
+                changed current-value => {
+                    ApplicationState.update_user_unit(self.current-value == "USCS" ? SUnitSystem.USCS : SUnitSystem.SI);
                 }
             }
         }
@@ -66,6 +69,45 @@ export component SettingsMenu inherits FocusDomain {
 
                 activated => {
                     ApplicationState.toggle_simulation();
+                }
+            }
+        }
+
+        if ApplicationState.debug-mode: VerticalLayout {
+            spacing: parent.spacing;
+            alignment: parent.alignment;
+
+            HorizontalLayout {
+                height: 30px;
+                alignment: center;
+                padding: 2px;
+
+                Text {
+                    vertical-alignment: center;
+                    text: "Debug Highlights: ";
+                }
+
+                Button {
+                    text: DebugSettings.debug-highlights ? "Enabled" : "Disabled";
+
+                    activated => DebugSettings.update-debug-highlights(!DebugSettings.debug-highlights);
+                }
+            }
+
+            HorizontalLayout {
+                height: 30px;
+                alignment: center;
+                padding: 2px;
+
+                Text {
+                    vertical-alignment: center;
+                    text: "Debug Overlay: ";
+                }
+
+                Button {
+                    text: DebugSettings.debug-overlay-enabled ? "Enabled" : "Disabled";
+
+                    activated => DebugSettings.update-debug-overlay-enabled(!DebugSettings.debug-overlay-enabled);
                 }
             }
         }

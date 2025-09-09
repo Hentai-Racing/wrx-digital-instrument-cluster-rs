@@ -240,22 +240,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     application_state.set_virtual_cluster(virtual_cluster);
     application_state.set_debug_mode(cfg!(debug_assertions));
 
-    let serdes_manager = Arc::new(RwLock::new(SettingsManager::default()));
+    let settings_manager = Arc::new(RwLock::new(SettingsManager::default()));
 
-    if let Ok(mut serdes_manager) = serdes_manager.write() {
-        serdes_manager.load_from_fs()?;
+    if let Ok(mut settings_manager) = settings_manager.write() {
+        settings_manager.load_from_fs()?;
     }
 
-    let unit_system_parameter = match serdes_manager.read() {
-        Ok(serdes_manager) => serdes_manager.user_settings.general.unit_system.clone(),
+    let unit_system_parameter = match settings_manager.read() {
+        Ok(settings_manager) => settings_manager.user_settings.general.unit_system.clone(),
         _ => FieldParameter::from(UnitSystem::USCS),
     };
 
-    user_settings_bridge::bridge_settings(ui.as_weak().clone(), serdes_manager.clone());
+    user_settings_bridge::bridge_settings(ui.as_weak().clone(), settings_manager.clone());
 
     {
         let car_data = car_data.clone();
-        let serdes_manager = serdes_manager.clone();
+        let settings_manager = settings_manager.clone();
         tokio::spawn(async move {
             let mut watch = car_data.odometer().watch();
 
@@ -263,8 +263,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if let Ok(_) = watch.changed().await {
                     let val = *watch.borrow_and_update();
 
-                    if let Ok(mut serdes_manager) = serdes_manager.try_write() {
-                        serdes_manager
+                    if let Ok(mut settings_manager) = settings_manager.try_write() {
+                        settings_manager
                             .user_settings
                             .static_car_data
                             .odometer
@@ -317,14 +317,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         use std::time::{Duration, Instant};
 
-        let serdes_manager = serdes_manager.clone();
+        let settings_manager = settings_manager.clone();
         tokio::spawn(async move {
             let mut now = Instant::now();
             loop {
                 if now.elapsed() >= Duration::from_secs(30) {
                     now = Instant::now();
-                    if let Ok(serdes_manager) = serdes_manager.read() {
-                        let _ = serdes_manager.save_to_fs();
+                    if let Ok(settings_manager) = settings_manager.read() {
+                        let _ = settings_manager.save_to_fs();
                     }
                 }
             }
@@ -335,9 +335,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // cleanup
 
-    if let Ok(serdes_manager) = serdes_manager.read() {
-        serdes_manager.save_to_fs()?;
-    }
+    // TODO: cleanup on SIGINT & SIGTERM
 
     for runner in runners {
         runner.store(false, Ordering::SeqCst);
@@ -348,6 +346,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     tokio_runtime.shutdown_background();
+
+    if let Ok(settings_manager) = settings_manager.read() {
+        settings_manager.save_to_fs()?;
+    }
 
     Ok(())
 }

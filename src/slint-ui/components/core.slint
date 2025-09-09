@@ -1,4 +1,4 @@
-import { ApplicationState, AccessibilitySettings } from "../data/application_state.slint";
+import { ApplicationState, AccessibilitySettings, DebugSettings } from "../data/application_state.slint";
 
 struct FocusBox {
     x: length,
@@ -98,6 +98,18 @@ export global DomainState {
 
     public function set-last-domain(id: int) {
         self.last-domain = id;
+    }
+}
+
+export component DebugHighlight {
+    in property <brush> background <=> i-rect.background;
+
+    width: 100%;
+    height: 100%;
+
+    i-rect := Rectangle {
+        background: purple;
+        visible: ApplicationState.debug-mode && DebugSettings.debug-highlights;
     }
 }
 
@@ -331,9 +343,7 @@ export component FocusDomain inherits Rectangle {
         }
     }
 
-    if ApplicationState.debug-mode: Rectangle {
-        width: 100%;
-        height: 100%;
+    DebugHighlight {
         background: red;
         visible: domain-active;
     }

@@ -1,8 +1,9 @@
 import { SCarData } from "../data/car_data.slint";
 import { GridBox } from "std-widgets.slint";
 import { Button, ComboBox } from "core.slint";
-import { ModuleDebug as FocusDebug} from "core.slint";
-import { ModuleDebug as ApplicationStateDebug} from "../data/application_state.slint";
+import { ModuleDebug as FocusDebug } from "core.slint";
+import { ModuleDebug as ApplicationStateDebug } from "../data/application_state.slint";
+import { DebugSettings, ApplicationState } from "../data/application_state.slint";
 
 export global DebugMenuState {
     callback debug-suspend();
@@ -44,6 +45,7 @@ export component DebugMenuWidget {
 export component DebugOverlay {
     x: 0;
     y: 20px;
+
     VerticalLayout {
         Text {
             color: purple;
