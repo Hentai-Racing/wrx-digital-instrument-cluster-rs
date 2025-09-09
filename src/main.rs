@@ -347,5 +347,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         handle.join().unwrap();
     }
 
+    tokio_runtime.shutdown_background();
+
     Ok(())
 }

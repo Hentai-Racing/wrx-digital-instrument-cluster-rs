@@ -1,0 +1,577 @@
+import { ApplicationState, AccessibilitySettings } from "../data/application_state.slint";
+
+struct FocusBox {
+    x: length,
+    y: length,
+    width: length,
+    height: length,
+}
+
+export global FocusState {
+    out property <int> num-focuses: 1;
+    out property <int> current-focus: 0;
+    out property <int> force-focus-id;
+    out property <bool> attempting-force-focus;
+    in-out property <FocusBox> focus-box: { x: 0, y: 0, width: 0, height: 0 };
+
+    private property <bool> i-force-complete;
+
+    public function create-focus-id() -> int {
+        self.num-focuses += 1;
+        self.num-focuses - 1
+    }
+
+    public function force-focus(id: int) {
+        self.force-focus-id = id;
+        self.attempting-force-focus = true;
+    }
+
+    pure public function has-focus(id: int) -> bool {
+        self.current-focus == id
+    }
+
+    public function set-focus-id(id: int) {
+        self.current-focus = id;
+    }
+
+    public function force-complete(id: int) {
+        if id == self.force-focus-id {
+            self.attempting-force-focus = false;
+        }
+    }
+
+    public function set-focus-coords(x: length, y: length, width: length, height: length) {
+        if self.focus-box.x != x {
+            self.focus-box.x = x;
+        }
+        if self.focus-box.y != y {
+            self.focus-box.y = y;
+        }
+        if self.focus-box.width != width {
+            self.focus-box.width = width;
+        }
+        if self.focus-box.height != height {
+            self.focus-box.height = height;
+        }
+    }
+}
+
+export global DomainState {
+    out property <int> num-domains: 1;
+    out property <int> current-domain: 0;
+    out property <int> last-domain: 0;
+
+    in-out property <FocusBox> focus-box: { x: 0, y: 0, width: 0, height: 0 };
+
+    public function create-domain-id() -> int {
+        num-domains += 1;
+        num-domains - 1
+    }
+
+    public function enter-domain(domain-id: int) {
+        self.last-domain = self.current-domain;
+        self.current-domain = domain-id;
+    }
+
+    public function domain-exit(domain-id: int) -> bool {
+        if domain-id == self.current-domain {
+            enter-domain(self.last-domain);
+            true
+        }
+        false
+    }
+
+    public function set-focus-coords(x: length, y: length, width: length, height: length) {
+        if self.focus-box.x != x {
+            self.focus-box.x = x;
+        }
+        if self.focus-box.y != y {
+            self.focus-box.y = y;
+        }
+        if self.focus-box.width != width {
+            self.focus-box.width = width;
+        }
+        if self.focus-box.height != height {
+            self.focus-box.height = height;
+        }
+    }
+
+    public function set-last-domain(id: int) {
+        self.last-domain = id;
+    }
+}
+
+component AnimatedHoverRect inherits Rectangle {
+    background: transparent;
+    border-color: white;
+    border-width: 2px;
+    border-radius: 2px;
+
+    animate x, y, width, height { duration: 60ms; }
+}
+
+export component AnimatedFocusHoverRect inherits AnimatedHoverRect {
+    x: FocusState.focus-box.x;
+    y: FocusState.focus-box.y;
+    width: FocusState.focus-box.width;
+    height: FocusState.focus-box.height;
+}
+
+export component AnimatedFocusDomainRect inherits AnimatedHoverRect {
+    x: DomainState.focus-box.x;
+    y: DomainState.focus-box.y;
+    width: DomainState.focus-box.width;
+    height: DomainState.focus-box.height;
+}
+
+component HoverRect inherits Rectangle {
+    background: transparent;
+    border-color: white;
+    border-width: 2px;
+    border-radius: 2px;
+}
+
+export component FocusHoverRect inherits HoverRect {
+    x: FocusState.focus-box.x;
+    y: FocusState.focus-box.y;
+    width: FocusState.focus-box.width;
+    height: FocusState.focus-box.height;
+}
+
+export component FocusDomainRect inherits HoverRect {
+    x: DomainState.focus-box.x;
+    y: DomainState.focus-box.y;
+    width: DomainState.focus-box.width;
+    height: DomainState.focus-box.height;
+}
+
+export component ControlledFocusScope inherits Rectangle {
+    in property <bool> force-focus: true;
+    in property <bool> enabled <=> i-focus.enabled;
+
+    out property <bool> has-focus <=> i-focus.has-focus;
+    out property <bool> has-hover <=> i-touch.has-hover;
+    out property <int> focus-id;
+
+    private property <bool> state-attempting-force-focus: FocusState.attempting-force-focus;
+
+    callback key-pressed(KeyEvent) -> EventResult;
+    callback key-released(KeyEvent) -> EventResult;
+    callback focus-gained(FocusReason);
+    callback focus-lost(FocusReason);
+    callback activated();
+    callback init-ready();
+
+    forward-focus: i-focus;
+
+    function update-coords() {
+        if (FocusState.focus-box.x != root.absolute-position.x) || (FocusState.focus-box.y != root.absolute-position.y) || (FocusState.focus-box.width != root.width) || (FocusState.focus-box.height != root.height) {
+            FocusState.set-focus-coords(root.absolute-position.x, root.absolute-position.y, root.width, root.height);
+        }
+    }
+
+    changed state-attempting-force-focus => {
+        if state-attempting-force-focus && (FocusState.force-focus-id == root.focus-id) && root.enabled {
+            root.focus();
+            FocusState.force-complete(root.focus-id);
+        }
+    }
+
+    init => {
+        self.focus-id = FocusState.create-focus-id();
+    }
+
+    i-touch := TouchArea {
+        enabled: root.enabled;
+
+        clicked => root.focus();
+        double-clicked => root.activated();
+    }
+
+    i-focus := FocusScope {
+        width: 0;
+
+        init => {
+            if force-focus {
+                self.focus();
+            }
+            root.init-ready();
+        }
+        key-pressed(event) => {
+            if (event.text == Key.Return) || (event.text == Key.Space) {
+                root.activated();
+                accept
+            } else {
+                root.key-pressed(event)
+            }
+        }
+        key-released(event) => root.key-released(event);
+        focus-lost(reason) => root.focus-lost(reason);
+        focus-gained(reason) => {
+            if !FocusState.has-focus(root.focus-id) {
+                update-coords();
+                FocusState.set-focus-id(root.focus-id);
+                root.focus-gained(reason);
+            }
+        }
+    }
+}
+
+export component Button inherits Rectangle {
+    in property <string> text <=> i-text.text;
+
+    out property <bool> has-focus: FocusState.has-focus(i-focus.focus-id);
+    out property <int> focus-id <=> i-focus.focus-id;
+
+    private property <length> i-padding: 10px;
+
+    callback focus-gained(FocusReason);
+    callback focus-lost(FocusReason);
+    callback init-ready();
+    callback activated();
+
+    border-radius: 2px;
+    background: gray;
+    forward-focus: i-focus;
+
+    HorizontalLayout {
+        pad-left := Rectangle {
+            width: i-padding;
+        }
+
+        i-text := Text {
+            color: white;
+            text: "Back";
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+
+        pad-right := Rectangle {
+            width: i-padding;
+        }
+    }
+
+    i-focus := ControlledFocusScope {
+        force-focus: false;
+
+        focus-gained(FocusReason) => root.focus-gained(FocusReason);
+        focus-lost(FocusReason) => root.focus-lost(FocusReason);
+        activated => root.activated();
+        init-ready => root.init-ready();
+    }
+}
+
+export component FocusDomain inherits Rectangle {
+    in property <bool> force-focus: true;
+    in property <bool> force-exit-strategy: true;
+    in property <length> exit-button-width <=> exit.width;
+    in property <length> exit-button-height <=> exit.height;
+
+    out property <int> domain-id;
+    out property <bool> domain-active: DomainState.current-domain == self.domain-id;
+
+    private property <int> last-domain: DomainState.last-domain;
+    private property <bool> was-last: false;
+
+    callback nav-front-forward();
+    callback nav-end-backward();
+    callback exited();
+    callback domain-returned();
+
+    public function enter-domain() {
+        DomainState.enter-domain(self.domain-id);
+    }
+
+    public function exit-domain() {
+        DomainState.domain-exit(self.domain-id);
+    }
+
+    forward-focus: pre-nav-lock;
+    width: 100%;
+    height: 100%;
+
+    changed domain-active => {
+        if domain-active {
+            DomainState.set-focus-coords(root.absolute-position.x, root.absolute-position.y, root.width, root.height);
+            pre-nav-lock.focus();
+            if was-last {
+                was-last = false;
+                // TODO: refocus the last selected focus when the domain was lost
+                domain-returned();
+            }
+        } else {
+            self.exited();
+        }
+    }
+
+    changed last-domain => {
+        if last-domain == domain-id {
+            was-last = true;
+        }
+    }
+
+    init => {
+        self.domain-id = DomainState.create-domain-id();
+
+        if force-focus {
+            enter-domain();
+        }
+    }
+
+    pre-nav-lock := FocusScope {
+        enabled: root.domain-active;
+        width: 0;
+
+        focus-gained(reason) => {
+            if reason == FocusReason.tab-navigation {
+                post-nav-lock.focus();
+            } else {
+                nav-front-forward();
+            }
+        }
+    }
+
+    if ApplicationState.debug-mode: Rectangle {
+        width: 100%;
+        height: 100%;
+        background: red;
+        visible: domain-active;
+    }
+
+    container := Rectangle {
+        y: 0;
+        clip: true;
+        height: (root.domain-active && force-exit-strategy) ? root.height - exit-button-height : root.height;
+        @children
+    }
+
+    HorizontalLayout {
+        height: 30px;
+        alignment: center;
+        y: root.height - self.height;
+
+        exit := Button {
+            visible: root.domain-active && root.force-exit-strategy;
+            text: "Back";
+
+            activated => exit-domain();
+        }
+    }
+
+    post-nav-lock := FocusScope {
+        enabled: root.domain-active;
+        width: 0;
+
+        focus-gained(reason) => {
+            if reason == FocusReason.tab-navigation {
+                pre-nav-lock.focus();
+            } else if force-exit-strategy {
+                exit.focus();
+            } else {
+                nav-end-backward();
+            }
+        }
+    }
+}
+
+export global ComboBoxState {
+    out property <[string]> model;
+    public function set-model(model: [string]) {
+        self.model = model;
+    }
+
+    out property <bool> visible: false;
+    public function show-selection-box() {
+        self.visible = true;
+    }
+
+    out property <FocusBox> focus-box;
+    public function set-focus-coords(x: length, y: length, width: length, height: length) {
+        if self.focus-box.x != x {
+            self.focus-box.x = x;
+        }
+        if self.focus-box.y != y {
+            self.focus-box.y = y;
+        }
+        if self.focus-box.width != width {
+            self.focus-box.width = width;
+        }
+        if self.focus-box.height != height {
+            self.focus-box.height = height;
+        }
+    }
+
+    out property <bool> selection-made;
+    out property <string> selection-value;
+    out property <int> selection-index;
+
+    in property <int> domain-id;
+
+    public function make-selection(value: string, index: int) {
+        self.selection-made = true;
+        self.selection-value = value;
+        self.selection-index = index;
+    }
+
+    public function complete-selection() {
+        DomainState.domain-exit(self.domain-id);
+        self.selection-made = false;
+        self.visible = false;
+    }
+}
+
+component ComboBoxSelectionBoxButton inherits Button {
+    in property <bool> has-selection;
+
+    height: 30px;
+
+    Rectangle {
+        height: 2px;
+        width: 4px;
+        x: 0;
+        background: white;
+        visible: has-selection;
+    }
+}
+
+export component ComboBoxSelectionBox inherits FocusDomain {
+    in-out property <string> current-value;
+
+    private property <int> first-model-focus-id;
+    private property <int> last-model-focus-id;
+    private property <bool> i-has-domain: ComboBoxState.visible;
+
+    force-exit-strategy: false;
+
+    x: ComboBoxState.focus-box.x;
+    y: ComboBoxState.focus-box.y;
+    width: ComboBoxState.focus-box.width;
+    height: i-layout.padding * 2 + i-layout.spacing * (ComboBoxState.model.length - 1) + 30px * ComboBoxState.model.length;
+
+    function open() {
+        if i-has-domain {
+            root.focus();
+        }
+    }
+
+    changed i-has-domain => open();
+
+    nav-front-forward => FocusState.force-focus(self.first-model-focus-id);
+    nav-end-backward => FocusState.force-focus(self.last-model-focus-id);
+    init => open();
+
+    i-layout := VerticalLayout {
+        padding: 5px;
+        spacing: 10px;
+
+        for model[i] in ComboBoxState.model: ComboBoxSelectionBoxButton {
+            text: model;
+
+            has-selection: root.current-value == model;
+
+            init-ready => {
+                if i == 0 {
+                    root.first-model-focus-id = self.focus-id;
+                }
+                if i == (ComboBoxState.model.length - 1) {
+                    root.last-model-focus-id = self.focus-id;
+                }
+            }
+
+            activated => {
+                ComboBoxState.domain-id = root.domain-id;
+                ComboBoxState.make-selection(model, i);
+            }
+        }
+    }
+}
+
+export component ComboBox inherits Button {
+    in property <[string]> model;
+
+    in-out property <int> current-index: 0;
+    in-out property <string> current-value: model[current-index];
+    out property <bool> open;
+
+    private property <bool> selection-state-made: ComboBoxState.selection-made;
+    private property <int> domain-state-real-last;
+
+    text: current-value;
+
+    changed selection-state-made => {
+        if open {
+            root.current-index = ComboBoxState.selection-index;
+            root.current-value = ComboBoxState.selection-value;
+            ComboBoxState.complete-selection();
+            DomainState.set-last-domain(root.domain-state-real-last);
+            root.open = false;
+        }
+    }
+
+    function activate-open() {
+        root.domain-state-real-last = DomainState.last-domain;
+        ComboBoxState.set-focus-coords(self.absolute-position.x, self.absolute-position.y, self.width, self.height);
+        ComboBoxState.set-model(self.model);
+        ComboBoxState.show-selection-box();
+        root.open = true;
+    }
+
+    activated => activate-open();
+}
+
+export component ModuleDebug inherits VerticalLayout {
+    Text {
+        color: purple;
+        text: "FocusState";
+    }
+
+    Text {
+        color: white;
+        text: FocusState.num-focuses;
+    }
+
+    Text {
+        color: white;
+        text: FocusState.current-focus;
+    }
+
+    Text {
+        color: white;
+        text: "{" + FocusState.focus-box.x / 1px + ", " + FocusState.focus-box.y / 1px + "}";
+    }
+
+    Text {
+        color: white;
+        text: "{" + FocusState.focus-box.width / 1px + ", " + FocusState.focus-box.height / 1px + "}";
+    }
+
+    Text {
+        color: purple;
+        text: "DomainState";
+    }
+
+    Text {
+        color: white;
+        text: DomainState.num-domains;
+    }
+
+    Text {
+        color: white;
+        text: DomainState.current-domain;
+    }
+
+    Text {
+        color: white;
+        text: DomainState.last-domain;
+    }
+
+    Text {
+        color: white;
+        text: "{" + DomainState.focus-box.x / 1px + ", " + DomainState.focus-box.y / 1px + "}";
+    }
+
+    Text {
+        color: white;
+        text: "{" + DomainState.focus-box.width / 1px + ", " + DomainState.focus-box.height / 1px + "}";
+    }
+}

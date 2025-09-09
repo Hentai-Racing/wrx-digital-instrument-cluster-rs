@@ -3,7 +3,7 @@
 //! where we can dynamically load slint files. Tracked here: https://github.com/slint-ui/slint/issues/2390
 //!
 
-import { ComboBox } from "std-widgets.slint";
+import { ComboBox } from "../components/core.slint";
 
 export global GlobalThemeData {
     in-out property <[string]> themes; //* set by theme_loader_gen
@@ -33,7 +33,6 @@ export component ThemeSelectorWidget {
             width: 125px;
 
             model: GlobalThemeData.themes;
-            enabled: GlobalThemeData.themes.length > 1;
 
             current-value <=> GlobalThemeData.current-theme;
 

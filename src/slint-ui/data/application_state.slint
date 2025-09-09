@@ -30,12 +30,12 @@ export component ModuleDebug inherits VerticalLayout {
 
     Text {
         color: white;
-        text: ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI";
+        text: "Units: " + (ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI");
     }
 
     Text {
         color: white;
-        text: ApplicationState.settings-menu-visible ? "true" : "false";
+        text: "Settings visible: " + (ApplicationState.settings-menu-visible ? "true" : "false");
     }
 
     Text {
@@ -45,6 +45,6 @@ export component ModuleDebug inherits VerticalLayout {
 
     Text {
         color: white;
-        text: AccessibilitySettings.animations-enabled ? "true" : "false";
+        text: "Animations: " + (AccessibilitySettings.animations-enabled ? "true" : "false");
     }
 }

@@ -2,8 +2,8 @@ import { ScrollView } from "std-widgets.slint";
 
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import { RoadIndicatorWidget } from "../themes/default/components/road_indicators.slint";
-import { ApplicationState } from "../application/application_state.slint";
-import { Button, ControlledFocusScope, ControlledFocusDomain, FocusState } from "../components/focus_elements.slint";
+import { ApplicationState } from "../data/application_state.slint";
+import { Button, ControlledFocusScope, FocusDomain, FocusState } from "../components/core.slint";
 import { CanDisplayWidget } from "can_display.slint";
 
 export global WidgetContainerState {
@@ -30,7 +30,7 @@ export global WidgetContainerState {
     }
 }
 
-component Widget inherits ControlledFocusDomain {
+component Widget inherits FocusDomain {
     in-out property <bool> focusable: false;
     out property <int> page-number;
     out property <bool> has-focus: WidgetContainerState.focused-page == self.page-number;
@@ -68,7 +68,7 @@ export component WidgetContainer {
     }
 
     VerticalLayout {
-        center-widget-container-indicator := ControlledFocusDomain {
+        center-widget-container-indicator := FocusDomain {
             property <length> indicator-width: self.height;
 
             height: 10%;

@@ -20,12 +20,12 @@ pub fn bridge_settings(handle_weak: Weak<App>, serdes_manager: Arc<RwLock<Serdes
                     let root = $root.clone();
                     let g = handle.global::<$slint_global>();
 
-                    if let Ok(root) = root.read() {
+                    if let Ok(root) = root.try_read() {
                         g.[<set_ $param>](root.$($tail)+.value().into());
                     }
 
                     g.[<on_update_ $param>](move |value| {
-                        if let Ok(mut root) = root.write() {
+                        if let Ok(mut root) = root.try_write() {
                             root.$($tail)+.set_value(value);
                         }
 
@@ -33,7 +33,7 @@ pub fn bridge_settings(handle_weak: Weak<App>, serdes_manager: Arc<RwLock<Serdes
                         let root = root.clone();
 
                         if let Err(e) = handle_copy.upgrade_in_event_loop(move |handle| {
-                            if let Ok(root) = root.read() {
+                            if let Ok(root) = root.try_read() {
                                 let g = handle.global::<$slint_global>();
                                 g.[<set_ $param>](root.$($tail)+.value().into());
                             }

@@ -1,10 +1,10 @@
 import { DebugMenuWidget, DebugMenuState, DebugOverlay } from "components/debug.slint";
 import { SettingsMenu, UserSettings } from "components/settings.slint";
-import { ControlledFocusScope, ControlledFocusDomain, FocusHoverRect, FocusDomainRect, AnimatedFocusHoverRect, } from "components/focus_elements.slint";
+import { ControlledFocusScope, FocusDomain, FocusHoverRect, FocusDomainRect, AnimatedFocusHoverRect, ComboBoxSelectionBox, ComboBoxState } from "components/core.slint";
 import { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter } from "data/data_parameter.slint";
 import { SCarData } from "data/car_data.slint";
 import { SUnitSystem } from "data/units.slint";
-import { ApplicationState, AccessibilitySettings } from "application/application_state.slint";
+import { ApplicationState, AccessibilitySettings } from "data/application_state.slint";
 import { GlobalThemeData } from "themes/themes.slint";
 import { ThemeLoader } from "themes/theme_loader_gen.slint";
 import { CanDisplay, SCanFrameDisplay } from "components/can_display.slint";
@@ -41,12 +41,21 @@ export component App inherits Window {
 
     background: black;
 
+    // foreground
     // TODO: revert settings menu to appear as a "floating window"
     if ApplicationState.settings-menu-visible: settings-menu := SettingsMenu { }
     if !ApplicationState.settings-menu-visible: theme-loader := ThemeLoader { }
 
+    // popup layer
+        //*
+
+    // popup highest layer
+    if ComboBoxState.visible: ComboBoxSelectionBox { }
+
+    // Highest layer
     if AccessibilitySettings.animations-enabled: AnimatedFocusHoverRect { }
     if !AccessibilitySettings.animations-enabled: FocusHoverRect { }
 
+    // debug layer
     if ApplicationState.debug-mode: DebugOverlay { }
 }

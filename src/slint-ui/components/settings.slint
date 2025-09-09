@@ -1,18 +1,17 @@
-import { ApplicationState, AccessibilitySettings } from "../application/application_state.slint";
+import { ApplicationState, AccessibilitySettings } from "../data/application_state.slint";
 import { SUnitSystem } from "../data/units.slint";
 import { ThemeSelectorWidget } from "../themes/themes.slint";
-import { Button, ControlledFocusScope, ControlledFocusDomain } from "focus_elements.slint";
+import { Button, FocusDomain } from "core.slint";
 
 export global UserSettings { } // TODO
 
-export component SettingsMenu inherits ControlledFocusDomain {
-    in-out property <bool> open <=> ApplicationState.settings-menu-visible;
-
-    exited => {
-        ApplicationState.settings-menu-visible = false;
-    }
+export component SettingsMenu inherits FocusDomain {
+    force-exit-strategy: false;
 
     nav-front-forward => theme-setting-widget.focus();
+    nav-end-backward => exit-button.focus();
+
+    forward-focus: theme-setting-widget;
 
     VerticalLayout {
         alignment: center;
@@ -67,6 +66,19 @@ export component SettingsMenu inherits ControlledFocusDomain {
 
                 activated => {
                     ApplicationState.toggle_simulation();
+                }
+            }
+        }
+
+        HorizontalLayout {
+            height: 30px;
+            alignment: center;
+
+            exit-button := Button {
+                text: "Exit";
+
+                activated => {
+                    ApplicationState.settings-menu-visible = false;
                 }
             }
         }
