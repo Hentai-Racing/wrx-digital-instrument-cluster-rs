@@ -17,6 +17,9 @@ export global ApplicationState {
 export global AccessibilitySettings {
     in-out property <bool> animations-enabled;
     callback update-animations-enabled(bool);
+
+    in-out property <bool> accessible-switches;
+    callback update-accessible-switches(bool);
 }
 
 export global DebugSettings {

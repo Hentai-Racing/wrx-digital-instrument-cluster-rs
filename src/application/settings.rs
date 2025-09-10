@@ -22,7 +22,10 @@ macro_rules! parameter_struct {
     ($struct_visibillity:vis $struct_name:ident {$($param_name:tt: $param_type:ty $(= $param_default:expr)?),+ $(,)?}) => {
         #[derive(Serialize, Deserialize)]
         $struct_visibillity struct $struct_name {
-            $(pub $param_name: FieldParameter<$param_type>,)*
+            $(
+                #[serde(default)]
+                pub $param_name: FieldParameter<$param_type>,
+            )*
         }
 
         impl Default for $struct_name {
@@ -47,6 +50,7 @@ parameter_struct! {pub GeneralSettings {
 
 parameter_struct! {pub AccessibilitySettings {
     animations_enabled: bool = true,
+    accessible_switches: bool = false,
 }}
 
 parameter_struct! {pub DebugSessionSettings {

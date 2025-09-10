@@ -48,18 +48,39 @@ export component SettingsMenu inherits FocusDomain {
             }
         }
 
-        accessibility-animation-setting := HorizontalLayout {
-            alignment: center;
-            padding: 2px;
+        VerticalLayout {
+            spacing: parent.spacing;
+            alignment: parent.alignment;
 
-            Text {
-                vertical-alignment: center;
-                text: "Animations: ";
+            accessibility-animation-setting := HorizontalLayout {
+                alignment: center;
+                padding: 2px;
+
+                Text {
+                    vertical-alignment: center;
+                    text: "Animations: ";
+                }
+
+                ToggleBox {
+                    var: AccessibilitySettings.animations-enabled;
+                    toggled(val) => AccessibilitySettings.update-animations-enabled(val);
+                }
             }
 
-            ToggleBox {
-                var: AccessibilitySettings.animations-enabled;
-                toggled(val) => AccessibilitySettings.update-animations-enabled(val);
+            accessibility-switch-setting := HorizontalLayout {
+                alignment: center;
+                padding: 2px;
+
+                Text {
+                    vertical-alignment: center;
+                    text: "Alternate Switches: ";
+                }
+
+                ToggleBox {
+                    force-accessible-enaled: true;
+                    var: AccessibilitySettings.accessible-switches;
+                    toggled(val) => AccessibilitySettings.update-accessible-switches(val);
+                }
             }
         }
 
