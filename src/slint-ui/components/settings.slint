@@ -5,6 +5,107 @@ import { Button, FocusDomain, ComboBox, ToggleBox } from "core.slint";
 
 export global UserSettings { } // TODO
 
+component DecorationBar inherits Rectangle {
+    height: 2px;
+    background: white;
+}
+
+component SettingBarLabelTextBase inherits Text {
+    horizontal-alignment: left;
+    vertical-alignment: center;
+}
+
+component SettingBarLabelTextAnimated inherits SettingBarLabelTextBase {
+    animate x { duration: 50ms; }
+}
+
+component SettingBarLabelText {
+    in property <length> i-x;
+    in property <string> text;
+    if AccessibilitySettings.animations-enabled: SettingBarLabelTextAnimated {
+        x: root.i-x;
+        text: root.text;
+    }
+    if !AccessibilitySettings.animations-enabled: SettingBarLabelTextBase {
+        x: root.i-x;
+        text: root.text;
+    }
+}
+
+component SettingsBarLabelBase {
+    in property <string> text <=> i-label.text;
+    in property <bool> has-focus: false;
+    in-out property <length> selector-x: has-focus ? 6px : 0;
+
+    i-selection-indicator := Rectangle {
+        x: 0;
+        width: root.selector-x;
+        height: 6px;
+        background: white;
+    }
+
+    i-label := SettingBarLabelText {
+        x: 0;
+        i-x: root.has-focus ? 10px : 0;
+    }
+}
+
+component SettingsBarLabelBaseAnimated inherits SettingsBarLabelBase {
+    animate selector-x { duration: 50ms; }
+}
+
+component SettingBarLabel inherits Rectangle {
+    in property <string> text;
+    in property <bool> has-focus: false;
+
+    if AccessibilitySettings.animations-enabled: SettingsBarLabelBaseAnimated {
+        x: 0;
+        text: root.text;
+        has-focus: root.has-focus;
+    }
+    if !AccessibilitySettings.animations-enabled: SettingsBarLabelBase {
+        x: 0;
+        text: root.text;
+        has-focus: root.has-focus;
+    }
+}
+
+component SettingBar inherits Rectangle {
+    in property <string> label <=> i-label.text;
+    in property <bool> has-focus <=> i-label.has-focus;
+
+    property <length> i-padding: 5px;
+
+    width: 250px;
+
+    VerticalLayout {
+        Rectangle {
+            height: i-padding;
+        }
+
+        Rectangle {
+            i-label := SettingBarLabel {
+                x: i-padding;
+            }
+
+            VerticalLayout {
+                i-container := HorizontalLayout {
+                    spacing: 5px;
+                    x: i-label.x + i-label.width;
+                    width: parent.width - i-label.width - i-padding * 2;
+                    alignment: end;
+
+                    @children
+                }
+            }
+        }
+
+        Rectangle {
+            height: i-padding;
+        }
+    }
+}
+
 export component SettingsMenu inherits FocusDomain {
     force-exit-strategy: false;
 
@@ -26,17 +127,11 @@ export component SettingsMenu inherits FocusDomain {
             height: 30px;
         }
 
-        user-unit-setting := HorizontalLayout {
-            height: 30px;
-            alignment: center;
-            padding: 2px;
+        SettingBar {
+            label: "Units";
 
-            Text {
-                vertical-alignment: center;
-                text: "Units: ";
-            }
-
-            ComboBox {
+            has-focus: units-i-element.has-focus;
+            units-i-element := ComboBox {
                 model: ["USCS", "SI"];
                 width: 100px;
 
@@ -52,31 +147,19 @@ export component SettingsMenu inherits FocusDomain {
             spacing: parent.spacing;
             alignment: parent.alignment;
 
-            accessibility-animation-setting := HorizontalLayout {
-                alignment: center;
-                padding: 2px;
-
-                Text {
-                    vertical-alignment: center;
-                    text: "Animations: ";
-                }
-
-                ToggleBox {
+            SettingBar {
+                label: "Animations";
+                has-focus: animations-i-element.has-focus;
+                animations-i-element := ToggleBox {
                     var: AccessibilitySettings.animations-enabled;
                     toggled(val) => AccessibilitySettings.update-animations-enabled(val);
                 }
             }
 
-            accessibility-switch-setting := HorizontalLayout {
-                alignment: center;
-                padding: 2px;
-
-                Text {
-                    vertical-alignment: center;
-                    text: "Alternate Switches: ";
-                }
-
-                ToggleBox {
+            SettingBar {
+                label: "Alternate Switches";
+                has-focus: accessible-switches-i-element.has-focus;
+                accessible-switches-i-element := ToggleBox {
                     force-accessible-enaled: true;
                     var: AccessibilitySettings.accessible-switches;
                     toggled(val) => AccessibilitySettings.update-accessible-switches(val);
@@ -84,16 +167,11 @@ export component SettingsMenu inherits FocusDomain {
             }
         }
 
-        if ApplicationState.virtual_cluster: simulation-toggle-button := HorizontalLayout {
-            alignment: center;
-            padding: 2px;
+        if ApplicationState.virtual_cluster: SettingBar {
+            label: "Simulation Running: ";
+            has-focus: simulation-toggle-i-element.has-focus;
 
-            Text {
-                vertical-alignment: center;
-                text: "Simulation Running: ";
-            }
-
-            ToggleBox {
+            simulation-toggle-i-element := ToggleBox {
                 var: ApplicationState.simulation-running;
                 toggled(val) => ApplicationState.update_simulation_running(val);
             }
@@ -103,33 +181,19 @@ export component SettingsMenu inherits FocusDomain {
             spacing: parent.spacing;
             alignment: parent.alignment;
 
-            HorizontalLayout {
-                height: 30px;
-                alignment: center;
-                padding: 2px;
-
-                Text {
-                    vertical-alignment: center;
-                    text: "Debug Highlights: ";
-                }
-
-                ToggleBox {
+            SettingBar {
+                label: "Debug Highlights";
+                has-focus: debug-highlights-i-element.has-focus;
+                debug-highlights-i-element := ToggleBox {
                     var: DebugSettings.debug-highlights;
                     toggled(val) => DebugSettings.update-debug-highlights(val);
                 }
             }
 
-            HorizontalLayout {
-                height: 30px;
-                alignment: center;
-                padding: 2px;
-
-                Text {
-                    vertical-alignment: center;
-                    text: "Debug Overlay: ";
-                }
-
-                ToggleBox {
+            SettingBar {
+                label: "Debug Overlay";
+                has-focus: debug-overlay-i-element.has-focus;
+                debug-overlay-i-element := ToggleBox {
                     var: DebugSettings.debug-overlay-enabled;
                     toggled(val) => DebugSettings.update-debug-overlay-enabled(val);
                 }
