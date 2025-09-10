@@ -43,13 +43,12 @@ export component SettingsMenu inherits FocusDomain {
                 current-value: ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI";
 
                 changed current-value => {
-                    ApplicationState.update_user_unit(self.current-value == "USCS" ? SUnitSystem.USCS : SUnitSystem.SI);
+                    ApplicationState.update-user-unit(self.current-value == "USCS" ? SUnitSystem.USCS : SUnitSystem.SI);
                 }
             }
         }
 
         accessibility-animation-setting := HorizontalLayout {
-            height: 35px;
             alignment: center;
             padding: 2px;
 
@@ -60,20 +59,22 @@ export component SettingsMenu inherits FocusDomain {
 
             ToggleBox {
                 var: AccessibilitySettings.animations-enabled;
-
                 toggled(val) => AccessibilitySettings.update-animations-enabled(val);
             }
         }
 
-        if ApplicationState.virtual_cluster: simulation-toggle-button := Rectangle {
-            height: 30px;
+        if ApplicationState.virtual_cluster: simulation-toggle-button := HorizontalLayout {
+            alignment: center;
+            padding: 2px;
 
-            Button {
-                text: "Toggle Simulation";
+            Text {
+                vertical-alignment: center;
+                text: "Simulation Running: ";
+            }
 
-                activated => {
-                    ApplicationState.toggle_simulation();
-                }
+            ToggleBox {
+                var: ApplicationState.simulation-running;
+                toggled(val) => ApplicationState.update_simulation_running(val);
             }
         }
 
@@ -91,10 +92,9 @@ export component SettingsMenu inherits FocusDomain {
                     text: "Debug Highlights: ";
                 }
 
-                Button {
-                    text: DebugSettings.debug-highlights ? "Enabled" : "Disabled";
-
-                    activated => DebugSettings.update-debug-highlights(!DebugSettings.debug-highlights);
+                ToggleBox {
+                    var: DebugSettings.debug-highlights;
+                    toggled(val) => DebugSettings.update-debug-highlights(val);
                 }
             }
 
@@ -108,10 +108,9 @@ export component SettingsMenu inherits FocusDomain {
                     text: "Debug Overlay: ";
                 }
 
-                Button {
-                    text: DebugSettings.debug-overlay-enabled ? "Enabled" : "Disabled";
-
-                    activated => DebugSettings.update-debug-overlay-enabled(!DebugSettings.debug-overlay-enabled);
+                ToggleBox {
+                    var: DebugSettings.debug-overlay-enabled;
+                    toggled(val) => DebugSettings.update-debug-overlay-enabled(val);
                 }
             }
         }

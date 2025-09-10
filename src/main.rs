@@ -111,6 +111,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut runners = vec![];
 
     let car_data = CarData::new();
+    let settings_manager = Arc::new(RwLock::new(SettingsManager::default()));
 
     let running_simulation = Arc::new(AtomicBool::new(false));
     let mut _created_interface = false;
@@ -232,7 +233,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             runners.push(running_vcan);
         }
     }
-    runners.push(running_can);
+    runners.push(running_can.clone());
+    runners.push(running_simulation.clone());
 
     let debug_menu_state = ui.global::<DebugMenuState>();
     let application_state = ui.global::<ApplicationState>();
@@ -240,18 +242,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     application_state.set_virtual_cluster(virtual_cluster);
     application_state.set_debug_mode(cfg!(debug_assertions));
 
-    let settings_manager = Arc::new(RwLock::new(SettingsManager::default()));
-
     if let Ok(mut settings_manager) = settings_manager.write() {
         settings_manager.load_from_fs()?;
     }
 
     let unit_system_parameter = match settings_manager.read() {
         Ok(settings_manager) => settings_manager.user_settings.general.unit_system.clone(),
-        _ => FieldParameter::from(UnitSystem::USCS),
+        _ => FieldParameter::from(UnitSystem::default()),
     };
 
     user_settings_bridge::bridge_settings(ui.as_weak().clone(), settings_manager.clone());
+
+    let mut ui_data_bridge =
+        SCarDataBridge::new(ui.as_weak(), car_data.clone(), unit_system_parameter);
+    ui_data_bridge.run();
+
+    #[cfg(feature = "apalis_imx8")]
+    {
+        use crate::hardware::{apalis_imx8::ApalisIMX8, hardware_backend};
+
+        let device = ApalisIMX8::new();
+
+        let hardware_backend =
+            hardware_backend::HardwareBackend::new(hardware_backend::Backend::ApalisIMX8(device));
+
+        debug_menu_state.on_debug_suspend(move || {
+            // device.power_suspend();
+        });
+    }
+    #[cfg(not(feature = "apalis_imx8"))]
+    {
+        use crate::hardware::hardware_backend;
+
+        let hardware_backend =
+            hardware_backend::HardwareBackend::new(hardware_backend::Backend::None);
+        debug_menu_state.on_debug_suspend(|| println!("DEBUG: DO SUSPEND"));
+    }
+
+    // main loop
 
     {
         let car_data = car_data.clone();
@@ -275,45 +303,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 
-    let mut ui_data_bridge = SCarDataBridge::new(ui.as_weak(), car_data, unit_system_parameter);
-    ui_data_bridge.run();
-
-    if virtual_cluster {
-        let running_simulation_clone = running_simulation.clone();
-        application_state.on_toggle_simulation(move || {
-            running_simulation_clone.store(
-                !running_simulation_clone.load(Ordering::SeqCst),
-                Ordering::SeqCst,
-            );
-        });
-    }
-
-    #[cfg(feature = "apalis_imx8")]
-    {
-        use crate::hardware::{apalis_imx8::ApalisIMX8, hardware_backend};
-
-        let device = ApalisIMX8::new();
-
-        let hardware_backend =
-            hardware_backend::HardwareBackend::new(hardware_backend::Backend::ApalisIMX8(device));
-
-        // debug_menu_state.on_debug_suspend(move || {
-        //     device.power_suspend();
-        // });
-    }
-    #[cfg(not(feature = "apalis_imx8"))]
-    {
-        use crate::hardware::hardware_backend;
-
-        let hardware_backend =
-            hardware_backend::HardwareBackend::new(hardware_backend::Backend::None);
-        debug_menu_state.on_debug_suspend(|| println!("DEBUG: DO SUSPEND"));
-    }
-
-    runners.push(running_simulation);
-
-    // main loop
-
     {
         use std::time::{Duration, Instant};
 
@@ -325,6 +314,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     now = Instant::now();
                     if let Ok(settings_manager) = settings_manager.read() {
                         let _ = settings_manager.save_to_fs();
+                    }
+                }
+            }
+        });
+    }
+
+    {
+        use tokio::select;
+
+        let settings_manager = settings_manager.clone();
+        let running_simulation = running_simulation.clone();
+
+        tokio::spawn(async move {
+            let mut simulation_running_setting = None;
+            if let Ok(settings_manager) = settings_manager.read() {
+                simulation_running_setting = Some(
+                    settings_manager
+                        .session_settings
+                        .simulation_settings
+                        .simulation_running
+                        .watch(),
+                );
+            }
+
+            if let Some(mut simulation_running_setting) = simulation_running_setting {
+                loop {
+                    select! {
+                        Ok(_) = simulation_running_setting.changed() => {
+                            let value = *simulation_running_setting.borrow_and_update();
+                            running_simulation.store(value, Ordering::SeqCst);
+                        },
+                        else => {
+                            break;
+                        },
                     }
                 }
             }

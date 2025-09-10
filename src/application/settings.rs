@@ -54,6 +54,10 @@ parameter_struct! {pub DebugSessionSettings {
     debug_overlay_enabled: bool = true,
 }}
 
+parameter_struct! {pub SimulationSettings {
+    simulation_running: bool = true,
+}}
+
 parameter_struct! {pub StaticCarData {
     vin: String,
     odometer: u32,
@@ -62,6 +66,7 @@ parameter_struct! {pub StaticCarData {
 #[derive(Default)]
 pub struct SessionSettings {
     pub debug_session_settings: DebugSessionSettings,
+    pub simulation_settings: SimulationSettings,
 }
 
 #[derive(Serialize, Deserialize, Default)]
