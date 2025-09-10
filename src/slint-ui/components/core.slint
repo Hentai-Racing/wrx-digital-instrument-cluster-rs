@@ -5,6 +5,7 @@ struct FocusBox {
     y: length,
     width: length,
     height: length,
+    border-radius: length,
 }
 
 export global FocusState {
@@ -12,7 +13,7 @@ export global FocusState {
     out property <int> current-focus: 0;
     out property <int> force-focus-id;
     out property <bool> attempting-force-focus;
-    in-out property <FocusBox> focus-box: { x: 0, y: 0, width: 0, height: 0 };
+    out property <FocusBox> focus-box: { x: 0, y: 0, width: 0, height: 0, border-radius: 0 };
 
     private property <bool> i-force-complete;
 
@@ -40,19 +41,8 @@ export global FocusState {
         }
     }
 
-    public function set-focus-coords(x: length, y: length, width: length, height: length) {
-        if self.focus-box.x != x {
-            self.focus-box.x = x;
-        }
-        if self.focus-box.y != y {
-            self.focus-box.y = y;
-        }
-        if self.focus-box.width != width {
-            self.focus-box.width = width;
-        }
-        if self.focus-box.height != height {
-            self.focus-box.height = height;
-        }
+    public function set-focus-box(focus-box: FocusBox) {
+        self.focus-box = focus-box;
     }
 }
 
@@ -113,48 +103,19 @@ export component DebugHighlight {
     }
 }
 
-component AnimatedHoverRect inherits Rectangle {
-    background: transparent;
-    border-color: white;
-    border-width: 2px;
-    border-radius: 2px;
-
-    animate x, y, width, height { duration: 60ms; }
-}
-
-export component AnimatedFocusHoverRect inherits AnimatedHoverRect {
+export component FocusHoverRect inherits Rectangle {
     x: FocusState.focus-box.x;
     y: FocusState.focus-box.y;
     width: FocusState.focus-box.width;
     height: FocusState.focus-box.height;
-}
-
-export component AnimatedFocusDomainRect inherits AnimatedHoverRect {
-    x: DomainState.focus-box.x;
-    y: DomainState.focus-box.y;
-    width: DomainState.focus-box.width;
-    height: DomainState.focus-box.height;
-}
-
-component HoverRect inherits Rectangle {
+    border-radius: FocusState.focus-box.border-radius;
     background: transparent;
     border-color: white;
     border-width: 2px;
-    border-radius: 2px;
 }
 
-export component FocusHoverRect inherits HoverRect {
-    x: FocusState.focus-box.x;
-    y: FocusState.focus-box.y;
-    width: FocusState.focus-box.width;
-    height: FocusState.focus-box.height;
-}
-
-export component FocusDomainRect inherits HoverRect {
-    x: DomainState.focus-box.x;
-    y: DomainState.focus-box.y;
-    width: DomainState.focus-box.width;
-    height: DomainState.focus-box.height;
+export component AnimatedFocusHoverRect inherits FocusHoverRect {
+    animate x, y, width, height, border-radius { duration: 60ms; }
 }
 
 export component ControlledFocusScope inherits Rectangle {
@@ -177,9 +138,13 @@ export component ControlledFocusScope inherits Rectangle {
     forward-focus: i-focus;
 
     function update-coords() {
-        if (FocusState.focus-box.x != root.absolute-position.x) || (FocusState.focus-box.y != root.absolute-position.y) || (FocusState.focus-box.width != root.width) || (FocusState.focus-box.height != root.height) {
-            FocusState.set-focus-coords(root.absolute-position.x, root.absolute-position.y, root.width, root.height);
-        }
+        FocusState.set-focus-box({
+            x: root.absolute-position.x,
+            y: root.absolute-position.y,
+            width: root.width,
+            height: root.height,
+            border-radius: root.border-radius
+        })
     }
 
     changed state-attempting-force-focus => {
@@ -253,7 +218,6 @@ export component Button inherits Rectangle {
 
         i-text := Text {
             color: white;
-            text: "Back";
             horizontal-alignment: center;
             vertical-alignment: center;
         }
@@ -264,6 +228,7 @@ export component Button inherits Rectangle {
     }
 
     i-focus := ControlledFocusScope {
+        border-radius: root.border-radius;
         force-focus: false;
 
         focus-gained(FocusReason) => root.focus-gained(FocusReason);
@@ -441,6 +406,48 @@ component ComboBoxSelectionBoxButton inherits Button {
         x: 0;
         background: white;
         visible: has-selection;
+    }
+}
+
+component ToggleBoxInner inherits Rectangle {
+    in property <brush> i-background: self.background;
+    in property <length> i-x <=> i-switch.x;
+    in property <bool> var;
+    private property <length> switch-padding: 4px;
+
+    background: var ? green : grey.darker(75%);
+    border-radius: self.height / 2;
+
+    i-switch := Rectangle {
+        border-radius: self.height / 2;
+        background: grey;
+        width: root.width / 1.5 - root.switch-padding - root.border-width;
+        x: var ? root.width - root.border-width - root.switch-padding - self.width : root.border-width + root.switch-padding;
+        y: root.height / 2 - self.height / 2;
+        height: root.height - root.switch-padding * 2 - root.border-width * 2;
+    }
+}
+
+component AnimatedToggleBoxInner inherits ToggleBoxInner {
+    animate i-x, i-background { duration: 60ms; }
+}
+
+export component ToggleBox inherits Button {
+    in property <bool> var;
+
+    callback toggled(bool);
+    activated => toggled(!var);
+
+    width: 60px;
+    height: 30px;
+    background: transparent;
+    border-radius: self.height / 2;
+
+    if !AccessibilitySettings.animations-enabled: ToggleBoxInner {
+        var <=> root.var;
+    }
+    if AccessibilitySettings.animations-enabled: AnimatedToggleBoxInner {
+        var <=> root.var;
     }
 }
 
