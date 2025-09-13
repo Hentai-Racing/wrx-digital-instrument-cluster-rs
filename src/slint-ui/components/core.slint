@@ -1,5 +1,9 @@
 import { ApplicationState, AccessibilitySettings, DebugSettings } from "../data/application_state.slint";
 
+export global GlobalSizing {
+    out property <length> button-height: 40px;
+}
+
 struct FocusBox {
     x: length,
     y: length,
@@ -92,14 +96,17 @@ export global DomainState {
 }
 
 export component DebugHighlight {
-    in property <brush> background <=> i-rect.background;
+    in property <brush> background <=> i-rect.border-color;
 
     width: 100%;
     height: 100%;
 
     i-rect := Rectangle {
-        background: purple;
+        background: transparent;
         visible: ApplicationState.debug-mode && DebugSettings.debug-highlights;
+
+        border-width: 2px;
+        border-color: purple;
     }
 }
 
@@ -210,6 +217,7 @@ export component Button inherits Rectangle {
     border-radius: 2px;
     background: gray.darker(80%);
     forward-focus: i-focus;
+    height: GlobalSizing.button-height;
 
     HorizontalLayout {
         pad-left := Rectangle {
@@ -242,7 +250,6 @@ export component FocusDomain inherits Rectangle {
     in property <bool> force-focus: true;
     in property <bool> force-exit-strategy: true;
     in property <length> exit-button-width <=> exit.width;
-    in property <length> exit-button-height <=> exit.height;
 
     out property <int> domain-id;
     out property <bool> domain-active: DomainState.current-domain == self.domain-id;
@@ -316,14 +323,14 @@ export component FocusDomain inherits Rectangle {
     container := Rectangle {
         y: 0;
         clip: true;
-        height: (root.domain-active && force-exit-strategy) ? root.height - exit-button-height : root.height;
+        height: (root.domain-active && force-exit-strategy) ? root.height - exit.height : root.height;
+
         @children
     }
 
     HorizontalLayout {
-        height: 30px;
         alignment: center;
-        y: root.height - self.height;
+        y: root.height - exit.height;
 
         exit := Button {
             visible: root.domain-active && root.force-exit-strategy;
@@ -398,8 +405,6 @@ export global ComboBoxState {
 component ComboBoxSelectionBoxButton inherits Button {
     in property <bool> has-selection;
 
-    height: 30px;
-
     Rectangle {
         height: 2px;
         width: 4px;
@@ -417,11 +422,11 @@ export component ComboBoxSelectionBox inherits FocusDomain {
     private property <bool> i-has-domain: ComboBoxState.visible;
 
     force-exit-strategy: false;
-
+    background: darkgray;
     x: ComboBoxState.focus-box.x;
     y: ComboBoxState.focus-box.y;
     width: ComboBoxState.focus-box.width;
-    height: i-layout.padding * 2 + i-layout.spacing * (ComboBoxState.model.length - 1) + 30px * ComboBoxState.model.length;
+    height: i-layout.padding * 2 + i-layout.spacing * (ComboBoxState.model.length - 1) + GlobalSizing.button-height * ComboBoxState.model.length;
 
     function open() {
         if i-has-domain {
@@ -437,7 +442,7 @@ export component ComboBoxSelectionBox inherits FocusDomain {
 
     i-layout := VerticalLayout {
         padding: 5px;
-        spacing: 10px;
+        spacing: 5px;
 
         for model[i] in ComboBoxState.model: ComboBoxSelectionBoxButton {
             text: model;
@@ -473,7 +478,7 @@ export component ComboBox inherits Button {
 
     text: current-value;
 
-    Rectangle {
+    i-arrow := Rectangle {
         y: root.height / 2 - self.height / 2;
         x: root.width - self.width - (root.height - self.height) / 2;
         width: 12px;
@@ -537,7 +542,7 @@ component ToggleBoxInner inherits Rectangle {
     i-switch := Rectangle {
         border-radius: self.height / 1.5;
         background: lightgray;
-        width: root.width / 1.5 - root.switch-padding - root.border-width;
+        width: root.width * 65% - root.switch-padding - root.border-width;
         x: var ? root.width - root.border-width - root.switch-padding - self.width : root.border-width + root.switch-padding;
         y: root.height / 2 - self.height / 2;
         height: root.height - root.switch-padding * 2 - root.border-width * 2;
@@ -576,10 +581,9 @@ export component ToggleBox inherits Button {
     callback toggled(bool);
     activated => toggled(!var);
 
-    width: 60px;
-    height: 35px;
+    width: self.height * 1.80;
     background: transparent;
-    border-radius: self.height / 1.5;
+    border-radius: self.height / 2;
 
     if !AccessibilitySettings.animations-enabled: ToggleBoxInner {
         var: root.var;
