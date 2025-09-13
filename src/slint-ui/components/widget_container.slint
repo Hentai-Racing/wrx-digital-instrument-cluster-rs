@@ -2,12 +2,12 @@ import { ScrollView } from "std-widgets.slint";
 
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import { RoadIndicatorWidget } from "../themes/default/components/road_indicators.slint";
-import { ApplicationState } from "../data/application_state.slint";
+import { ApplicationState, AccessibilitySettings } from "../data/application_state.slint";
 import { Button, ControlledFocusScope, FocusDomain, FocusState } from "../components/core.slint";
 import { CanDisplayWidget } from "can_display.slint";
 
 export global WidgetContainerState {
-    in property <duration> page-animation-duration: 150ms;
+    in property <duration> page-animation-duration: 150ms; // TODO: incorporate AccessibilitySettings.animations-enabled; currently Slint does not support changing animation parameters post init
 
     in-out property <int> current-page: 0;
     in property <int> num-pages: 0;
@@ -160,18 +160,20 @@ export component WidgetContainer {
                         settings-button.focus()
                     }
 
-                    VerticalLayout {
+                    HorizontalLayout {
+                        alignment: center;
                         padding: 20px;
 
-                        Rectangle {
-                            settings-button := Button {
-                                height: 25px;
-                                x: parent.width / 2 - self.width / 2;
+                        VerticalLayout {
+                            alignment: center;
 
-                                text: "Open Settings";
+                            Rectangle {
+                                settings-button := Button {
+                                    text: "Settings";
 
-                                activated => {
-                                    ApplicationState.settings-menu-visible = !ApplicationState.settings-menu-visible;
+                                    activated => {
+                                        ApplicationState.settings-menu-visible = !ApplicationState.settings-menu-visible;
+                                    }
                                 }
                             }
                         }

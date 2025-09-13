@@ -1,9 +1,9 @@
 import { ApplicationState, AccessibilitySettings, DebugSettings } from "../data/application_state.slint";
 import { SUnitSystem } from "../data/units.slint";
-import { ThemeSelectorWidget, GlobalThemeData } from "../themes/themes.slint";
+import { GlobalThemeData } from "../themes/themes.slint";
 import { Button, FocusDomain, ComboBox, ToggleBox, DebugHighlight } from "core.slint";
 
-export global UserSettings { } // TODO
+export global SettingsState { }
 
 component DecorationBar inherits Rectangle {
     height: 2px;
@@ -42,6 +42,7 @@ component SettingsBarLabelBase {
         x: 0;
         width: root.selector-x;
         height: 6px;
+        border-radius: 2px;
         background: white;
     }
 
@@ -79,7 +80,7 @@ component SettingBar inherits Rectangle {
 
     property <length> i-padding: 5px;
 
-    width: 300px;
+    width: 350px;
 
     VerticalLayout {
         alignment: center;
@@ -89,15 +90,15 @@ component SettingBar inherits Rectangle {
             i-label := SettingBarLabel { }
 
             i-container := Rectangle {
+                DebugHighlight {
+                    background: blue;
+                }
+
                 HorizontalLayout {
                     spacing: 5px;
                     alignment: end;
 
                     @children
-                }
-
-                DebugHighlight {
-                    background: blue;
                 }
             }
         }
@@ -108,6 +109,19 @@ component SettingBar inherits Rectangle {
     }
 }
 
+// TODO: implement pages for better settings organization
+component SettingsPage inherits PopupWindow {
+    width: 1920px;
+    close-policy: PopupClosePolicy.no-auto-close;
+    height: 1080px;
+
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: red;
+    }
+}
+
 export component SettingsMenu inherits FocusDomain {
     force-exit-strategy: false;
 
@@ -115,153 +129,166 @@ export component SettingsMenu inherits FocusDomain {
     nav-end-backward => exit-button.focus();
     init => theme-selection-box.focus();
 
-    VerticalLayout {
+    width: 2400px;
+    height: 900px;
+    HorizontalLayout {
         alignment: center;
-        spacing: 10px;
 
-        DecorationBar { }
-
-        HorizontalLayout {
+        VerticalLayout {
             alignment: center;
+            spacing: 10px;
+
+            DecorationBar { }
+
+            HorizontalLayout {
+                alignment: center;
+
+                VerticalLayout {
+                    spacing: parent.spacing;
+                    alignment: parent.alignment;
+
+                    SettingBar {
+                        label: "Theme";
+
+                        has-focus: theme-selection-box.has-focus;
+                        theme-selection-box := ComboBox {
+                            title: "Theme";
+                            model: GlobalThemeData.themes;
+
+                            current-value <=> GlobalThemeData.current-theme;
+
+                            changed current-value => {
+                                GlobalThemeData.update_current_theme(self.current-value);
+                            }
+                        }
+                    }
+                }
+            }
+
+            DecorationBar { }
 
             VerticalLayout {
                 spacing: parent.spacing;
                 alignment: parent.alignment;
 
-                SettingBar {
-                    label: "Theme";
+                HorizontalLayout {
+                    alignment: parent.alignment;
 
-                    has-focus: theme-selection-box.has-focus;
-                    theme-selection-box := ComboBox {
-                        model: GlobalThemeData.themes;
-                        width: 100px;
+                    SettingBar {
+                        label: "Units";
 
-                        current-value <=> GlobalThemeData.current-theme;
+                        has-focus: units-i-element.has-focus;
+                        units-i-element := ComboBox {
+                            title: "Units";
+                            model: ["USCS", "SI"];
 
-                        changed current-value => {
-                            GlobalThemeData.update_current_theme(self.current-value);
+                            current-value: ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI";
+
+                            changed current-value => {
+                                ApplicationState.update-user-unit(self.current-value == "USCS" ? SUnitSystem.USCS : SUnitSystem.SI);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        DecorationBar { }
+            DecorationBar { }
 
-        VerticalLayout {
-            spacing: parent.spacing;
-            alignment: parent.alignment;
-
-            HorizontalLayout {
+            VerticalLayout {
+                spacing: parent.spacing;
                 alignment: parent.alignment;
+                HorizontalLayout {
+                    alignment: parent.alignment;
 
-                SettingBar {
-                    label: "Units";
+                    SettingBar {
+                        label: "Animations";
+                        has-focus: animations-i-element.has-focus;
+                        animations-i-element := ToggleBox {
+                            var: AccessibilitySettings.animations-enabled;
+                            toggled(val) => AccessibilitySettings.update-animations-enabled(val);
+                        }
+                    }
+                }
 
-                    has-focus: units-i-element.has-focus;
-                    units-i-element := ComboBox {
-                        model: ["USCS", "SI"];
-                        width: 100px;
+                HorizontalLayout {
+                    alignment: parent.alignment;
 
-                        current-value: ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI";
-
-                        changed current-value => {
-                            ApplicationState.update-user-unit(self.current-value == "USCS" ? SUnitSystem.USCS : SUnitSystem.SI);
+                    SettingBar {
+                        label: "Alternate Switches";
+                        has-focus: accessible-switches-i-element.has-focus;
+                        accessible-switches-i-element := ToggleBox {
+                            force-accessible-enaled: true;
+                            var: AccessibilitySettings.accessible-switches;
+                            toggled(val) => AccessibilitySettings.update-accessible-switches(val);
                         }
                     }
                 }
             }
-        }
 
-        DecorationBar { }
-
-        VerticalLayout {
-            spacing: parent.spacing;
-            alignment: parent.alignment;
-            HorizontalLayout {
+            if ApplicationState.virtual_cluster: VerticalLayout {
+                spacing: parent.spacing;
                 alignment: parent.alignment;
 
-                SettingBar {
-                    label: "Animations";
-                    has-focus: animations-i-element.has-focus;
-                    animations-i-element := ToggleBox {
-                        var: AccessibilitySettings.animations-enabled;
-                        toggled(val) => AccessibilitySettings.update-animations-enabled(val);
+                DecorationBar { }
+
+                HorizontalLayout {
+                    alignment: parent.alignment;
+                    SettingBar {
+                        label: "Simulation Running";
+                        has-focus: simulation-toggle-i-element.has-focus;
+
+                        simulation-toggle-i-element := ToggleBox {
+                            var: ApplicationState.simulation-running;
+                            toggled(val) => ApplicationState.update_simulation_running(val);
+                        }
                     }
                 }
             }
 
-            HorizontalLayout {
+            if ApplicationState.debug-mode: VerticalLayout {
+                spacing: parent.spacing;
                 alignment: parent.alignment;
 
-                SettingBar {
-                    label: "Alternate Switches";
-                    has-focus: accessible-switches-i-element.has-focus;
-                    accessible-switches-i-element := ToggleBox {
-                        force-accessible-enaled: true;
-                        var: AccessibilitySettings.accessible-switches;
-                        toggled(val) => AccessibilitySettings.update-accessible-switches(val);
+                DecorationBar { }
+
+                HorizontalLayout {
+                    alignment: parent.alignment;
+
+                    SettingBar {
+                        label: "Debug Highlights";
+                        has-focus: debug-highlights-i-element.has-focus;
+                        debug-highlights-i-element := ToggleBox {
+                            var: DebugSettings.debug-highlights;
+                            toggled(val) => DebugSettings.update-debug-highlights(val);
+                        }
                     }
                 }
-            }
-        }
 
-        DecorationBar { }
+                HorizontalLayout {
+                    alignment: parent.alignment;
 
-        if ApplicationState.virtual_cluster: HorizontalLayout {
-            alignment: parent.alignment;
-            SettingBar {
-                label: "Simulation Running: ";
-                has-focus: simulation-toggle-i-element.has-focus;
-
-                simulation-toggle-i-element := ToggleBox {
-                    var: ApplicationState.simulation-running;
-                    toggled(val) => ApplicationState.update_simulation_running(val);
-                }
-            }
-        }
-
-        if ApplicationState.debug-mode: VerticalLayout {
-            spacing: parent.spacing;
-            alignment: parent.alignment;
-
-            HorizontalLayout {
-                alignment: parent.alignment;
-
-                SettingBar {
-                    label: "Debug Highlights";
-                    has-focus: debug-highlights-i-element.has-focus;
-                    debug-highlights-i-element := ToggleBox {
-                        var: DebugSettings.debug-highlights;
-                        toggled(val) => DebugSettings.update-debug-highlights(val);
+                    SettingBar {
+                        label: "Debug Overlay";
+                        has-focus: debug-overlay-i-element.has-focus;
+                        debug-overlay-i-element := ToggleBox {
+                            var: DebugSettings.debug-overlay-enabled;
+                            toggled(val) => DebugSettings.update-debug-overlay-enabled(val);
+                        }
                     }
                 }
             }
 
+            DecorationBar { }
+
             HorizontalLayout {
                 alignment: parent.alignment;
 
-                SettingBar {
-                    label: "Debug Overlay";
-                    has-focus: debug-overlay-i-element.has-focus;
-                    debug-overlay-i-element := ToggleBox {
-                        var: DebugSettings.debug-overlay-enabled;
-                        toggled(val) => DebugSettings.update-debug-overlay-enabled(val);
+                exit-button := Button {
+                    text: "Exit";
+
+                    activated => {
+                        ApplicationState.settings-menu-visible = false;
                     }
-                }
-            }
-        }
-
-        DecorationBar { }
-
-        HorizontalLayout {
-            alignment: parent.alignment;
-
-            exit-button := Button {
-                text: "Exit";
-
-                activated => {
-                    ApplicationState.settings-menu-visible = false;
                 }
             }
         }

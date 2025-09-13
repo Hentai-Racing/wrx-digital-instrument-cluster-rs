@@ -15,30 +15,3 @@ export struct ThemeParams {
     font-family: string,
     font-weight: int,
 }
-
-export component ThemeSelectorWidget {
-    forward-focus: theme-selection-box;
-
-    HorizontalLayout {
-        alignment: center;
-        padding: 2px;
-
-        theme-text := Text {
-            vertical-alignment: center;
-            color: white;
-            text: "Theme: ";
-        }
-
-        theme-selection-box := ComboBox {
-            width: 100px;
-
-            model: GlobalThemeData.themes;
-
-            current-value <=> GlobalThemeData.current-theme;
-
-            changed current-value => {
-                GlobalThemeData.update_current_theme(self.current-value);
-            }
-        }
-    }
-}

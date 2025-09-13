@@ -203,6 +203,7 @@ export component ControlledFocusScope inherits Rectangle {
 
 export component Button inherits Rectangle {
     in property <string> text <=> i-text.text;
+    in property <TextHorizontalAlignment> text-alignment <=> i-text.horizontal-alignment;
 
     out property <bool> has-focus: FocusState.has-focus(i-focus.focus-id);
     out property <int> focus-id <=> i-focus.focus-id;
@@ -215,23 +216,18 @@ export component Button inherits Rectangle {
     callback activated();
 
     border-radius: 2px;
-    background: gray.darker(80%);
+    background: gray.darker(95%);
     forward-focus: i-focus;
     height: GlobalSizing.button-height;
+    width: self.height * 2.5;
 
     HorizontalLayout {
-        pad-left := Rectangle {
-            width: i-padding;
-        }
+        padding: i-padding;
 
         i-text := Text {
             color: white;
             horizontal-alignment: center;
             vertical-alignment: center;
-        }
-
-        pad-right := Rectangle {
-            width: i-padding;
         }
     }
 
@@ -243,6 +239,10 @@ export component Button inherits Rectangle {
         focus-lost(FocusReason) => root.focus-lost(FocusReason);
         activated => root.activated();
         init-ready => root.init-ready();
+    }
+
+    DebugHighlight {
+        background: orange;
     }
 }
 
@@ -357,6 +357,9 @@ export component FocusDomain inherits Rectangle {
 }
 
 export global ComboBoxState {
+    in property <string> current-value;
+    in property <string> title;
+
     out property <[string]> model;
     public function set-model(model: [string]) {
         self.model = model;
@@ -404,29 +407,40 @@ export global ComboBoxState {
 
 component ComboBoxSelectionBoxButton inherits Button {
     in property <bool> has-selection;
+    width: self.height * 4;
 
-    Rectangle {
-        height: 2px;
-        width: 4px;
-        x: 0;
-        background: white;
-        visible: has-selection;
+    HorizontalLayout {
+        padding: 6px;
+        alignment: start;
+
+        VerticalLayout {
+            alignment: center;
+
+            Rectangle {
+                width: 6px;
+                height: 90%;
+                background: white;
+                visible: has-selection;
+                border-radius: 2px;
+            }
+        }
     }
 }
 
 export component ComboBoxSelectionBox inherits FocusDomain {
-    in-out property <string> current-value;
+    in-out property <string> current-value: ComboBoxState.current-value;
 
     private property <int> first-model-focus-id;
     private property <int> last-model-focus-id;
     private property <bool> i-has-domain: ComboBoxState.visible;
 
     force-exit-strategy: false;
-    background: darkgray;
-    x: ComboBoxState.focus-box.x;
-    y: ComboBoxState.focus-box.y;
-    width: ComboBoxState.focus-box.width;
-    height: i-layout.padding * 2 + i-layout.spacing * (ComboBoxState.model.length - 1) + GlobalSizing.button-height * ComboBoxState.model.length;
+    background: black.transparentize(7.5%);
+    // TODO: add animated version that fades in
+
+    width: 100%;
+    height: 100%;
+    border-radius: 2px;
 
     function open() {
         if i-has-domain {
@@ -436,31 +450,49 @@ export component ComboBoxSelectionBox inherits FocusDomain {
 
     changed i-has-domain => open();
 
+    // TODO: nav functions broke somehow
     nav-front-forward => FocusState.force-focus(self.first-model-focus-id);
     nav-end-backward => FocusState.force-focus(self.last-model-focus-id);
     init => open();
 
-    i-layout := VerticalLayout {
+    HorizontalLayout {
         padding: 5px;
-        spacing: 5px;
+        alignment: center;
 
-        for model[i] in ComboBoxState.model: ComboBoxSelectionBoxButton {
-            text: model;
+        i-layout := VerticalLayout {
+            spacing: 5px;
+            alignment: center;
 
-            has-selection: root.current-value == model;
-
-            init-ready => {
-                if i == 0 {
-                    root.first-model-focus-id = self.focus-id;
-                }
-                if i == (ComboBoxState.model.length - 1) {
-                    root.last-model-focus-id = self.focus-id;
-                }
+            Text {
+                height: self.font-size + 20px;
+                color: white;
+                text: ComboBoxState.title;
+                font-size: 25px;
+                horizontal-alignment: left;
+                vertical-alignment: center;
             }
 
-            activated => {
-                ComboBoxState.domain-id = root.domain-id;
-                ComboBoxState.make-selection(model, i);
+            for model[i] in ComboBoxState.model: HorizontalLayout {
+                alignment: center;
+
+                ComboBoxSelectionBoxButton {
+                    text: model;
+                    has-selection: root.current-value == model;
+
+                    init-ready => {
+                        if i == 0 {
+                            root.first-model-focus-id = self.focus-id;
+                        }
+                        if i == (ComboBoxState.model.length - 1) {
+                            root.last-model-focus-id = self.focus-id;
+                        }
+                    }
+
+                    activated => {
+                        ComboBoxState.domain-id = root.domain-id;
+                        ComboBoxState.make-selection(model, i);
+                    }
+                }
             }
         }
     }
@@ -468,6 +500,7 @@ export component ComboBoxSelectionBox inherits FocusDomain {
 
 export component ComboBox inherits Button {
     in property <[string]> model;
+    in property <string> title;
 
     in-out property <int> current-index: 0;
     in-out property <string> current-value: model[current-index];
@@ -477,6 +510,7 @@ export component ComboBox inherits Button {
     private property <int> domain-state-real-last;
 
     text: current-value;
+    text-alignment: left;
 
     i-arrow := Rectangle {
         y: root.height / 2 - self.height / 2;
@@ -518,6 +552,8 @@ export component ComboBox inherits Button {
 
     function activate-open() {
         root.domain-state-real-last = DomainState.last-domain;
+        ComboBoxState.title = root.title;
+        ComboBoxState.current-value = root.current-value;
         ComboBoxState.set-focus-coords(self.absolute-position.x, self.absolute-position.y, self.width, self.height);
         ComboBoxState.set-model(self.model);
         ComboBoxState.show-selection-box();
@@ -581,9 +617,9 @@ export component ToggleBox inherits Button {
     callback toggled(bool);
     activated => toggled(!var);
 
-    width: self.height * 1.80;
     background: transparent;
     border-radius: self.height / 2;
+    width: self.height * 1.8;
 
     if !AccessibilitySettings.animations-enabled: ToggleBoxInner {
         var: root.var;
