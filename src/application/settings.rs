@@ -46,6 +46,7 @@ parameter_struct! {pub ThemeSettings {
 
 parameter_struct! {pub GeneralSettings {
     unit_system: UnitSystem,
+    disable_hill_assist: bool = false,
 }}
 
 parameter_struct! {pub AccessibilitySettings {

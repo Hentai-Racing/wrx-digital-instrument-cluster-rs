@@ -55,6 +55,8 @@ export global DomainState {
     out property <int> current-domain: 0;
     out property <int> last-domain: 0;
 
+    out property <int> navigation-errors: 0;
+
     in-out property <FocusBox> focus-box: { x: 0, y: 0, width: 0, height: 0 };
 
     public function create-domain-id() -> int {
@@ -92,6 +94,10 @@ export global DomainState {
 
     public function set-last-domain(id: int) {
         self.last-domain = id;
+    }
+
+    public function navigation-error-occured(id: int) {
+        self.navigation-errors += 1;
     }
 }
 
@@ -145,6 +151,7 @@ export component ControlledFocusScope inherits Rectangle {
     forward-focus: i-focus;
 
     function update-coords() {
+        // TODO: tie to changes in geometry; https://github.com/slint-ui/slint/issues/7849
         FocusState.set-focus-box({
             x: root.absolute-position.x,
             y: root.absolute-position.y,
@@ -270,14 +277,14 @@ export component FocusDomain inherits Rectangle {
         DomainState.domain-exit(self.domain-id);
     }
 
-    forward-focus: pre-nav-lock;
+    forward-focus: pre-nav-focus;
     width: 100%;
     height: 100%;
 
     changed domain-active => {
         if domain-active {
             DomainState.set-focus-coords(root.absolute-position.x, root.absolute-position.y, root.width, root.height);
-            pre-nav-lock.focus();
+            pre-nav-focus.focus();
             if was-last {
                 was-last = false;
                 // TODO: refocus the last selected focus when the domain was lost
@@ -303,12 +310,21 @@ export component FocusDomain inherits Rectangle {
     }
 
     pre-nav-lock := FocusScope {
+        width: 0;
+
+        focus-gained(reason) => {
+            DomainState.navigation-error-occured(root.domain-id);
+            pre-nav-focus.focus();
+        }
+    }
+
+    pre-nav-focus := FocusScope {
         enabled: root.domain-active;
         width: 0;
 
         focus-gained(reason) => {
             if reason == FocusReason.tab-navigation {
-                post-nav-lock.focus();
+                post-nav-focus.focus();
             } else {
                 nav-front-forward();
             }
@@ -340,18 +356,27 @@ export component FocusDomain inherits Rectangle {
         }
     }
 
-    post-nav-lock := FocusScope {
+    post-nav-focus := FocusScope {
         enabled: root.domain-active;
         width: 0;
 
         focus-gained(reason) => {
             if reason == FocusReason.tab-navigation {
-                pre-nav-lock.focus();
+                pre-nav-focus.focus();
             } else if force-exit-strategy {
                 exit.focus();
             } else {
                 nav-end-backward();
             }
+        }
+    }
+
+    post-nav-lock := FocusScope {
+        width: 0;
+
+        focus-gained(reason) => {
+            DomainState.navigation-error-occured(root.domain-id);
+            pre-nav-focus.focus();
         }
     }
 }
@@ -687,5 +712,10 @@ export component ModuleDebug inherits VerticalLayout {
     Text {
         color: white;
         text: "{" + DomainState.focus-box.width / 1px + ", " + DomainState.focus-box.height / 1px + "}";
+    }
+
+    Text {
+        color: red;
+        text: DomainState.navigation-errors;
     }
 }

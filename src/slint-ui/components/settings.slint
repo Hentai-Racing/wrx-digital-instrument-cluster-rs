@@ -1,4 +1,4 @@
-import { ApplicationState, AccessibilitySettings, DebugSettings } from "../data/application_state.slint";
+import { ApplicationState, AccessibilitySettings, DebugSettings, GeneralSettings } from "../data/application_state.slint";
 import { SUnitSystem } from "../data/units.slint";
 import { GlobalThemeData } from "../themes/themes.slint";
 import { Button, FocusDomain, ComboBox, ToggleBox, DebugHighlight } from "core.slint";
@@ -80,7 +80,7 @@ component SettingBar inherits Rectangle {
 
     property <length> i-padding: 5px;
 
-    width: 350px;
+    width: 500px;
 
     VerticalLayout {
         alignment: center;
@@ -187,6 +187,20 @@ export component SettingsMenu inherits FocusDomain {
                             changed current-value => {
                                 ApplicationState.update-user-unit(self.current-value == "USCS" ? SUnitSystem.USCS : SUnitSystem.SI);
                             }
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    alignment: parent.alignment;
+
+                    SettingBar {
+                        label: "Disable Hill Assist Warning";
+
+                        has-focus: disable-hill-assist-i-element.has-focus;
+                        disable-hill-assist-i-element := ToggleBox {
+                            var: GeneralSettings.disable-hill-assist;
+                            toggled(val) => GeneralSettings.update-disable-hill-assist(val);
                         }
                     }
                 }

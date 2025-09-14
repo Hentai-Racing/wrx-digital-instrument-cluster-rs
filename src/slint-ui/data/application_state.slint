@@ -14,6 +14,11 @@ export global ApplicationState {
     in-out property <bool> settings-menu-visible: false;
 }
 
+export global GeneralSettings {
+    in-out property <bool> disable-hill-assist;
+    callback update-disable-hill-assist(bool);
+}
+
 export global AccessibilitySettings {
     in-out property <bool> animations-enabled;
     callback update-animations-enabled(bool);

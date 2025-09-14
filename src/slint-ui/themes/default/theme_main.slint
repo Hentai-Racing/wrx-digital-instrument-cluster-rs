@@ -14,7 +14,7 @@ import { InstrumentGauge, GaugeArc } from "components/instrument_gauge.slint";
 import { SymbolProperties } from "symbol_properties.slint";
 import { SCarData } from "../../data/car_data.slint";
 import { SUnitSystem } from "../../data/units.slint";
-import { ApplicationState } from "../../data/application_state.slint";
+import { ApplicationState, GeneralSettings } from "../../data/application_state.slint";
 import { WidgetContainer } from "../../components/widget_container.slint";
 
 global DefaultThemeParams {
@@ -575,7 +575,7 @@ export component DefaultTheme inherits Rectangle {
                     visible: SCarData.driver_seatbelt_warning_enabled.value;
                 }
 
-                hill-assist-enabled-indicator := GaugeAttachedSymbol {
+                if !GeneralSettings.disable-hill-assist: hill-assist-enabled-indicator := GaugeAttachedSymbol {
                     center-radius: speedometer.width / 2;
                     center-x: speedometer.x + speedometer.width / 2;
                     center-y: speedometer.y + speedometer.height / 2;

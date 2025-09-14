@@ -7,7 +7,7 @@ import { Button, ControlledFocusScope, FocusDomain, FocusState } from "../compon
 import { CanDisplayWidget } from "can_display.slint";
 
 export global WidgetContainerState {
-    in property <duration> page-animation-duration: 150ms; // TODO: incorporate AccessibilitySettings.animations-enabled; currently Slint does not support changing animation parameters post init
+    in property <duration> page-animation-duration: 150ms; // TODO: incorporate AccessibilitySettings.animations-enabled; https://github.com/slint-ui/slint/issues/348
 
     in-out property <int> current-page: 0;
     in property <int> num-pages: 0;
