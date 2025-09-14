@@ -74,6 +74,7 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Generates Rust code for virtual CAN data generation
 fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
+    // TODO: make this use the FieldParameter simulation_running
     // Read the mod.rs file
 
     let messages_dir = Path::new("src/can/messages");

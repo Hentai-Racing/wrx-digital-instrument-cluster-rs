@@ -140,7 +140,7 @@ export component CanDisplayWidget inherits Rectangle {
                     }
 
                     i-focus := ControlledFocusScope {
-                        force-focus: false;
+                        init-focus: false;
 
                         activated => byte-clicked();
                         init => {
