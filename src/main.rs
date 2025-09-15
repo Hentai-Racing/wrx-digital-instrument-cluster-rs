@@ -21,7 +21,7 @@ use tokio::sync::mpsc;
 use std::collections::VecDeque;
 use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, LazyLock, RwLock};
 use std::thread;
 use std::time::Duration;
 
@@ -35,6 +35,9 @@ const CAN_IF_NAME: &str = "can0";
 const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
 #[cfg(target_vendor = "apple")]
 const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
+
+static SETTINGS_MANAGER: LazyLock<Arc<RwLock<SettingsManager>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(SettingsManager::default())));
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = clap::Command::new("").version(env!("CARGO_PKG_VERSION"))
@@ -113,8 +116,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut handles = vec![];
     let mut runners = vec![];
 
+    // TODO: make car_data static
     let car_data = CarData::new();
-    let settings_manager = Arc::new(RwLock::new(SettingsManager::default()));
 
     let running_simulation = Arc::new(AtomicBool::new(false));
     let mut _created_interface = false;
@@ -148,7 +151,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(mut can_backend) = can_backend {
         let mut frame_display = CanFrameDisplay::new(ui.as_weak());
         let mut car_data = car_data.clone();
-        let settings_manager = settings_manager.clone();
 
         tokio::spawn(async move {
             let obd_id =
@@ -170,7 +172,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ]);
 
             loop {
-                if let Ok(settings_manager) = settings_manager.try_read() {
+                if let Ok(settings_manager) = SETTINGS_MANAGER.try_read() {
                     let running_can = settings_manager
                         .session_settings
                         .can_settings
@@ -251,16 +253,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     application_state.set_virtual_cluster(virtual_cluster);
     application_state.set_debug_mode(cfg!(debug_assertions));
 
-    if let Ok(mut settings_manager) = settings_manager.write() {
+    if let Ok(mut settings_manager) = SETTINGS_MANAGER.write() {
         settings_manager.load_from_fs()?;
     }
 
-    let unit_system_parameter = match settings_manager.read() {
+    let unit_system_parameter = match SETTINGS_MANAGER.read() {
         Ok(settings_manager) => settings_manager.user_settings.general.unit_system.clone(),
         _ => FieldParameter::from(UnitSystem::default()),
     };
 
-    user_settings_bridge::bridge_settings(ui.as_weak().clone(), settings_manager.clone());
+    user_settings_bridge::bridge_settings(ui.as_weak().clone(), SETTINGS_MANAGER.clone());
 
     let mut ui_data_bridge =
         SCarDataBridge::new(ui.as_weak(), car_data.clone(), unit_system_parameter);
@@ -293,7 +295,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // temp cardata :-> settings_manager bind hack
     {
         let car_data = car_data.clone();
-        let settings_manager = settings_manager.clone();
         tokio::spawn(async move {
             let mut watch = car_data.odometer().watch();
 
@@ -301,7 +302,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if let Ok(_) = watch.changed().await {
                     let val = *watch.borrow_and_update();
 
-                    if let Ok(mut settings_manager) = settings_manager.try_write() {
+                    if let Ok(mut settings_manager) = SETTINGS_MANAGER.try_write() {
                         settings_manager
                             .user_settings
                             .static_car_data
@@ -313,9 +314,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 
-    let save_settings_settings_manager = settings_manager.clone();
     let save_settings = move || {
-        if let Ok(settings_manager) = save_settings_settings_manager.read() {
+        if let Ok(settings_manager) = SETTINGS_MANAGER.read() {
             let _ = settings_manager.save_to_fs();
         }
     };
@@ -357,12 +357,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // running_simulation bind
     {
-        let settings_manager = settings_manager.clone();
         let running_simulation = running_simulation.clone();
 
         tokio::spawn(async move {
             let mut simulation_running_setting = None;
-            if let Ok(settings_manager) = settings_manager.read() {
+            if let Ok(settings_manager) = SETTINGS_MANAGER.read() {
                 simulation_running_setting = Some(
                     settings_manager
                         .session_settings
