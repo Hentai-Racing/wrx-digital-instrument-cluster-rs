@@ -239,6 +239,21 @@ export component SettingsMenu inherits FocusDomain {
                 }
             }
 
+            DecorationBar { }
+
+            HorizontalLayout {
+                alignment: parent.alignment;
+                SettingBar {
+                    label: "CAN Bus Running";
+                    has-focus: running-can-i-element.has-focus;
+
+                    running-can-i-element := ToggleBox {
+                        var: ApplicationState.running-can;
+                        toggled(val) => ApplicationState.update-running-can(val);
+                    }
+                }
+            }
+
             if ApplicationState.virtual_cluster: VerticalLayout {
                 spacing: parent.spacing;
                 alignment: parent.alignment;
@@ -253,7 +268,7 @@ export component SettingsMenu inherits FocusDomain {
 
                         simulation-toggle-i-element := ToggleBox {
                             var: ApplicationState.simulation-running;
-                            toggled(val) => ApplicationState.update_simulation_running(val);
+                            toggled(val) => ApplicationState.update-running-can(val);
                         }
                     }
                 }

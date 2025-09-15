@@ -15,6 +15,9 @@ use crate::data::units::UnitSystem;
 use crate::ui::car_data_bridge::SCarDataBridge;
 use crate::ui::{can_display::CanFrameDisplay, user_settings_bridge};
 
+use tokio::select;
+use tokio::sync::mpsc;
+
 use std::collections::VecDeque;
 use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -38,12 +41,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .args([
             #[cfg(target_os = "linux")]
             clap::arg!(-v --virtual "Runs the application in virtual mode using socketcan vcan")
-                .required(false),
-            #[cfg(target_os = "linux")]
+                .required(false)
+                .exclusive(true),
             clap::arg!(-f --fakedev "Runs the application in virtual mode using a fake can socket emulator")
-                .required(false),
-            #[cfg(not(target_os = "linux"))]
-            clap::arg!(-v --virtual "Runs the application in virtual mode using a fake can socket emulator")
                 .required(false)
                 .exclusive(true),
             clap::arg!(-c --candev <PATH> "Path to the desired CAN device to use")
@@ -57,18 +57,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ])
         .get_matches();
 
-    let mut virtual_cluster = cli.get_flag("virtual");
-    #[cfg(target_os = "linux")]
     let fake_dev = cli.get_flag("fakedev");
-    #[cfg(not(target_os = "linux"))]
-    let fake_dev = virtual_cluster;
 
-    virtual_cluster |= fake_dev;
-    let selected_interface = if virtual_cluster {
+    #[cfg(target_os = "linux")]
+    let virtual_cluster = cli.get_flag("virtual") | fake_dev;
+    #[cfg(not(target_os = "linux"))]
+    let virtual_cluster = fake_dev;
+
+    let selected_interface = if fake_dev {
+        SelectedCanInterface::Fake
+    } else if virtual_cluster {
         #[cfg(target_os = "linux")]
-        if fake_dev {
-            SelectedCanInterface::Fake
-        } else {
+        {
             SelectedCanInterface::VirtualSocketCan
         }
 
@@ -93,6 +93,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let tokio_runtime = tokio::runtime::Runtime::new().unwrap();
     let _guard = tokio_runtime.enter();
+
+    let (shutdown_send, mut shutdown_recv) = mpsc::unbounded_channel::<bool>();
+    let (shutdown_finished, mut shutdown_finished_recv) = mpsc::unbounded_channel::<bool>();
 
     #[cfg(debug_assertions)]
     if env::var("SLINT_DEBUG_PERFORMANCE")
@@ -141,16 +144,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             None
         }
     };
-    let running_can = Arc::new(AtomicBool::new(false));
 
     if let Some(mut can_backend) = can_backend {
         let mut frame_display = CanFrameDisplay::new(ui.as_weak());
         let mut car_data = car_data.clone();
+        let settings_manager = settings_manager.clone();
 
-        let running_can = running_can.clone();
-        let can_backend_read_handle = thread::spawn(move || {
-            running_can.store(true, Ordering::SeqCst);
-
+        tokio::spawn(async move {
             let obd_id =
                 unsafe { embedded_can::Id::from(embedded_can::StandardId::new_unchecked(0x7E0)) };
 
@@ -169,39 +169,48 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ),
             ]);
 
-            while running_can.load(Ordering::SeqCst) {
-                if let Some(frame) = can_backend.read_frame() {
-                    frame_display.update(&frame, false);
-                    match car_data.parse_frame(&frame) {
-                        Ok(result) => match result {
-                            ParseResult::Mux(result) => match result {
-                                MuxParseResult::AwaitingBroadcastAck => {
-                                    let ack = ISOTPAckFrame::new(obd_id);
-                                    queue.push_front(CanFrame::from_frame(ack));
-                                }
-                                _ => {}
-                            },
-                            _ => {}
-                        },
-                        Err(e) => println!("Failed to parse frame: {e:?}"),
-                    }
-                };
+            loop {
+                if let Ok(settings_manager) = settings_manager.try_read() {
+                    let running_can = settings_manager
+                        .session_settings
+                        .can_settings
+                        .running_can
+                        .value();
 
-                if !car_data.obd_mux_context.waiting_for_responce {
-                    if let Some(frame) = queue.pop_front() {
-                        match can_backend.write_frame(frame) {
-                            Ok(_written_bytes) => {
-                                car_data.obd_mux_context.waiting_for_responce = true;
+                    if running_can {
+                        if let Some(frame) = can_backend.read_frame() {
+                            frame_display.update(&frame, false);
+                            match car_data.parse_frame(&frame) {
+                                Ok(result) => match result {
+                                    ParseResult::Mux(result) => match result {
+                                        MuxParseResult::AwaitingBroadcastAck => {
+                                            let ack = ISOTPAckFrame::new(obd_id);
+                                            queue.push_front(CanFrame::from_frame(ack));
+                                        }
+                                        _ => {}
+                                    },
+                                    _ => {}
+                                },
+                                Err(e) => println!("Failed to parse frame: {e:?}"),
                             }
-                            Err(e) => {
-                                eprintln!("Failed to write to can_socket: {e:?}");
+                        };
+
+                        if !car_data.obd_mux_context.waiting_for_responce {
+                            if let Some(frame) = queue.pop_front() {
+                                match can_backend.write_frame(frame) {
+                                    Ok(_written_bytes) => {
+                                        car_data.obd_mux_context.waiting_for_responce = true;
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Failed to write to can_socket: {e:?}");
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         });
-        handles.push(can_backend_read_handle);
 
         if virtual_cluster {
             let running_vcan = Arc::new(AtomicBool::new(false));
@@ -221,6 +230,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             let vcan_handle = thread::spawn(move || {
+                // TODO: change generator function to only generate once, and move the loop logic here
                 run_can_data_emulator(
                     &mut backend,
                     running_vcan_clone,
@@ -233,7 +243,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             runners.push(running_vcan);
         }
     }
-    runners.push(running_can.clone());
     runners.push(running_simulation.clone());
 
     let debug_menu_state = ui.global::<DebugMenuState>();
@@ -281,6 +290,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // main loop
 
+    // temp cardata :-> settings_manager bind hack
     {
         let car_data = car_data.clone();
         let settings_manager = settings_manager.clone();
@@ -303,26 +313,50 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 
+    let save_settings_settings_manager = settings_manager.clone();
+    let save_settings = move || {
+        if let Ok(settings_manager) = save_settings_settings_manager.read() {
+            let _ = settings_manager.save_to_fs();
+        }
+    };
+
+    // autosave interval
     {
         use std::time::{Duration, Instant};
 
-        let settings_manager = settings_manager.clone();
+        let save_settings = save_settings.clone();
         tokio::spawn(async move {
             let mut now = Instant::now();
             loop {
                 if now.elapsed() >= Duration::from_secs(30) {
                     now = Instant::now();
-                    if let Ok(settings_manager) = settings_manager.read() {
-                        let _ = settings_manager.save_to_fs();
-                    }
+                    save_settings();
                 }
             }
         });
     }
 
-    {
-        use tokio::select;
+    let cleanup = move || {
+        for runner in runners {
+            runner.store(false, Ordering::SeqCst);
+        }
 
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        if let Err(e) = slint::quit_event_loop() {
+            panic!("Failed to quit Slint event loop: {e:?}");
+        }
+
+        save_settings();
+        if let Err(e) = shutdown_finished.send(true) {
+            panic!("Failed to send `shutdown_finished` signal: {e:?}")
+        }
+    };
+
+    // running_simulation bind
+    {
         let settings_manager = settings_manager.clone();
         let running_simulation = running_simulation.clone();
 
@@ -354,25 +388,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 
+    // graceful shutdown
+    {
+        use tokio::signal;
+
+        let shutdown_send = shutdown_send.clone();
+        tokio::spawn(async move {
+            match signal::ctrl_c().await {
+                Ok(_) => shutdown_send.send(true),
+                Err(e) => panic!("Failed to forward shutdown signal: {e:?}"),
+            }
+        });
+
+        tokio::spawn(async move {
+            match shutdown_recv.recv().await {
+                Some(_) => {
+                    cleanup();
+                }
+                _ => {}
+            }
+        });
+    }
+
     ui.run()?;
 
-    // cleanup
-
-    // TODO: cleanup on SIGINT & SIGTERM
-
-    for runner in runners {
-        runner.store(false, Ordering::SeqCst);
+    if !shutdown_send.is_closed() {
+        if let Err(e) = shutdown_send.send(true) {
+            panic!("Failed to send shutdown signal: {e:?}");
+        }
     }
 
-    for handle in handles {
-        handle.join().unwrap();
-    }
-
+    tokio_runtime.block_on(async move { shutdown_finished_recv.recv().await });
     tokio_runtime.shutdown_background();
-
-    if let Ok(settings_manager) = settings_manager.read() {
-        settings_manager.save_to_fs()?;
-    }
 
     Ok(())
 }

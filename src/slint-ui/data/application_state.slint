@@ -12,6 +12,9 @@ export global ApplicationState {
     callback update-user-unit(SUnitSystem);
 
     in-out property <bool> settings-menu-visible: false;
+
+    in-out property <bool> running_can: true;
+    callback update-running-can(bool);
 }
 
 export global GeneralSettings {

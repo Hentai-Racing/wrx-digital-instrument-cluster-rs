@@ -49,6 +49,7 @@ pub fn bridge_settings(handle_weak: Weak<App>, settings_manager: Arc<RwLock<Sett
 
         bind!(ApplicationState.user_unit <=> settings_manager.user_settings.general.unit_system);
         bind!(ApplicationState.simulation_running <=> settings_manager.session_settings.simulation_settings.simulation_running);
+        bind!(ApplicationState.running_can <=> settings_manager.session_settings.can_settings.running_can);
         bind!(GeneralSettings.disable_hill_assist <=> settings_manager.user_settings.general.disable_hill_assist);
         bind!(GlobalThemeData.current_theme <=> settings_manager.user_settings.theme.selected_theme);
         bind!(AccessibilitySettings.animations_enabled <=> settings_manager.user_settings.accessibility.animations_enabled);
