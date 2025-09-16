@@ -216,6 +216,7 @@ export component ControlledFocusScope inherits Rectangle {
         }
         key-released(event) => root.key-released(event);
         focus-lost(reason) => {
+            // TODO: potentially check that the domain did not change unexpectedly and take back focus if it did
             FocusState.set-last-focus-id(root.focus-id);
             root.focus-lost(reason);
         }

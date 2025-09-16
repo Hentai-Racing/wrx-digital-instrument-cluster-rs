@@ -1,6 +1,11 @@
 use crate::data::parameters::FieldParameter;
-use crate::data::{car_data::CarData, units::UnitSystem};
+use crate::data::{
+    car_data::CarData,
+    units::{Unit, UnitSystem},
+};
 use crate::slint_generatedApp::*;
+
+use std::sync::Arc;
 
 use paste::paste;
 use slint::{ComponentHandle, Weak};
@@ -10,13 +15,17 @@ macro_rules! number_param_convertion_handle {
     ($car_data:ident, $ui_car_data:ident, $unit_system:ident, $param:ident: $type:ty = $value:expr) => {paste!(
         let units = $car_data.$param().units();
 
-        let mut sparam = $ui_car_data.[<get_ $param>]();
-        sparam.value = units.convert_value_to($value as f64, $unit_system) as $type;
-        sparam.min = units.convert_value_to($car_data.$param().min() as f64, $unit_system) as $type;
-        sparam.max = units.convert_value_to($car_data.$param().max() as f64, $unit_system) as $type;
-        sparam.unit_str = units.convert_system_to($unit_system).get_short_str().into();
+        let converted_value = units.convert_value_to($value as f64, $unit_system);
+        let converted_min = units.convert_value_to($car_data.$param().min() as f64, $unit_system);
+        let converted_max = units.convert_value_to($car_data.$param().max() as f64, $unit_system);
 
-        $ui_car_data.[<set_ $param>](sparam);
+        if !converted_value.is_nan() && !converted_min.is_nan() && !converted_max.is_nan() {
+            let mut sparam = $ui_car_data.[<get_ $param>]();
+            sparam.value = converted_value as $type;
+            sparam.min = converted_min as $type;
+            sparam.max = converted_max as $type;
+            sparam.unit_str = units.convert_system_to($unit_system).get_short_str().into();
+        }
     )};
 }
 
@@ -50,7 +59,7 @@ macro_rules! bridge {
                         let mut _unit_system: UnitSystem = *unit_system_changed.borrow_and_update();
 
                         loop { // do-while for initial setting of values, then wait for update events
-                            let value = *thread_watch.borrow_and_update();
+                            let value = car_data.$param().value();
                             param_convertion_handle!(car_data, ui_car_data, _unit_system, $param: $type = value);
 
                             select! {
@@ -76,14 +85,14 @@ macro_rules! bridge {
 #[derive(Clone)]
 pub struct SCarDataBridge {
     ui: Weak<App>,
-    car_data: CarData,
+    car_data: Arc<CarData>,
     unit_system_parameter: FieldParameter<UnitSystem>,
 }
 
 impl SCarDataBridge {
     pub fn new(
         ui: Weak<App>,
-        car_data: CarData,
+        car_data: Arc<CarData>,
         unit_system_parameter: FieldParameter<UnitSystem>,
     ) -> Self {
         let this = Self {

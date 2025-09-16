@@ -1,4 +1,4 @@
-use crossbeam_channel::{Receiver, RecvTimeoutError, Sender, TrySendError, bounded};
+use crossbeam::channel::{Receiver, RecvTimeoutError, Sender, TrySendError, bounded};
 use embedded_can::{Frame, Id};
 use std::collections::HashMap;
 use std::error::Error;

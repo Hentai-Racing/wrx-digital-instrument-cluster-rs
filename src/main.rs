@@ -37,7 +37,8 @@ const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
 const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 
 static SETTINGS_MANAGER: LazyLock<Arc<RwLock<SettingsManager>>> =
-    LazyLock::new(|| Arc::new(RwLock::new(SettingsManager::default())));
+    LazyLock::new(|| Default::default());
+static CAR_DATA: LazyLock<Arc<CarData>> = LazyLock::new(|| Default::default());
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = clap::Command::new("").version(env!("CARGO_PKG_VERSION"))
@@ -116,9 +117,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut handles = vec![];
     let mut runners = vec![];
 
-    // TODO: make car_data static
-    let car_data = CarData::new();
-
     let running_simulation = Arc::new(AtomicBool::new(false));
     let mut _created_interface = false;
 
@@ -150,7 +148,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if let Some(mut can_backend) = can_backend {
         let mut frame_display = CanFrameDisplay::new(ui.as_weak());
-        let mut car_data = car_data.clone();
+        let car_data = CAR_DATA.clone();
 
         tokio::spawn(async move {
             let obd_id =
@@ -197,18 +195,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         };
 
-                        if !car_data.obd_mux_context.waiting_for_responce {
-                            if let Some(frame) = queue.pop_front() {
-                                match can_backend.write_frame(frame) {
-                                    Ok(_written_bytes) => {
-                                        car_data.obd_mux_context.waiting_for_responce = true;
-                                    }
-                                    Err(e) => {
-                                        eprintln!("Failed to write to can_socket: {e:?}");
-                                    }
-                                }
-                            }
-                        }
+                        // if !car_data.obd_mux_context.waiting_for_responce {
+                        //     if let Some(frame) = queue.pop_front() {
+                        //         match can_backend.write_frame(frame) {
+                        //             Ok(_written_bytes) => {
+                        //                 car_data.obd_mux_context.waiting_for_responce = true;
+                        //             }
+                        //             Err(e) => {
+                        //                 eprintln!("Failed to write to can_socket: {e:?}");
+                        //             }
+                        //         }
+                        //     }
+                        // }
                     }
                 }
             }
@@ -265,7 +263,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     user_settings_bridge::bridge_settings(ui.as_weak().clone(), SETTINGS_MANAGER.clone());
 
     let mut ui_data_bridge =
-        SCarDataBridge::new(ui.as_weak(), car_data.clone(), unit_system_parameter);
+        SCarDataBridge::new(ui.as_weak(), CAR_DATA.clone(), unit_system_parameter);
     ui_data_bridge.run();
 
     #[cfg(feature = "apalis_imx8")]
@@ -294,7 +292,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // temp cardata :-> settings_manager bind hack
     {
-        let car_data = car_data.clone();
+        let car_data = CAR_DATA.clone();
         tokio::spawn(async move {
             let mut watch = car_data.odometer().watch();
 

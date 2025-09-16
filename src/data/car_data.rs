@@ -1,69 +1,82 @@
 use crate::can::can_mux_manager::{MuxContext, MuxParseError, MuxParseResult};
 use crate::can::messages::wrx_2018::{self, EngineMtGear, Messages};
 use crate::data::parameters::DataParameter;
-use crate::data::units::{Unit, UnitSystem};
+#[allow(unused_imports)]
+use crate::data::units::Unit;
+#[allow(unused_imports)]
+use crate::data::units::UnitSystem::{self, *};
 
 use embedded_can::Frame;
+#[allow(unused_imports)]
 use paste::paste;
 
-macro_rules! param_max_min {
-    ($car_data:ident, $msg:path, $param:ident) => {paste!(
-        $car_data.$param.set_min($msg::[<$param:upper _MIN>]);
-        $car_data.$param.set_max($msg::[<$param:upper _MAX>]);
-    )};
-}
-
-macro_rules! bool_default {
-    ($car_data:ident, $msg:path, $param:ident) => {
-        $car_data.$param.set_value(true);
+macro_rules! default_value {
+    ($ty:ty| $param_default:expr) => {
+        $param_default.into()
+    };
+    (bool|) => {
+        true.into()
+    };
+    ($ty:ty|) => {
+        Default::default()
     };
 }
 
-use UnitSystem::*;
-macro_rules! unit_system_type_overload {
-    ($type:expr) => {
-        $type
+macro_rules! generate_param_unit_system {
+    ($unit:path| $system:expr) => {
+        Some($unit($system))
+    };
+    ($unit:path|) => {
+        Some($unit(UnitSystem::default()))
     };
     () => {
-        SI
+        None
     };
 }
 
-macro_rules! handle_param_type {
-    ($car_data:ident, $msg:path => $param:ident: f32) => {
-        param_max_min!($car_data, $msg, $param)
+macro_rules! generate_param_instantiation {
+    ($msg:path => $param:ident: number $type:ty $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {paste!{
+        DataParameter::new($msg::[<$param:upper _MIN>], $msg::[<$param:upper _MAX>], Some(default_value!($type| $($default_value)?)), generate_param_unit_system!($($unit| $($system)?)?))
+    }};
+    ($msg:path => $param:ident: $type:ty $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
+        default_value!($type| $($default_value)?)
     };
-    ($car_data:ident, $msg:path => $param:ident: f64) => {
-        param_max_min!($car_data, $msg, $param)
+}
+
+macro_rules! param {
+    ($msg:path => $param:ident: f32 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
+        generate_param_instantiation!($msg => $param: number f32 $([$unit| $($system)?])? $(= $default_value)?)
     };
-    ($car_data:ident, $msg:path => $param:ident: u8) => {
-        param_max_min!($car_data, $msg, $param)
+    ($msg:path => $param:ident: f64 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
+        generate_param_instantiation!($msg => $param: number f64 $([$unit| $($system)?])? $(= $default_value)?)
     };
-    ($car_data:ident, $msg:path => $param:ident: u16) => {
-        param_max_min!($car_data, $msg, $param)
+    ($msg:path => $param:ident: u8 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
+        generate_param_instantiation!($msg => $param: number u8 $([$unit| $($system)?])? $(= $default_value)?)
     };
-    ($car_data:ident, $msg:path => $param:ident: u32) => {
-        param_max_min!($car_data, $msg, $param)
+    ($msg:path => $param:ident: u16 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
+        generate_param_instantiation!($msg => $param: number u16 $([$unit| $($system)?])? $(= $default_value)?)
     };
-    ($car_data:ident, $msg:path => $param:ident: u64) => {
-        param_max_min!($car_data, $msg, $param)
+    ($msg:path => $param:ident: u32 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
+        generate_param_instantiation!($msg => $param: number u32 $([$unit| $($system)?])? $(= $default_value)?)
     };
-    ($car_data:ident, $msg:path => $param:ident: i8) => {
-        param_max_min!($car_data, $msg, $param)
+    ($msg:path => $param:ident: u64 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
+        generate_param_instantiation!($msg => $param: number u64 $([$unit| $($system)?])? $(= $default_value)?)
     };
-    ($car_data:ident, $msg:path => $param:ident: i16) => {
-        param_max_min!($car_data, $msg, $param)
+    ($msg:path => $param:ident: i8 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
+        generate_param_instantiation!($msg => $param: number i8 $([$unit| $($system)?])? $(= $default_value)?)
     };
-    ($car_data:ident, $msg:path => $param:ident: i32) => {
-        param_max_min!($car_data, $msg, $param)
+    ($msg:path => $param:ident: i16 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
+        generate_param_instantiation!($msg => $param: number i16 $([$unit| $($system)?])? $(= $default_value)?)
     };
-    ($car_data:ident, $msg:path => $param:ident: i64) => {
-        param_max_min!($car_data, $msg, $param)
+    ($msg:path => $param:ident: i32 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
+        generate_param_instantiation!($msg => $param: number i32 $([$unit| $($system)?])? $(= $default_value)?)
     };
-    ($car_data:ident, $msg:path => $param:ident: bool) => {
-        bool_default!($car_data, $msg, $param)
+    ($msg:path => $param:ident: i64 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
+        generate_param_instantiation!($msg => $param: number i64 $([$unit| $($system)?])? $(= $default_value)?)
     };
-    ($car_data:ident, $msg:path => $param:ident: $type:ty) => {};
+    ($msg:path => $param:ident: $type:ty $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
+        generate_param_instantiation!($msg => $param: $type $(= $default_value)?)
+    };
 }
 
 macro_rules! HandleSignalProcess {
@@ -98,30 +111,14 @@ macro_rules! HandleSignalProcess {
 /// Note: ```bool``` data types default to `true` unless otherwise stated
 ///
 macro_rules! CarData {
-    { {$( $visible:vis $struct_param:ident: $struct_param_ty:ty ),+}; $($msg:ident => { $($(<$unit:path$(:$unit_system:path)?>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; } => {
-        #[derive(Clone, Default)]
+    { {$( $visible:vis $struct_param:ident: $struct_param_ty:ty $(= $struct_param_init:expr)?),+}; $($msg:ident => { $($(<$unit:path$(:$unit_system:path)?>)? $([$process_override:ident])? $param:ident: $type:ty $(= $init:expr)?),+ $(,)? } );+; } => {
         pub struct CarData {
             $($visible $struct_param: $struct_param_ty,)+
             $($($param: DataParameter<$type>,)*)*
         }
 
         impl CarData {
-            pub fn new() -> Self {
-                use Unit::*;
-                let mut car_data = Self {
-                    ..Default::default()
-                };
-
-                $($(
-                    handle_param_type!(car_data, wrx_2018::$msg => $param: $type); // set min and max values for number types
-                    $(car_data.$param.set_value($init);)? // allow for optional initial values
-                    $(car_data.$param.set_units($unit(unit_system_type_overload!($($unit_system)?)));)? // allow for optional unit type
-                )*)*
-
-                car_data
-            }
-
-            pub fn process_message(&mut self, message: &Messages) {
+            pub fn process_message(&self, message: &Messages) {
                 match message {
                     $(
                         Messages::$msg(sig) => {
@@ -139,6 +136,15 @@ macro_rules! CarData {
                 }
             )*)*
         }
+
+        impl Default for CarData {
+            fn default() -> Self {
+                Self {
+                    $($struct_param: default_value!($struct_param_ty| $($struct_param_init)?),)+
+                    $($($param: param!(wrx_2018::$msg => $param: $type $([$unit| $($unit_system)?])? $(= $init)?),)*)*
+                }
+            }
+        }
     }
 }
 
@@ -149,7 +155,7 @@ CarData! {
 
     Engine => {
         engine_rpm: u16,
-        mt_gear: EngineMtGear = EngineMtGear::Neutral
+        mt_gear: EngineMtGear,
     };
 
     EngineStatus2 => {
@@ -158,7 +164,7 @@ CarData! {
         <Pressure> engine_boost_pressure: f32,
         cruise_control_enabled: bool,
         cruise_control_set_enabled: bool,
-        /* <Speed:USCS> */ cruise_control_speed: u8 = 20,
+        /* <Speed:USCS> */ cruise_control_speed: u8,
     };
 
     EngineWarningLights => {
@@ -259,7 +265,7 @@ impl std::fmt::Display for ParseError {
 }
 
 impl CarData {
-    pub fn parse_frame(&mut self, frame: &impl Frame) -> Result<ParseResult, ParseError> {
+    pub fn parse_frame(&self, frame: &impl Frame) -> Result<ParseResult, ParseError> {
         let data = &frame.data()[..frame.dlc()];
 
         match Messages::from_can_message(frame.id(), data) {
@@ -269,15 +275,15 @@ impl CarData {
             }
             Err(e) => match e {
                 // if it's an unknown message, we will handle it with a different parser
-                wrx_2018::CanError::UnknownMessageId(_) => {}
+                // wrx_2018::CanError::UnknownMessageId(_) => {}
                 _ => return Err(ParseError::CanError(e)),
             },
         };
 
-        match self.obd_mux_context.parse_frame(frame) {
-            Ok(mux_result) => return Ok(ParseResult::Mux(mux_result)),
-            Err(e) => return Err(ParseError::MuxError(e)),
-        }
+        // match self.obd_mux_context.parse_frame(frame) {
+        //     Ok(mux_result) => return Ok(ParseResult::Mux(mux_result)),
+        //     Err(e) => return Err(ParseError::MuxError(e)),
+        // }
     }
 }
 
