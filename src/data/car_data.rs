@@ -2,7 +2,7 @@ use crate::can::can_mux_manager::{MuxContext, MuxParseError, MuxParseResult};
 use crate::can::messages::wrx_2018::{self, EngineMtGear, Messages};
 use crate::data::parameters::DataParameter;
 #[allow(unused_imports)]
-use crate::data::units::Unit;
+use crate::data::units::Unit::{self, *};
 #[allow(unused_imports)]
 use crate::data::units::UnitSystem::{self, *};
 
@@ -18,7 +18,7 @@ macro_rules! default_value {
         true.into()
     };
     ($ty:ty|) => {
-        Default::default()
+        <$ty>::default().into()
     };
 }
 
@@ -30,12 +30,12 @@ macro_rules! generate_param_unit_system {
         Some($unit(UnitSystem::default()))
     };
     () => {
-        None
+        std::option::Option::None
     };
 }
 
 macro_rules! generate_param_instantiation {
-    ($msg:path => $param:ident: number $type:ty $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {paste!{
+    (number| $msg:path => $param:ident: $type:ty $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {paste!{
         DataParameter::new($msg::[<$param:upper _MIN>], $msg::[<$param:upper _MAX>], Some(default_value!($type| $($default_value)?)), generate_param_unit_system!($($unit| $($system)?)?))
     }};
     ($msg:path => $param:ident: $type:ty $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
@@ -45,34 +45,34 @@ macro_rules! generate_param_instantiation {
 
 macro_rules! param {
     ($msg:path => $param:ident: f32 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!($msg => $param: number f32 $([$unit| $($system)?])? $(= $default_value)?)
+        generate_param_instantiation!(number| $msg => $param: f32 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: f64 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!($msg => $param: number f64 $([$unit| $($system)?])? $(= $default_value)?)
+        generate_param_instantiation!(number| $msg => $param: f64 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: u8 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!($msg => $param: number u8 $([$unit| $($system)?])? $(= $default_value)?)
+        generate_param_instantiation!(number| $msg => $param: u8 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: u16 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!($msg => $param: number u16 $([$unit| $($system)?])? $(= $default_value)?)
+        generate_param_instantiation!(number| $msg => $param: u16 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: u32 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!($msg => $param: number u32 $([$unit| $($system)?])? $(= $default_value)?)
+        generate_param_instantiation!(number| $msg => $param: u32 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: u64 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!($msg => $param: number u64 $([$unit| $($system)?])? $(= $default_value)?)
+        generate_param_instantiation!(number| $msg => $param: u64 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: i8 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!($msg => $param: number i8 $([$unit| $($system)?])? $(= $default_value)?)
+        generate_param_instantiation!(number| $msg => $param: i8 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: i16 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!($msg => $param: number i16 $([$unit| $($system)?])? $(= $default_value)?)
+        generate_param_instantiation!(number| $msg => $param: i16 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: i32 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!($msg => $param: number i32 $([$unit| $($system)?])? $(= $default_value)?)
+        generate_param_instantiation!(number| $msg => $param: i32 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: i64 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!($msg => $param: number i64 $([$unit| $($system)?])? $(= $default_value)?)
+        generate_param_instantiation!(number| $msg => $param: i64 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: $type:ty $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
         generate_param_instantiation!($msg => $param: $type $(= $default_value)?)
@@ -111,7 +111,7 @@ macro_rules! HandleSignalProcess {
 /// Note: ```bool``` data types default to `true` unless otherwise stated
 ///
 macro_rules! CarData {
-    { {$( $visible:vis $struct_param:ident: $struct_param_ty:ty $(= $struct_param_init:expr)?),+}; $($msg:ident => { $($(<$unit:path$(:$unit_system:path)?>)? $([$process_override:ident])? $param:ident: $type:ty $(= $init:expr)?),+ $(,)? } );+; } => {
+    { {$( $visible:vis $struct_param:ident: $struct_param_ty:ty $(= $struct_param_init:expr)?),+}; $($msg:ident => { $($(<$unit:path$(:$unit_system:path)?>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; } => {
         pub struct CarData {
             $($visible $struct_param: $struct_param_ty,)+
             $($($param: DataParameter<$type>,)*)*
@@ -309,7 +309,7 @@ impl PartialOrd for EngineMtGear {
         } else if v1 == v2 {
             Some(std::cmp::Ordering::Equal)
         } else {
-            None
+            std::option::Option::None
         }
     }
 }

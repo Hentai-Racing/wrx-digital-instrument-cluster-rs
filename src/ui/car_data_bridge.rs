@@ -1,8 +1,5 @@
 use crate::data::parameters::FieldParameter;
-use crate::data::{
-    car_data::CarData,
-    units::{Unit, UnitSystem},
-};
+use crate::data::{car_data::CarData, units::UnitSystem};
 use crate::slint_generatedApp::*;
 
 use std::sync::Arc;
@@ -25,6 +22,7 @@ macro_rules! number_param_convertion_handle {
             sparam.min = converted_min as $type;
             sparam.max = converted_max as $type;
             sparam.unit_str = units.convert_system_to($unit_system).get_short_str().into();
+            $ui_car_data.[<set_ $param>](sparam);
         }
     )};
 }
@@ -59,7 +57,7 @@ macro_rules! bridge {
                         let mut _unit_system: UnitSystem = *unit_system_changed.borrow_and_update();
 
                         loop { // do-while for initial setting of values, then wait for update events
-                            let value = car_data.$param().value();
+                            let value = *thread_watch.borrow_and_update();
                             param_convertion_handle!(car_data, ui_car_data, _unit_system, $param: $type = value);
 
                             select! {

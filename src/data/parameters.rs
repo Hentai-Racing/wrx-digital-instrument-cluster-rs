@@ -6,8 +6,8 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use tokio::sync::watch;
 
 pub struct DataParameter<T> {
-    min: AtomicCell<T>,
-    max: AtomicCell<T>,
+    min: T,
+    max: T,
 
     value: AtomicCell<T>,
     units: Unit,
@@ -30,8 +30,8 @@ where
         let (changed, _) = watch::channel(Default::default());
 
         Self {
-            min: AtomicCell::new(min),
-            max: AtomicCell::new(max),
+            min: min,
+            max: max,
 
             value: AtomicCell::new(value.unwrap_or_default()),
             units: units.unwrap_or_default(),
@@ -40,22 +40,10 @@ where
         }
     }
 
-    pub fn set_max(&self, value: T) {
-        self.max.store(value);
-    }
-
-    pub fn set_min(&self, value: T) {
-        self.min.store(value);
-    }
-
     pub fn set_value(&self, value: T) {
         if self.value.swap(value) != value {
             self.send_changed();
         }
-    }
-
-    pub fn set_units(&mut self, unit: Unit) {
-        self.units = unit;
     }
 
     #[allow(unused)]
@@ -69,12 +57,12 @@ where
 
     #[allow(unused)]
     pub fn min(&self) -> T {
-        self.min.load()
+        self.min
     }
 
     #[allow(unused)]
     pub fn max(&self) -> T {
-        self.max.load()
+        self.max
     }
 
     fn send_changed(&self) {
