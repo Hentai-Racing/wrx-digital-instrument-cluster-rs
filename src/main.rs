@@ -4,16 +4,14 @@ mod data;
 mod hardware;
 mod ui;
 
-use application::settings::SettingsManager;
-
+use crate::application::settings::SettingsManager;
 use crate::can::can_backend::{CanBackend, CanFrame, SelectedCanInterface};
 use crate::can::can_data_emulator::run_can_data_emulator;
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
 use crate::data::car_data::{CarData, ParseResult};
 use crate::data::parameters::FieldParameter;
 use crate::data::units::UnitSystem;
-use crate::ui::car_data_bridge::SCarDataBridge;
-use crate::ui::{can_display::CanFrameDisplay, user_settings_bridge};
+use crate::ui::{can_display::CanFrameDisplay, car_data_bridge, user_settings_bridge};
 
 use tokio::select;
 use tokio::sync::mpsc;
@@ -23,7 +21,7 @@ use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock, RwLock};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 slint::include_modules!();
 
@@ -170,7 +168,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ]);
 
             loop {
-                if let Ok(settings_manager) = SETTINGS_MANAGER.try_read() {
+                if let Ok(settings_manager) = SETTINGS_MANAGER.read() {
                     let running_can = settings_manager
                         .session_settings
                         .can_settings
@@ -260,11 +258,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         _ => FieldParameter::from(UnitSystem::default()),
     };
 
-    user_settings_bridge::bridge_settings(ui.as_weak().clone(), SETTINGS_MANAGER.clone());
-
-    let mut ui_data_bridge =
-        SCarDataBridge::new(ui.as_weak(), CAR_DATA.clone(), unit_system_parameter);
-    ui_data_bridge.run();
+    user_settings_bridge::bridge(ui.as_weak().clone(), SETTINGS_MANAGER.clone());
+    car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), unit_system_parameter);
 
     #[cfg(feature = "apalis_imx8")]
     {
@@ -291,48 +286,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // main loop
 
     // temp cardata :-> settings_manager bind hack
-    {
-        let car_data = CAR_DATA.clone();
-        tokio::spawn(async move {
-            let mut watch = car_data.odometer().watch();
+    tokio::spawn(async move {
+        let mut watch = CAR_DATA.odometer().watch();
 
-            loop {
-                if let Ok(_) = watch.changed().await {
-                    let val = *watch.borrow_and_update();
+        loop {
+            if let Ok(_) = watch.changed().await {
+                let val = *watch.borrow_and_update();
 
-                    if let Ok(mut settings_manager) = SETTINGS_MANAGER.try_write() {
-                        settings_manager
-                            .user_settings
-                            .static_car_data
-                            .odometer
-                            .set_value(val as u32);
-                    }
+                if let Ok(mut settings_manager) = SETTINGS_MANAGER.try_write() {
+                    settings_manager
+                        .user_settings
+                        .static_car_data
+                        .odometer
+                        .set_value(val as u32);
                 }
             }
-        });
-    }
-
-    let save_settings = move || {
-        if let Ok(settings_manager) = SETTINGS_MANAGER.read() {
-            let _ = settings_manager.save_to_fs();
         }
-    };
+    });
 
     // autosave interval
-    {
-        use std::time::{Duration, Instant};
-
-        let save_settings = save_settings.clone();
-        tokio::spawn(async move {
-            let mut now = Instant::now();
-            loop {
-                if now.elapsed() >= Duration::from_secs(30) {
-                    now = Instant::now();
-                    save_settings();
-                }
+    tokio::spawn(async move {
+        let mut now = Instant::now();
+        loop {
+            if now.elapsed() >= Duration::from_secs(30) {
+                now = Instant::now();
+                save_settings();
             }
-        });
-    }
+        }
+    });
 
     let cleanup = move || {
         for runner in runners {
@@ -419,4 +400,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio_runtime.shutdown_background();
 
     Ok(())
+}
+
+fn save_settings() {
+    if let Ok(settings_manager) = SETTINGS_MANAGER.read() {
+        let _ = settings_manager.save_to_fs();
+    }
 }

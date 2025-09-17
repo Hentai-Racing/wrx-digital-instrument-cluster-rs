@@ -7,7 +7,7 @@ use paste::paste;
 use slint::{ComponentHandle, Weak};
 use std::sync::{Arc, RwLock};
 
-pub fn bridge_settings(handle_weak: Weak<App>, settings_manager: Arc<RwLock<SettingsManager>>) {
+pub fn bridge(handle_weak: Weak<App>, settings_manager: Arc<RwLock<SettingsManager>>) {
     match slint::spawn_local(async_compat::Compat::new(async move {
         if let Ok(settings_manager) = settings_manager.read() {
             if let Err(e) = settings_manager.loaded().wait_for(|loaded| *loaded).await {

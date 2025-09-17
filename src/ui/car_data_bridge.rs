@@ -2,11 +2,11 @@ use crate::data::parameters::FieldParameter;
 use crate::data::{car_data::CarData, units::UnitSystem};
 use crate::slint_generatedApp::*;
 
-use std::sync::Arc;
-
 use paste::paste;
 use slint::{ComponentHandle, Weak};
 use tokio::select;
+
+use std::sync::Arc;
 
 macro_rules! number_param_convertion_handle {
     ($car_data:ident, $ui_car_data:ident, $unit_system:ident, $param:ident: $type:ty = $value:expr) => {paste!(
@@ -42,65 +42,43 @@ macro_rules! param_convertion_handle {
     )};
 }
 
-macro_rules! bridge {
-    ($($param:ident: $type:tt),+ $(,)? ) => {
-        pub fn run(&mut self) {
-            $(
-                let ui = self.ui.clone();
-                let car_data = self.car_data.clone();
-                let mut unit_system_changed = self.unit_system_parameter.watch();
-                let mut thread_watch = car_data.$param().watch();
-
-                slint::spawn_local(async_compat::Compat::new(async move {
-                    if let Some(ui) = ui.upgrade() {
-                        let ui_car_data = ui.global::<SCarData>();
-                        let mut _unit_system: UnitSystem = *unit_system_changed.borrow_and_update();
-
-                        loop { // do-while for initial setting of values, then wait for update events
-                            let value = *thread_watch.borrow_and_update();
-                            param_convertion_handle!(car_data, ui_car_data, _unit_system, $param: $type = value);
-
-                            select! {
-                                biased; // always check the unit system first
-                                Ok(_) = unit_system_changed.changed() => {
-                                    _unit_system = *unit_system_changed.borrow_and_update();
-                                },
-                                Ok(_) = thread_watch.changed() => {},
-                                else => {
-                                    // if for any reason one of the watches errors (by being dropped early), break the loop to stop deadlock
-                                    // this should never happen, but we cannot not break the entire application if it does
-                                    break;
-                                },
-                            };
-                        }
-                    }
-                })).unwrap();
-            )*
-        }
-    };
-}
-
-#[derive(Clone)]
-pub struct SCarDataBridge {
+pub fn bridge(
     ui: Weak<App>,
     car_data: Arc<CarData>,
     unit_system_parameter: FieldParameter<UnitSystem>,
-}
+) {
+    macro_rules! bridge {
+    ($($param:ident: $type:tt),+ $(,)? ) => {$({
+        let ui = ui.clone();
+        let car_data = car_data.clone();
+        let mut unit_system_changed = unit_system_parameter.watch();
+        let mut thread_watch = car_data.$param().watch();
 
-impl SCarDataBridge {
-    pub fn new(
-        ui: Weak<App>,
-        car_data: Arc<CarData>,
-        unit_system_parameter: FieldParameter<UnitSystem>,
-    ) -> Self {
-        let this = Self {
-            ui,
-            car_data,
-            unit_system_parameter,
-        };
+        slint::spawn_local(async_compat::Compat::new(async move {
+            if let Some(ui) = ui.upgrade() {
+                let ui_car_data = ui.global::<SCarData>();
+                let mut _unit_system: UnitSystem = *unit_system_changed.borrow_and_update();
 
-        this
-    }
+                loop { // do-while for initial setting of values, then wait for update events
+                    let value = *thread_watch.borrow_and_update();
+                    param_convertion_handle!(car_data, ui_car_data, _unit_system, $param: $type = value);
+
+                    select! {
+                        biased; // always check the unit system first
+                        Ok(_) = unit_system_changed.changed() => {
+                            _unit_system = *unit_system_changed.borrow_and_update();
+                        },
+                        Ok(_) = thread_watch.changed() => {},
+                        else => {
+                            // if for any reason one of the watches errors (by being dropped early), break the loop to stop deadlock
+                            // this should never happen, but we cannot not break the entire application if it does
+                            break;
+                        },
+                    };
+                }
+            }
+        })).unwrap();}
+    )*};}
 
     bridge! {
         engine_rpm: SIDataParameter,

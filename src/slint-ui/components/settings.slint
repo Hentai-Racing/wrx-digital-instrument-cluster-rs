@@ -268,7 +268,7 @@ export component SettingsMenu inherits FocusDomain {
 
                         simulation-toggle-i-element := ToggleBox {
                             var: ApplicationState.simulation-running;
-                            toggled(val) => ApplicationState.update-running-can(val);
+                            toggled(val) => ApplicationState.update-simulation-running(val);
                         }
                     }
                 }
