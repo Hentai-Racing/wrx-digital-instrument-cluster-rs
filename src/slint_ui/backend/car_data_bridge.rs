@@ -1,11 +1,10 @@
 use crate::application::settings::SettingsManager;
-use crate::data::parameters::Parameter;
 use crate::data::{car_data::CarData, units::UnitSystem};
 use crate::slint_generatedApp::*;
 
 use pastey::paste;
 use slint::{ComponentHandle, Weak};
-use tokio::{select, sync::watch::Receiver};
+use tokio::select;
 
 use std::sync::Arc;
 

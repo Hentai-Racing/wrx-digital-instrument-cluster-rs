@@ -12,14 +12,14 @@ use socketcan::Socket;
 
 #[allow(dead_code)]
 #[derive(Clone, Copy)]
-pub enum SelectedCanInterface {
+pub enum CanInterface {
     VirtualSocketCan,
     SocketCan,
     SerialCan,
     Fake,
 }
 
-impl SelectedCanInterface {
+impl CanInterface {
     #[allow(unused)]
     fn as_str(&self) -> &'static str {
         match self {
@@ -102,12 +102,12 @@ const DEFAULT_TIMEOUT: Duration = Duration::from_millis(1);
 
 impl CanBackend {
     pub fn new(
-        interface_type: &SelectedCanInterface,
+        interface_type: &CanInterface,
         interface_path: &str,
     ) -> Result<Self, Box<dyn Error>> {
         let socket: Option<CanSocket> = match interface_type {
             #[cfg(target_os = "linux")]
-            SelectedCanInterface::VirtualSocketCan | SelectedCanInterface::SocketCan => {
+            CanInterface::VirtualSocketCan | CanInterface::SocketCan => {
                 let interface = match socketcan::CanInterface::open(&interface_path) {
                     Ok(can_interface) => Some(can_interface),
                     _ => {
@@ -135,7 +135,7 @@ impl CanBackend {
                         match interface.set_bitrate(can_bitrate, None) {
                             Ok(_) => {}
                             Err(e) => match interface_type {
-                                SelectedCanInterface::VirtualSocketCan => {} // vcan does not allow setting bitrate
+                                CanInterface::VirtualSocketCan => {} // vcan does not allow setting bitrate
                                 _ => eprintln!("Failed to set can bitrate: {e:?}"),
                             },
                         }
@@ -166,24 +166,22 @@ impl CanBackend {
             }
 
             #[cfg(feature = "slcan")]
-            SelectedCanInterface::SerialCan => {
-                match serial::SystemPort::open(Path::new(interface_path)) {
-                    Ok(port) => {
-                        let mut socket = slcan::CanSocket::<serial::SystemPort>::new(port);
+            CanInterface::SerialCan => match serial::SystemPort::open(Path::new(interface_path)) {
+                Ok(port) => {
+                    let mut socket = slcan::CanSocket::<serial::SystemPort>::new(port);
 
-                        socket.close()?;
-                        socket.open(slcan::BitRate::Setup500Kbit)?;
+                    socket.close()?;
+                    socket.open(slcan::BitRate::Setup500Kbit)?;
 
-                        Some(CanSocket::Serial(socket))
-                    }
-                    Err(e) => {
-                        eprintln!("Error opening serial device {interface_path}: {e}");
-                        None
-                    }
+                    Some(CanSocket::Serial(socket))
                 }
-            }
+                Err(e) => {
+                    eprintln!("Error opening serial device {interface_path}: {e}");
+                    None
+                }
+            },
 
-            SelectedCanInterface::Fake => {
+            CanInterface::Fake => {
                 let mut socket = FakeCanSocket::open(interface_path);
                 socket.set_read_timeout(Some(DEFAULT_TIMEOUT));
                 Some(CanSocket::Fake(socket))

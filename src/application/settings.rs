@@ -16,16 +16,19 @@ pub enum SaveStatus {
 }
 
 macro_rules! default_value {
-    ($param_default:expr) => {
+    ($type:ty| $param_default:expr) => {
         $param_default.into()
     };
-    () => {
+    (String| ) => {
+        String::from("Unknown").into()
+    };
+    ($type:ty| ) => {
         Default::default()
     };
 }
 
 macro_rules! parameter_struct {
-    ($struct_visibillity:vis $struct_name:ident {$($param:tt: $param_type:ty $(= $param_default:expr)?),+ $(,)?}) => {
+    ($struct_visibillity:vis $struct_name:ident {$($param:tt: $param_type:tt $(= $param_default:expr)?),+ $(,)?}) => {
         #[derive(Serialize, Deserialize)]
         $struct_visibillity struct $struct_name {
             $(
@@ -35,6 +38,7 @@ macro_rules! parameter_struct {
         }
 
         impl $struct_name {
+            #[allow(unused)]
             fn apply(&self, from: Self) {
                 $(self.$param.set_value(from.$param.value()));*
             }
@@ -44,7 +48,7 @@ macro_rules! parameter_struct {
             fn default() -> Self {
                 Self {
                     $(
-                        $param: default_value!($($param_default)?)
+                        $param: default_value!($param_type| $($param_default)?)
                     ),+
                 }
             }
@@ -111,7 +115,6 @@ settings_root! {pub UserSettings {
     theme: ThemeSettings,
     general: GeneralSettings,
     accessibility: AccessibilitySettings,
-    static_car_data: StaticCarData,
 }}
 
 #[derive(Default)]
@@ -119,7 +122,6 @@ pub struct SettingsManager {
     loaded: Parameter<bool>,
     pub user_settings: UserSettings,
     pub session_settings: SessionSettings,
-    static_car_data: StaticCarData,
 }
 
 impl SettingsManager {
@@ -190,6 +192,7 @@ impl SettingsManager {
         Ok(save_status)
     }
 
+    #[allow(unused)]
     pub fn loaded(&self) -> watch::Receiver<bool> {
         self.loaded.watch()
     }

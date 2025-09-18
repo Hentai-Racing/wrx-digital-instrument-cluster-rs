@@ -4083,7 +4083,7 @@ checksum = "7a2ae44ef20feb57a68b23d846850f861394c2e02dc425a50098ae8c90267589"
 [[package]]
 name = "slcan"
 version = "0.1.4"
-source = "git+https://github.com/bryce-happel-walton/slcan.git#442085457c80c47e5aae8d152df5a15305dffcdd"
+source = "git+https://github.com/bryce-happel-walton/slcan.git#49cca2b6c8f6a43a3816c0de5b28a0d8e394f7a2"
 dependencies = [
  "embedded-can",
  "nb",
@@ -5813,7 +5813,7 @@ checksum = "ea2f10b9bb0928dfb1b42b65e1f9e36f7f54dbdf08457afefb38afcdec4fa2bb"
 
 [[package]]
 name = "wrx-digital-instrument-cluster-rs"
-version = "0.14.1"
+version = "0.14.2"
 dependencies = [
  "async-compat",
  "bitvec",

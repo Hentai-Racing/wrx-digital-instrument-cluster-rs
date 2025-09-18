@@ -5,12 +5,11 @@ mod hardware;
 mod slint_ui;
 
 use crate::application::settings::{SaveStatus, SettingsManager};
-use crate::can::can_backend::{CanBackend, CanFrame, SelectedCanInterface};
+use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
 use crate::can::can_data_emulator::run_can_data_emulator;
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
 use crate::data::car_data::{CarData, ParseResult};
-use crate::data::parameters::Parameter;
-use crate::data::units::UnitSystem;
+use crate::hardware::hardware_backend::{self, HardwareBackend};
 use crate::slint_ui::backend::{
     can_display::CanFrameDisplay, car_data_bridge, user_settings_bridge,
 };
@@ -68,29 +67,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let virtual_cluster = fake_dev;
 
     let selected_interface = if fake_dev {
-        SelectedCanInterface::Fake
+        CanInterface::Fake
     } else if virtual_cluster {
         #[cfg(target_os = "linux")]
         {
-            SelectedCanInterface::VirtualSocketCan
+            CanInterface::VirtualSocketCan
         }
 
         #[cfg(not(target_os = "linux"))]
         {
-            SelectedCanInterface::Fake
+            CanInterface::Fake
         }
     } else if cli.value_source("candev") == Some(clap::parser::ValueSource::CommandLine) {
-        SelectedCanInterface::SocketCan
+        CanInterface::SocketCan
     } else if cli.value_source("sldev") == Some(clap::parser::ValueSource::CommandLine) {
-        SelectedCanInterface::SerialCan
+        CanInterface::SerialCan
     } else {
         #[cfg(feature = "apalis_imx8")]
         {
-            SelectedCanInterface::SocketCan
+            CanInterface::SocketCan
         }
         #[cfg(not(feature = "apalis_imx8"))]
         {
-            SelectedCanInterface::SerialCan
+            CanInterface::SerialCan
         }
     };
 
@@ -119,16 +118,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let running_simulation = Arc::new(AtomicBool::new(false));
     let mut _created_interface = false;
 
-    let interface_path = match &selected_interface {
-        SelectedCanInterface::VirtualSocketCan | SelectedCanInterface::Fake => VCAN_IF_NAME,
-        SelectedCanInterface::SerialCan => {
+    let mut interface_path = match &selected_interface {
+        CanInterface::VirtualSocketCan | CanInterface::Fake => VCAN_IF_NAME,
+        CanInterface::SerialCan => {
             if let Some(sldev) = cli.get_one::<String>("sldev") {
                 sldev.as_str()
             } else {
                 DEFAULT_SL_DEV
             }
         }
-        SelectedCanInterface::SocketCan => {
+        CanInterface::SocketCan => {
             if let Some(candev) = cli.get_one::<String>("candev") {
                 candev.as_str()
             } else {
@@ -141,6 +140,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(can_backend) => Some(can_backend),
         Err(e) => {
             eprintln!("Error in can backend: {e:?}");
+            interface_path = "err";
             None
         }
     };
@@ -221,7 +221,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             if !matches!(
                 &selected_interface,
-                SelectedCanInterface::Fake | SelectedCanInterface::VirtualSocketCan
+                CanInterface::Fake | CanInterface::VirtualSocketCan
             ) {
                 panic!("Do not run the can generator on a real socket!")
             }
@@ -246,6 +246,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let application_state = ui.global::<ApplicationState>();
 
     application_state.set_virtual_cluster(virtual_cluster);
+    application_state.set_interface_type(
+        format!(
+            "{}: {}",
+            match selected_interface {
+                CanInterface::Fake => "fake",
+                CanInterface::SerialCan => "slcan",
+                CanInterface::SocketCan => "socketcan",
+                CanInterface::VirtualSocketCan => "vcan(socketcan)",
+            },
+            interface_path
+        )
+        .into(),
+    );
     application_state.set_debug_mode(cfg!(debug_assertions));
 
     SETTINGS_MANAGER.load_from_fs()?;
@@ -254,28 +267,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), SETTINGS_MANAGER.clone());
 
     #[cfg(feature = "apalis_imx8")]
-    {
-        use crate::hardware::{apalis_imx8::ApalisIMX8, hardware_backend};
-
-        let device = ApalisIMX8::new();
-
-        let hardware_backend =
-            hardware_backend::HardwareBackend::new(hardware_backend::Backend::ApalisIMX8(device));
-
-        debug_menu_state.on_debug_suspend(move || {
-            // device.power_suspend();
-        });
-    }
+    let device = hardware::apalis_imx8::ApalisIMX8::new();
+    #[cfg(feature = "apalis_imx8")]
+    let hardware_backend = HardwareBackend::new(hardware_backend::Backend::ApalisIMX8(device));
     #[cfg(not(feature = "apalis_imx8"))]
-    {
-        use crate::hardware::hardware_backend;
-
-        let hardware_backend =
-            hardware_backend::HardwareBackend::new(hardware_backend::Backend::None);
-        debug_menu_state.on_debug_suspend(|| println!("DEBUG: DO SUSPEND"));
-    }
+    let hardware_backend = HardwareBackend::new(hardware_backend::Backend::None);
 
     // main loop
+
+    debug_menu_state.on_debug_suspend(move || hardware_backend.power_suspend());
 
     // autosave interval
     tokio::spawn(async move {

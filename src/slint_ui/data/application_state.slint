@@ -13,8 +13,10 @@ export global ApplicationState {
 
     in-out property <bool> settings-menu-visible: false;
 
-    in-out property <bool> running_can: true;
+    in-out property <bool> running-can: true;
     callback update-running-can(bool);
+
+    in-out property <string> interface-type;
 }
 
 export global GeneralSettings {
@@ -46,16 +48,6 @@ export component ModuleDebug inherits VerticalLayout {
 
     Text {
         color: white;
-        text: ApplicationState.virtual-cluster ? "virtual" : "normal";
-    }
-
-    if ApplicationState.virtual-cluster: Text {
-        color: white;
-        text: "Simulation: " + (ApplicationState.simulation-running ? "running" : "stopped");
-    }
-
-    Text {
-        color: white;
         text: "Units: " + (ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI");
     }
 
@@ -75,6 +67,11 @@ export component ModuleDebug inherits VerticalLayout {
     }
 
     Text {
+        color: white;
+        text: "Switches: " + (AccessibilitySettings.accessible-switches ? "alt" : "normal");
+    }
+
+    Text {
         color: purple;
         text: "DebugSettings";
     }
@@ -82,5 +79,30 @@ export component ModuleDebug inherits VerticalLayout {
     Text {
         color: white;
         text: "Highlights: " + (DebugSettings.debug-highlights ? "true" : "false");
+    }
+
+    Text {
+        color: Colors.darkviolet;
+        text: "CanSettings";
+    }
+
+    Text {
+        color: white;
+        text: ApplicationState.virtual-cluster ? "virtual" : "normal";
+    }
+
+    if ApplicationState.virtual-cluster: Text {
+        color: white;
+        text: "Simulation: " + (ApplicationState.simulation-running ? "running" : "stopped");
+    }
+
+    Text {
+        color: white;
+        text: ApplicationState.interface-type;
+    }
+
+    Text {
+        color: white;
+        text: ApplicationState.running-can ? "running" : "halted";
     }
 }

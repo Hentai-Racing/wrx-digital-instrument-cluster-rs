@@ -1,8 +1,5 @@
-use crate::data::parameters::Parameter;
 #[cfg(feature = "apalis_imx8")]
 use crate::hardware::apalis_imx8;
-
-use std::sync::Arc;
 
 pub enum Backend {
     #[cfg(feature = "apalis_imx8")]
@@ -152,5 +149,16 @@ impl HardwareBackend {
         }
 
         Self { backend }
+    }
+
+    pub fn power_suspend(&self) {
+        match &self.backend {
+            #[cfg(feature = "apalis_imx8")]
+            Backend::ApalisIMX8(_device) => {
+                println!("Power suspend not yet implemented!");
+                // device.power_suspend();
+            }
+            _ => println!("Tried to suspend with no hardware backend!"),
+        }
     }
 }
