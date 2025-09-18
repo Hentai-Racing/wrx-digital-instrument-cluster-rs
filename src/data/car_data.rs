@@ -8,7 +8,7 @@ use crate::data::units::UnitSystem::{self, *};
 
 use embedded_can::Frame;
 #[allow(unused_imports)]
-use paste::paste;
+use pastey::paste;
 
 macro_rules! default_value {
     ($ty:ty| $param_default:expr) => {
@@ -173,11 +173,11 @@ CarData! {
     };
 
     Odometer => {
-        <Distance> odometer: f32
+        <Distance> odometer: f32,
     };
 
     BrakePedal => {
-        <Speed> vehicle_speed: f32
+        <Speed> vehicle_speed: f32,
     };
 
     StatusSwitches => {
@@ -185,7 +185,7 @@ CarData! {
         handbrake_sw: bool,
         parking_lights_enabled: bool,
         highbeams_enabled: bool,
-        reverse_sw: bool
+        reverse_sw: bool,
     };
 
     Cluster => {

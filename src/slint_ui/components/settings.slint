@@ -5,6 +5,22 @@ import { Button, FocusDomain, ComboBox, ToggleBox, DebugHighlight } from "core.s
 
 export global SettingsState { }
 
+export struct SettingsContent {
+    setting-title: string,
+    setting-id: string,
+    setting-type: string,
+
+    setting-owner-id: string,
+}
+
+/*
+settings: [SettingsContent]
+
+for content in SettingsContent {
+
+}
+*/
+
 component DecorationBar inherits Rectangle {
     height: 2px;
     background: white;
@@ -106,19 +122,6 @@ component SettingBar inherits Rectangle {
 
     DebugHighlight {
         background: yellow;
-    }
-}
-
-// TODO: implement pages for better settings organization
-component SettingsPage inherits PopupWindow {
-    width: 1920px;
-    close-policy: PopupClosePolicy.no-auto-close;
-    height: 1080px;
-
-    Rectangle {
-        width: 100%;
-        height: 100%;
-        background: red;
     }
 }
 

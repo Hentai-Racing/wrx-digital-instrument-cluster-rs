@@ -18,20 +18,20 @@ export global ApplicationState {
 }
 
 export global GeneralSettings {
-    in-out property <bool> disable-hill-assist;
+    in-out property <bool> disable-hill-assist: false;
     callback update-disable-hill-assist(bool);
 }
 
 export global AccessibilitySettings {
-    in-out property <bool> animations-enabled;
+    in-out property <bool> animations-enabled: true;
     callback update-animations-enabled(bool);
 
-    in-out property <bool> accessible-switches;
+    in-out property <bool> accessible-switches: false;
     callback update-accessible-switches(bool);
 }
 
 export global DebugSettings {
-    in-out property <bool> debug-highlights;
+    in-out property <bool> debug-highlights: true;
     callback update-debug-highlights(bool);
 
     in-out property <bool> debug-overlay-enabled: true;

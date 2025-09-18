@@ -1,9 +1,98 @@
-use std::fmt::Debug;
-
 use crate::data::units::Unit;
+
 use crossbeam::atomic::AtomicCell;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use tokio::sync::watch;
+
+use std::fmt::Debug;
+
+pub struct Parameter<T> {
+    value: AtomicCell<T>,
+
+    changed: watch::Sender<T>,
+}
+
+impl<T> Parameter<T>
+where
+    T: Clone + Default + Serialize + PartialEq,
+{
+    pub fn new(value: T) -> Self {
+        let (changed, _) = watch::channel(Default::default());
+
+        Self {
+            value: AtomicCell::new(value),
+            changed,
+        }
+    }
+
+    pub fn value(&self) -> T {
+        let tmp = self.value.take();
+        let clone = tmp.clone();
+        self.value.store(tmp);
+        clone
+    }
+
+    pub fn set_value(&self, value: T) {
+        if self.value.swap(value.clone()) != value {
+            self.send_changed(value);
+        }
+    }
+
+    fn send_changed(&self, value: T) {
+        self.changed.send_replace(value);
+    }
+
+    pub fn watch(&self) -> watch::Receiver<T> {
+        self.changed.subscribe()
+    }
+}
+
+impl<T> Default for Parameter<T>
+where
+    T: Clone + Default + Serialize + PartialEq,
+{
+    fn default() -> Self {
+        Self::new(Default::default())
+    }
+}
+
+impl<T> Serialize for Parameter<T>
+where
+    T: Serialize + Default,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let value = self.value.take();
+        let ret = value.serialize(serializer);
+
+        self.value.store(value);
+
+        ret
+    }
+}
+
+impl<'de, T> Deserialize<'de> for Parameter<T>
+where
+    T: Deserialize<'de> + Clone + Default + Serialize + PartialEq,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        T::deserialize(deserializer).map(Parameter::new)
+    }
+}
+
+impl<T> From<T> for Parameter<T>
+where
+    T: Clone + Default + Serialize + PartialEq,
+{
+    fn from(value: T) -> Self {
+        Parameter::new(value)
+    }
+}
 
 pub struct DataParameter<T> {
     min: T,
@@ -11,13 +100,6 @@ pub struct DataParameter<T> {
 
     value: AtomicCell<T>,
     units: Unit,
-
-    changed: watch::Sender<T>,
-}
-
-#[derive(Clone)]
-pub struct FieldParameter<T> {
-    value: T,
 
     changed: watch::Sender<T>,
 }
@@ -89,80 +171,5 @@ where
 {
     fn from(value: T) -> Self {
         Self::new(Default::default(), Default::default(), Some(value), None)
-    }
-}
-
-impl<T> FieldParameter<T>
-where
-    T: Clone + Default + Serialize + PartialEq,
-{
-    pub fn new(value: T) -> Self {
-        let (changed, _) = watch::channel(value.clone());
-
-        Self { value, changed }
-    }
-
-    pub fn value(&self) -> T {
-        self.value.clone()
-    }
-
-    pub fn set_value(&mut self, value: impl Into<T>) {
-        let value: T = value.into();
-
-        if self.value != value {
-            self.value = value;
-
-            self.send_changed();
-        }
-    }
-
-    fn send_changed(&self) {
-        self.changed.send_replace(self.value());
-    }
-
-    pub fn watch(&self) -> watch::Receiver<T> {
-        self.changed.subscribe()
-    }
-}
-
-impl<T> Default for FieldParameter<T>
-where
-    T: Clone + Default + Serialize + PartialEq,
-{
-    fn default() -> Self {
-        Self::new(Default::default())
-    }
-}
-
-impl<T> Serialize for FieldParameter<T>
-where
-    T: Serialize + Clone + Default,
-{
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.value.serialize(serializer)
-    }
-}
-
-impl<'de, T> Deserialize<'de> for FieldParameter<T>
-where
-    T: Deserialize<'de> + Clone + Default + Serialize + PartialEq,
-{
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        T::deserialize(deserializer).map(FieldParameter::new)
-    }
-}
-
-impl<T> From<T> for FieldParameter<T>
-where
-    T: Clone + Default + Serialize + PartialEq,
-{
-    fn from(value: T) -> Self {
-        FieldParameter::new(value)
     }
 }

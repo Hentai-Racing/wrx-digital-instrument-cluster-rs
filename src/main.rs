@@ -2,16 +2,18 @@ mod application;
 mod can;
 mod data;
 mod hardware;
-mod ui;
+mod slint_ui;
 
-use crate::application::settings::SettingsManager;
+use crate::application::settings::{SaveStatus, SettingsManager};
 use crate::can::can_backend::{CanBackend, CanFrame, SelectedCanInterface};
 use crate::can::can_data_emulator::run_can_data_emulator;
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
 use crate::data::car_data::{CarData, ParseResult};
-use crate::data::parameters::FieldParameter;
+use crate::data::parameters::Parameter;
 use crate::data::units::UnitSystem;
-use crate::ui::{can_display::CanFrameDisplay, car_data_bridge, user_settings_bridge};
+use crate::slint_ui::backend::{
+    can_display::CanFrameDisplay, car_data_bridge, user_settings_bridge,
+};
 
 use tokio::select;
 use tokio::sync::mpsc;
@@ -19,7 +21,7 @@ use tokio::sync::mpsc;
 use std::collections::VecDeque;
 use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, LazyLock, RwLock};
+use std::sync::{Arc, LazyLock};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -34,8 +36,7 @@ const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
 #[cfg(target_vendor = "apple")]
 const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 
-static SETTINGS_MANAGER: LazyLock<Arc<RwLock<SettingsManager>>> =
-    LazyLock::new(|| Default::default());
+static SETTINGS_MANAGER: LazyLock<Arc<SettingsManager>> = LazyLock::new(|| Default::default());
 static CAR_DATA: LazyLock<Arc<CarData>> = LazyLock::new(|| Default::default());
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -168,44 +169,42 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ]);
 
             loop {
-                if let Ok(settings_manager) = SETTINGS_MANAGER.read() {
-                    let running_can = settings_manager
-                        .session_settings
-                        .can_settings
-                        .running_can
-                        .value();
+                let running_can = SETTINGS_MANAGER
+                    .session_settings
+                    .can_settings
+                    .running_can
+                    .value();
 
-                    if running_can {
-                        if let Some(frame) = can_backend.read_frame() {
-                            frame_display.update(&frame, false);
-                            match car_data.parse_frame(&frame) {
-                                Ok(result) => match result {
-                                    ParseResult::Mux(result) => match result {
-                                        MuxParseResult::AwaitingBroadcastAck => {
-                                            let ack = ISOTPAckFrame::new(obd_id);
-                                            queue.push_front(CanFrame::from_frame(ack));
-                                        }
-                                        _ => {}
-                                    },
+                if running_can {
+                    if let Some(frame) = can_backend.read_frame() {
+                        frame_display.update(&frame, false);
+                        match car_data.parse_frame(&frame) {
+                            Ok(result) => match result {
+                                ParseResult::Mux(result) => match result {
+                                    MuxParseResult::AwaitingBroadcastAck => {
+                                        let ack = ISOTPAckFrame::new(obd_id);
+                                        queue.push_front(CanFrame::from_frame(ack));
+                                    }
                                     _ => {}
                                 },
-                                Err(e) => println!("Failed to parse frame: {e:?}"),
-                            }
-                        };
+                                _ => {}
+                            },
+                            Err(e) => println!("Failed to parse frame: {e:?}"),
+                        }
+                    };
 
-                        // if !car_data.obd_mux_context.waiting_for_responce {
-                        //     if let Some(frame) = queue.pop_front() {
-                        //         match can_backend.write_frame(frame) {
-                        //             Ok(_written_bytes) => {
-                        //                 car_data.obd_mux_context.waiting_for_responce = true;
-                        //             }
-                        //             Err(e) => {
-                        //                 eprintln!("Failed to write to can_socket: {e:?}");
-                        //             }
-                        //         }
-                        //     }
-                        // }
-                    }
+                    // if !car_data.obd_mux_context.waiting_for_responce {
+                    //     if let Some(frame) = queue.pop_front() {
+                    //         match can_backend.write_frame(frame) {
+                    //             Ok(_written_bytes) => {
+                    //                 car_data.obd_mux_context.waiting_for_responce = true;
+                    //             }
+                    //             Err(e) => {
+                    //                 eprintln!("Failed to write to can_socket: {e:?}");
+                    //             }
+                    //         }
+                    //     }
+                    // }
                 }
             }
         });
@@ -249,17 +248,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     application_state.set_virtual_cluster(virtual_cluster);
     application_state.set_debug_mode(cfg!(debug_assertions));
 
-    if let Ok(mut settings_manager) = SETTINGS_MANAGER.write() {
-        settings_manager.load_from_fs()?;
-    }
-
-    let unit_system_parameter = match SETTINGS_MANAGER.read() {
-        Ok(settings_manager) => settings_manager.user_settings.general.unit_system.clone(),
-        _ => FieldParameter::from(UnitSystem::default()),
-    };
+    SETTINGS_MANAGER.load_from_fs()?;
 
     user_settings_bridge::bridge(ui.as_weak().clone(), SETTINGS_MANAGER.clone());
-    car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), unit_system_parameter);
+    car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), SETTINGS_MANAGER.clone());
 
     #[cfg(feature = "apalis_imx8")]
     {
@@ -284,25 +276,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // main loop
-
-    // temp cardata :-> settings_manager bind hack
-    tokio::spawn(async move {
-        let mut watch = CAR_DATA.odometer().watch();
-
-        loop {
-            if let Ok(_) = watch.changed().await {
-                let val = *watch.borrow_and_update();
-
-                if let Ok(mut settings_manager) = SETTINGS_MANAGER.try_write() {
-                    settings_manager
-                        .user_settings
-                        .static_car_data
-                        .odometer
-                        .set_value(val as u32);
-                }
-            }
-        }
-    });
 
     // autosave interval
     tokio::spawn(async move {
@@ -334,37 +307,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    // running_simulation bind
-    {
-        let running_simulation = running_simulation.clone();
+    let running_simulation = running_simulation.clone();
 
-        tokio::spawn(async move {
-            let mut simulation_running_setting = None;
-            if let Ok(settings_manager) = SETTINGS_MANAGER.read() {
-                simulation_running_setting = Some(
-                    settings_manager
-                        .session_settings
-                        .simulation_settings
-                        .simulation_running
-                        .watch(),
-                );
-            }
+    // simulation control
+    tokio::spawn(async move {
+        let mut simulation_running_setting = SETTINGS_MANAGER
+            .session_settings
+            .simulation_settings
+            .simulation_running
+            .watch();
 
-            if let Some(mut simulation_running_setting) = simulation_running_setting {
-                loop {
-                    select! {
-                        Ok(_) = simulation_running_setting.changed() => {
-                            let value = *simulation_running_setting.borrow_and_update();
-                            running_simulation.store(value, Ordering::SeqCst);
-                        },
-                        else => {
-                            break;
-                        },
-                    }
-                }
+        loop {
+            select! {
+                Ok(_) = simulation_running_setting.changed() => {
+                    let value = *simulation_running_setting.borrow_and_update();
+                    running_simulation.store(value, Ordering::SeqCst);
+                },
+                else => {
+                    break;
+                },
             }
-        });
-    }
+        }
+    });
 
     // graceful shutdown
     {
@@ -403,7 +367,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn save_settings() {
-    if let Ok(settings_manager) = SETTINGS_MANAGER.read() {
-        let _ = settings_manager.save_to_fs();
+    match SETTINGS_MANAGER.save_to_fs() {
+        Ok(status) => match status {
+            SaveStatus::Success => {}
+            SaveStatus::Failed(e) => eprintln!("Failed to write settings: {e:?}"),
+        },
+        Err(e) => eprintln!("Failed to save settings: {e:?}"),
     }
 }

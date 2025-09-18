@@ -19,7 +19,7 @@
     slint        = { git = "https://github.com/slint-ui/slint.git", default-features = false, features = ["compat-1-2", "std"] }
     async-compat = "*"
     rand         = "*"
-    paste        = "*"
+    pastey       = "*"
     clap         = "*"
     embedded-can = "*"
     futures      = "*"

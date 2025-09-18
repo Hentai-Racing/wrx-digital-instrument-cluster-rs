@@ -1,10 +1,11 @@
-use crate::data::parameters::FieldParameter;
+use crate::application::settings::SettingsManager;
+use crate::data::parameters::Parameter;
 use crate::data::{car_data::CarData, units::UnitSystem};
 use crate::slint_generatedApp::*;
 
-use paste::paste;
+use pastey::paste;
 use slint::{ComponentHandle, Weak};
-use tokio::select;
+use tokio::{select, sync::watch::Receiver};
 
 use std::sync::Arc;
 
@@ -42,15 +43,14 @@ macro_rules! param_convertion_handle {
     )};
 }
 
-pub fn bridge(
-    ui: Weak<App>,
-    car_data: Arc<CarData>,
-    unit_system_parameter: FieldParameter<UnitSystem>,
-) {
+pub fn bridge(ui: Weak<App>, car_data: Arc<CarData>, settings_manager: Arc<SettingsManager>) {
     macro_rules! bridge {
     ($($param:ident: $type:tt),+ $(,)? ) => {$({
         let ui = ui.clone();
         let car_data = car_data.clone();
+        let settings_manager = settings_manager.clone();
+
+        let unit_system_parameter = &settings_manager.user_settings.general.unit_system;
         let mut unit_system_changed = unit_system_parameter.watch();
         let mut thread_watch = car_data.$param().watch();
 

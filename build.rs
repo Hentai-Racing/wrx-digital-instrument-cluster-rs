@@ -6,7 +6,7 @@ use std::process::Command;
 use syn;
 use walkdir::WalkDir;
 
-const SLINT_PATH: &str = "src/slint-ui"; // path to the directory that contains `main.slint`
+const SLINT_PATH: &str = "src/slint_ui"; // path to the directory that contains `main.slint`
 
 /// Generates Rust code from dbc files in resources/database/dbc/
 ///
@@ -74,7 +74,7 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Generates Rust code for virtual CAN data generation
 fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
-    // TODO: make this use the FieldParameter simulation_running
+    // TODO: make this use the Parameter simulation_running
     // Read the mod.rs file
 
     let messages_dir = Path::new("src/can/messages");

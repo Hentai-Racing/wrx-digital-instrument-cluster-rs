@@ -1,6 +1,8 @@
 use crate::{App, CanDisplay, SCanFrameDisplay};
+
 use embedded_can::{Frame, Id};
 use slint::{ComponentHandle, Model, ModelRc, SharedString, VecModel, Weak};
+
 use std::cmp::max;
 
 pub struct CanFrameDisplay {

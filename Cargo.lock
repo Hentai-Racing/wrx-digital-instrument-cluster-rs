@@ -807,7 +807,7 @@ dependencies = [
 [[package]]
 name = "const-field-offset"
 version = "0.1.5"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "const-field-offset-macro",
  "field-offset",
@@ -816,7 +816,7 @@ dependencies = [
 [[package]]
 name = "const-field-offset-macro"
 version = "0.1.5"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1818,7 +1818,7 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 [[package]]
 name = "i-slint-backend-linuxkms"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "calloop 0.14.3",
  "drm 0.14.1",
@@ -1837,7 +1837,7 @@ dependencies = [
 [[package]]
 name = "i-slint-backend-selector"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "cfg-if 1.0.3",
  "i-slint-backend-linuxkms",
@@ -1851,7 +1851,7 @@ dependencies = [
 [[package]]
 name = "i-slint-backend-winit"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "cfg-if 1.0.3",
  "cfg_aliases",
@@ -1884,7 +1884,7 @@ dependencies = [
 [[package]]
 name = "i-slint-common"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "cfg-if 1.0.3",
  "derive_more",
@@ -1896,7 +1896,7 @@ dependencies = [
 [[package]]
 name = "i-slint-compiler"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "by_address",
  "codemap",
@@ -1925,7 +1925,7 @@ dependencies = [
 [[package]]
 name = "i-slint-core"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "auto_enums",
  "bitflags 2.9.4",
@@ -1968,7 +1968,7 @@ dependencies = [
 [[package]]
 name = "i-slint-core-macros"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "quote",
  "serde_json",
@@ -1978,7 +1978,7 @@ dependencies = [
 [[package]]
 name = "i-slint-renderer-skia"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "bytemuck",
  "cfg-if 1.0.3",
@@ -2356,9 +2356,9 @@ dependencies = [
 
 [[package]]
 name = "js-sys"
-version = "0.3.79"
+version = "0.3.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6247da8b8658ad4e73a186e747fcc5fc2a29f979d6fe6269127fdb5fd08298d0"
+checksum = "852f13bec5eba4ba9afbeb93fd7c13fe56147f055939ae21c43a29a0ecb2702e"
 dependencies = [
  "once_cell",
  "wasm-bindgen",
@@ -3261,6 +3261,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
+name = "pastey"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35fb2e5f958ec131621fdd531e9fc186ed768cbe395337403ae56c17a74c68ec"
+
+[[package]]
 name = "percent-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4087,7 +4093,7 @@ dependencies = [
 [[package]]
 name = "slint"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "const-field-offset",
  "i-slint-backend-selector",
@@ -4104,7 +4110,7 @@ dependencies = [
 [[package]]
 name = "slint-build"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "derive_more",
  "i-slint-compiler",
@@ -4115,7 +4121,7 @@ dependencies = [
 [[package]]
 name = "slint-macros"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "i-slint-compiler",
  "proc-macro2",
@@ -4937,7 +4943,7 @@ checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
 [[package]]
 name = "vtable"
 version = "0.3.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "const-field-offset",
  "portable-atomic",
@@ -4948,7 +4954,7 @@ dependencies = [
 [[package]]
 name = "vtable-macro"
 version = "0.3.0"
-source = "git+https://github.com/slint-ui/slint.git#c5ff9070cf2acf5ad4570817d762d1d12e22b480"
+source = "git+https://github.com/slint-ui/slint.git#7fdf568caa07e71f86fdc983ebe86fbfca6107b0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4991,9 +4997,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen"
-version = "0.2.102"
+version = "0.2.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ad224d2776649cfb4f4471124f8176e54c1cca67a88108e30a0cd98b90e7ad3"
+checksum = "ab10a69fbd0a177f5f649ad4d8d3305499c42bab9aef2f7ff592d0ec8f833819"
 dependencies = [
  "cfg-if 1.0.3",
  "once_cell",
@@ -5004,9 +5010,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-backend"
-version = "0.2.102"
+version = "0.2.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a1364104bdcd3c03f22b16a3b1c9620891469f5e9f09bc38b2db121e593e732"
+checksum = "0bb702423545a6007bbc368fde243ba47ca275e549c8a28617f56f6ba53b1d1c"
 dependencies = [
  "bumpalo",
  "log",
@@ -5018,9 +5024,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-futures"
-version = "0.4.52"
+version = "0.4.53"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c0a08ecf5d99d5604a6666a70b3cde6ab7cc6142f5e641a8ef48fc744ce8854"
+checksum = "a0b221ff421256839509adbb55998214a70d829d3a28c69b4a6672e9d2a42f67"
 dependencies = [
  "cfg-if 1.0.3",
  "js-sys",
@@ -5031,9 +5037,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro"
-version = "0.2.102"
+version = "0.2.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d7ab4ca3e367bb1ed84ddbd83cc6e41e115f8337ed047239578210214e36c76"
+checksum = "fc65f4f411d91494355917b605e1480033152658d71f722a90647f56a70c88a0"
 dependencies = [
  "quote",
  "wasm-bindgen-macro-support",
@@ -5041,9 +5047,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro-support"
-version = "0.2.102"
+version = "0.2.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a518014843a19e2dbbd0ed5dfb6b99b23fb886b14e6192a00803a3e14c552b0"
+checksum = "ffc003a991398a8ee604a401e194b6b3a39677b3173d6e74495eb51b82e99a32"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5054,9 +5060,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-shared"
-version = "0.2.102"
+version = "0.2.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "255eb0aa4cc2eea3662a00c2bbd66e93911b7361d5e0fcd62385acfd7e15dcee"
+checksum = "293c37f4efa430ca14db3721dfbe48d8c33308096bd44d80ebaa775ab71ba1cf"
 dependencies = [
  "unicode-ident",
 ]
@@ -5172,9 +5178,9 @@ dependencies = [
 
 [[package]]
 name = "web-sys"
-version = "0.3.79"
+version = "0.3.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50462a022f46851b81d5441d1a6f5bac0b21a1d72d64bd4906fbdd4bf7230ec7"
+checksum = "fbe734895e869dc429d78c4b433f8d17d95f8d05317440b4fad5ab2d33e596dc"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
@@ -5818,7 +5824,7 @@ dependencies = [
  "futures",
  "gpio-cdev",
  "num_enum",
- "paste",
+ "pastey",
  "rand 0.9.2",
  "serde",
  "serde_bytes",

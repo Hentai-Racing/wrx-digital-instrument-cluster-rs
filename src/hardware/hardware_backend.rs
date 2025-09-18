@@ -1,6 +1,8 @@
-use crate::data::parameters::FieldParameter;
+use crate::data::parameters::Parameter;
 #[cfg(feature = "apalis_imx8")]
 use crate::hardware::apalis_imx8;
+
+use std::sync::Arc;
 
 pub enum Backend {
     #[cfg(feature = "apalis_imx8")]
@@ -31,10 +33,10 @@ impl HardwareBackend {
         match &backend {
             #[cfg(feature = "apalis_imx8")]
             Backend::ApalisIMX8(_) => {
-                let gpio_1 = FieldParameter::<bool>::new(false);
+                let gpio_1 = Arc::new(Parameter::<bool>::new(false));
 
                 {
-                    let mut gpio_1 = gpio_1.clone();
+                    let gpio_1 = gpio_1.clone();
                     tokio::spawn(async move {
                         use gpio_cdev::{Chip, EventRequestFlags, EventType, LineRequestFlags};
                         use std::os::unix::io::AsRawFd;
