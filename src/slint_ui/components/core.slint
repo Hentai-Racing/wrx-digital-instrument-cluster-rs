@@ -17,6 +17,8 @@ enum ForceFailedReason {
     Stolen
 }
 
+// TODO: add different notification types
+
 export global FocusState {
     out property <int> num-focuses: 1;
     out property <int> current-focus-id: 0;
@@ -69,7 +71,6 @@ export global DomainState {
     out property <int> num-domains: 1;
     out property <int> current-domain-id: 0;
     out property <int> last-domain-id: 0;
-
     out property <int> navigation-errors: 0;
 
     in-out property <FocusBox> focus-box: { x: 0, y: 0, width: 0, height: 0 };
@@ -107,7 +108,7 @@ export global DomainState {
         }
     }
 
-    public function set-last-domain(id: int) {
+    public function set-last-domain-id(id: int) {
         self.last-domain-id = id;
     }
 
@@ -157,7 +158,7 @@ export component ControlledFocusScope inherits Rectangle {
     out property <int> focus-id;
 
     private property <bool> state-attempting-force-focus: FocusState.attempting-force-focus;
-    out property <bool> i-forcing-focus: FocusState.attempting-force-focus && (FocusState.force-focus-id == root.focus-id);
+    private property <bool> i-forcing-focus: FocusState.attempting-force-focus && (FocusState.force-focus-id == root.focus-id);
 
     callback key-pressed(KeyEvent) -> EventResult;
     callback key-released(KeyEvent) -> EventResult;
@@ -290,13 +291,25 @@ export component FocusDomain inherits Rectangle {
     out property <int> domain-id;
     out property <bool> domain-active: DomainState.current-domain-id == self.domain-id;
 
-    private property <int> last-domain: DomainState.last-domain-id;
+    in-out property <bool> no-graceful-return: false;
+
+    private property <int> last-domain-id: DomainState.last-domain-id;
+    private property <int> current-focus-id: FocusState.current-focus-id;
+    private property <int> last-focus-id;
+    private property <int> domain-last-focus-id;
     private property <bool> was-last: false;
+    private property <bool> safe-return: false;
 
     callback nav-front-forward();
     callback nav-end-backward();
     callback exited();
     callback domain-returned();
+
+    function i-domain-returned() {
+        FocusState.force-focus(domain-last-focus-id);
+        root.safe-return = true;
+        root.domain-returned();
+    }
 
     public function enter-domain() {
         DomainState.enter-domain(self.domain-id);
@@ -313,20 +326,32 @@ export component FocusDomain inherits Rectangle {
     changed domain-active => {
         if domain-active {
             DomainState.set-focus-coords(root.absolute-position.x, root.absolute-position.y, root.width, root.height);
-            pre-nav-focus.focus();
             if was-last {
                 was-last = false;
-                // TODO: refocus the last selected focus when the domain was lost
-                domain-returned();
+                i-domain-returned();
             }
+            if !safe-return || no-graceful-return {
+                pre-nav-focus.focus();
+            }
+            safe-return = false;
+            no-graceful-return = false;
         } else {
             self.exited();
         }
     }
 
-    changed last-domain => {
-        if last-domain == domain-id {
+    changed last-domain-id => {
+        if last-domain-id == domain-id {
             was-last = true;
+        }
+    }
+
+    changed current-focus-id => {
+        if domain-active {
+            root.last-focus-id = current-focus-id;
+        }
+        if was-last {
+            root.domain-last-focus-id = root.last-focus-id;
         }
     }
 
@@ -613,7 +638,7 @@ export component ComboBox inherits Button {
             root.current-index = ComboBoxState.selection-index;
             root.current-value = ComboBoxState.selection-value;
             ComboBoxState.complete-selection();
-            DomainState.set-last-domain(root.domain-state-real-last);
+            DomainState.set-last-domain-id(root.domain-state-real-last);
             root.open = false;
         }
     }
