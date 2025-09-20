@@ -27,14 +27,19 @@ where
 
     pub fn value(&self) -> T {
         let tmp = self.value.take();
-        let clone = tmp.clone();
+        let ret = tmp.clone();
         self.value.store(tmp);
-        clone
+        ret
     }
 
     pub fn set_value(&self, value: T) {
-        if self.value.swap(value.clone()) != value {
+        let current = self.value.take();
+
+        if current != value {
+            self.value.store(value.clone());
             self.send_changed(value);
+        } else {
+            self.value.store(current);
         }
     }
 

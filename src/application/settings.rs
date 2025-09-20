@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::watch;
 use toml;
 
+use std::any::Any;
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -28,7 +29,7 @@ macro_rules! default_value {
 }
 
 macro_rules! parameter_struct {
-    ($struct_visibillity:vis $struct_name:ident {$($param:tt: $param_type:tt $(= $param_default:expr)?),+ $(,)?}) => {
+    ($struct_visibillity:vis $struct_name:ident {$($param:ident: $param_type:ty $(= $param_default:expr)?),+ $(,)?}) => {
         #[derive(Serialize, Deserialize)]
         $struct_visibillity struct $struct_name {
             $(
@@ -40,7 +41,23 @@ macro_rules! parameter_struct {
         impl $struct_name {
             #[allow(unused)]
             fn apply(&self, from: Self) {
-                $(self.$param.set_value(from.$param.value()));*
+                $( self.$param.set_value(from.$param.value()) );*
+            }
+
+            #[allow(unused)]
+            pub fn set_by_name(&self, param_name: &str, value: &dyn Any) {
+                match param_name {
+                    $(stringify!($param) => {
+                        if let Some(value) = value.downcast_ref::<$param_type>() {
+                            self.$param.set_value(value.clone())
+                        } else {
+                            // TODO: return err Result
+                        }
+                    }),+
+                    _ => {
+                        // TODO: return err Result
+                    }
+                }
             }
         }
 
