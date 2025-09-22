@@ -2,7 +2,7 @@ import { SCarData } from "../data/car_data.slint";
 import { GridBox } from "std-widgets.slint";
 import { Button, ComboBox } from "core.slint";
 import { ModuleDebug as FocusDebug } from "core.slint";
-import { ModuleDebug as ApplicationStateDebug } from "../data/application_state.slint";
+import { ModuleDebug as ApplicationStateDebug, BackendDebugModule } from "../data/application_state.slint";
 import { DebugSettings, ApplicationState } from "../data/application_state.slint";
 
 export global DebugMenuState {
@@ -47,14 +47,32 @@ export component DebugOverlay {
     x: 0;
     y: 20px;
 
-    VerticalLayout {
-        Text {
-            color: purple;
-            text: "UI DEBUG";
+    HorizontalLayout {
+        alignment: start;
+        spacing: 20px;
+
+        VerticalLayout {
+            alignment: start;
+
+            Text {
+                color: purple;
+                text: "UI DEBUG";
+            }
+
+            ApplicationStateDebug { }
+
+            FocusDebug { }
         }
 
-        ApplicationStateDebug { }
+        VerticalLayout {
+            alignment: start;
 
-        FocusDebug { }
+            Text {
+                color: darkviolet;
+                text: "BACKEND DEBUG";
+            }
+
+            BackendDebugModule { }
+        }
     }
 }
