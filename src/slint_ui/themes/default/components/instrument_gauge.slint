@@ -1,3 +1,5 @@
+import { Arc } from "@lib";
+
 enum RadialCenter {
     Bottom,
     Top,
@@ -90,57 +92,6 @@ export component RadialRect inherits Rectangle {
     }
 }
 
-export component GaugeArc inherits Path {
-    in property <angle> start;
-    in property <angle> end;
-
-    property <angle> angle-range: end - start;
-
-    in property <length> inner-radius: self.width / 3;
-    in property <length> outer-radius: self.width / 2;
-
-    viewbox-width: self.width / 1px;
-    viewbox-height: self.height / 1px;
-
-    MoveTo {
-        x: (parent.viewbox-width / 2) + cos(start) * (outer-radius / 1px);
-        y: (parent.viewbox-height / 2) - sin(start) * (outer-radius / 1px);
-    }
-
-    LineTo {
-        x: (parent.viewbox-width / 2) + cos(start) * (inner-radius / 1px);
-        y: (parent.viewbox-height / 2) - sin(start) * (inner-radius / 1px);
-    }
-
-    ArcTo {
-        x: (parent.viewbox-width / 2) + cos(end) * (inner-radius / 1px);
-        y: (parent.viewbox-height / 2) - sin(end) * (inner-radius / 1px);
-        radius-x: inner-radius / 1px;
-        radius-y: inner-radius / 1px;
-        sweep: angle-range < 0deg;
-        large-arc: abs(angle-range) > 180deg;
-    }
-
-    LineTo {
-        x: (parent.viewbox-width / 2) + cos(end) * (outer-radius / 1px);
-        y: (parent.viewbox-height / 2) - sin(end) * (outer-radius / 1px);
-    }
-
-    ArcTo {
-        x: (parent.viewbox-width / 2) + cos(start) * (outer-radius / 1px);
-        y: (parent.viewbox-height / 2) - sin(start) * (outer-radius / 1px);
-        radius-x: outer-radius / 1px;
-        radius-y: outer-radius / 1px;
-        sweep: angle-range > 0deg;
-        large-arc: abs(angle-range) > 180deg;
-    }
-
-    LineTo {
-        x: (parent.viewbox-width / 2) + cos(start) * (outer-radius / 1px);
-        y: (parent.viewbox-height / 2) - sin(start) * (outer-radius / 1px);
-    }
-}
-
 export struct InstrumentGaugeRegion {
     start: angle,
     end: angle,
@@ -193,7 +144,7 @@ export component InstrumentGauge inherits Rectangle {
 
     property <float> gradient-start: (needle_inner_radius * 1.4) / self.width;
     property <float> gradient-pre-end: (100 - ((100 - gradient-start) / ((100 + gradient-start) / 2))) / 100;
-    
+
     in property <brush> needle-sweep-fill: @radial-gradient(circle, #00000000 gradient-start, needle-sweep-color.darker(25%).transparentize(40%) gradient-pre-end);
 
     in property <[InstrumentGaugeRegion]> regions: [
@@ -236,7 +187,7 @@ export component InstrumentGauge inherits Rectangle {
 
             visible: (region.fill-final-tick || ((major-tick + 1) != region.major-ticks));
 
-            GaugeArc {
+            Arc {
                 width: root.width;
                 height: root.height;
 
@@ -260,7 +211,7 @@ export component InstrumentGauge inherits Rectangle {
             }
 
             if (major-tick + 1) != region.major-ticks: Rectangle {
-                for minor-tick in region.minor-ticks: GaugeArc {
+                for minor-tick in region.minor-ticks: Arc {
                     start: major-tick-arc.start + (minor-tick + 1) * minor-tick-angle-step;
                     end: self.start + region.minor-tick-size;
 
@@ -276,7 +227,7 @@ export component InstrumentGauge inherits Rectangle {
         }
     }
 
-    needle-sweep := GaugeArc {
+    needle-sweep := Arc {
         width: needle.width;
         height: needle.height;
 
@@ -324,7 +275,7 @@ export component InstrumentGauge inherits Rectangle {
         }
     }
 
-    background-arc := GaugeArc {
+    background-arc := Arc {
         width: 100%;
         height: 100%;
 

@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+use std::env;
 use std::ffi::OsStr;
 use std::fs::{self, File};
 use std::io::{BufWriter, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use syn;
 use walkdir::WalkDir;
@@ -504,11 +506,18 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
 
 fn main() {
     let slint_path = Path::new(SLINT_PATH);
+    let manifest_dir = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
+    let library_paths = HashMap::from([(
+        // TODO: make properly organized component library
+        "lib".to_string(),
+        manifest_dir.join("src/slint_ui/components/core.slint"),
+    )]);
 
     build_dbc().unwrap();
     generate_can_data_emulator().unwrap();
     generate_slint_car_data(slint_path).unwrap();
     generate_slint_themes(slint_path).unwrap();
 
-    slint_build::compile(slint_path.join("main.slint")).unwrap();
+    let config = slint_build::CompilerConfiguration::new().with_library_paths(library_paths);
+    slint_build::compile_with_config(slint_path.join("main.slint"), config).unwrap();
 }

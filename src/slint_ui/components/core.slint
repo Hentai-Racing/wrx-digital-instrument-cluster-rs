@@ -17,7 +17,6 @@ enum ForceFailedReason {
     Stolen
 }
 
-// TODO: add different notification types
 
 export global FocusState {
     out property <int> num-focuses: 1;
@@ -25,7 +24,7 @@ export global FocusState {
     out property <int> force-focus-id;
     out property <bool> attempting-force-focus;
     out property <int> last-focus-id;
-    out property <FocusBox> focus-box: { x: 0, y: 0, width: 0, height: 0, border-radius: 0 };
+    out property <FocusBox> focus-box: { x: 4px, y: 4px, width: 100px, height: 75px, border-radius: 75px / 3 };
     out property <int> failed-forces: 0;
 
     private property <bool> i-force-complete;
@@ -66,6 +65,9 @@ export global FocusState {
         self.last-focus-id = id;
     }
 }
+
+// TODO: add sub-domain with focus wrapper for components like sliders or settings boxes that contain their own focusscope, but exist in a larger scope
+// allows the main focusscope to be interacted with while indicating which sub-domain is active
 
 export global DomainState {
     out property <int> num-domains: 1;
@@ -132,17 +134,172 @@ export component DebugHighlight {
     }
 }
 
+export component Arc inherits Path {
+    in property <angle> start: 90deg;
+    in property <angle> end: 180deg;
+    in property <length> inner-radius: self.width / 3;
+    in property <length> outer-radius: self.width / 2;
+
+    property <angle> angle-range: end - start;
+
+    fill: white;
+    viewbox-width: self.width / 1px;
+    viewbox-height: self.height / 1px;
+
+    MoveTo {
+        x: (parent.viewbox-width / 2) + cos(start) * (outer-radius / 1px);
+        y: (parent.viewbox-height / 2) - sin(start) * (outer-radius / 1px);
+    }
+
+    LineTo {
+        x: (parent.viewbox-width / 2) + cos(start) * (inner-radius / 1px);
+        y: (parent.viewbox-height / 2) - sin(start) * (inner-radius / 1px);
+    }
+
+    ArcTo {
+        x: (parent.viewbox-width / 2) + cos(end) * (inner-radius / 1px);
+        y: (parent.viewbox-height / 2) - sin(end) * (inner-radius / 1px);
+        radius-x: inner-radius / 1px;
+        radius-y: inner-radius / 1px;
+        sweep: angle-range < 0deg;
+        large-arc: abs(angle-range) > 180deg;
+    }
+
+    LineTo {
+        x: (parent.viewbox-width / 2) + cos(end) * (outer-radius / 1px);
+        y: (parent.viewbox-height / 2) - sin(end) * (outer-radius / 1px);
+    }
+
+    ArcTo {
+        x: (parent.viewbox-width / 2) + cos(start) * (outer-radius / 1px);
+        y: (parent.viewbox-height / 2) - sin(start) * (outer-radius / 1px);
+        radius-x: outer-radius / 1px;
+        radius-y: outer-radius / 1px;
+        sweep: angle-range > 0deg;
+        large-arc: abs(angle-range) > 180deg;
+    }
+
+    LineTo {
+        x: (parent.viewbox-width / 2) + cos(start) * (outer-radius / 1px);
+        y: (parent.viewbox-height / 2) - sin(start) * (outer-radius / 1px);
+    }
+}
+
 export component FocusHoverRect inherits Rectangle {
-    private property <length> size-offset: self.border-width;
+    private property <brush> hover-color: white;
+    private property <float> hover-fade: 100%;
+    private property <length> size-offset: 1.5px;
     private property <length> new-height: FocusState.focus-box.height + size-offset * 2;
+    private property <length> corner-size: self.border-radius;
+
+    property <float> radial-percentage: (size-offset / corner-size);
+
     x: FocusState.focus-box.x - size-offset;
     y: FocusState.focus-box.y - size-offset;
     width: FocusState.focus-box.width + size-offset * 2;
     height: new-height;
     border-radius: FocusState.focus-box.border-radius * (new-height / FocusState.focus-box.height);
     background: transparent;
-    border-color: white;
-    border-width: 2px;
+
+    top-rect := Rectangle {
+        y: 0;
+        x: root.width / 2 - self.width / 2;
+        height: root.size-offset;
+        width: root.width - root.corner-size * 2;
+
+        background: white;
+        // background: @linear-gradient(0deg, root.hover-color, root.hover-color.transparentize(hover-fade));
+    }
+
+    bottom-rect := Rectangle {
+        y: root.height - root.size-offset;
+        x: top-rect.x;
+        height: root.size-offset;
+        width: top-rect.width;
+
+        background: white;
+        // background: @linear-gradient(180deg, root.hover-color, root.hover-color.transparentize(hover-fade));
+    }
+
+    left-rect := Rectangle {
+        x: 0;
+        y: root.height / 2 - self.height / 2;
+        width: root.size-offset;
+        height: root.height - root.corner-size * 2;
+
+        background: white;
+        // background: @linear-gradient(270deg, root.hover-color, root.hover-color.transparentize(hover-fade));
+    }
+
+    right-rect := Rectangle {
+        x: root.width - self.width;
+        y: left-rect.y;
+        width: left-rect.width;
+        height: left-rect.height;
+
+        background: white;
+        // background: @linear-gradient(90deg, root.hover-color, root.hover-color.transparentize(hover-fade));
+    }
+
+    // TODO: figure out the gradient rate mismatch
+    top-left-corner-rect := Arc {
+        start: 90deg;
+        // fill: @radial-gradient(circle, root.hover-color radial-percentage, root.hover-color.transparentize(hover-fade) 100%);
+        end: 180deg;
+        x: 0;
+        y: 0;
+        width: root.corner-size * 2;
+        height: root.corner-size * 2;
+        inner-radius: root.corner-size - root.size-offset;
+    }
+
+    // Rectangle {
+    //     background: red;
+    //     x: 0;
+    //     y: root.corner-size * radial-percentage;
+    //     width: root.corner-size * 2;
+    //     height: 1px;
+    // }
+
+    bottom-left-corner-rect := Arc {
+        start: 180deg;
+        end: 270deg;
+        x: 0;
+        y: root.height - self.height;
+        width: top-left-corner-rect.width;
+        height: top-left-corner-rect.height;
+        inner-radius: root.corner-size - root.size-offset;
+    }
+
+    top-right-corner-rect := Arc {
+        start: 0deg;
+        end: 90deg;
+        x: root.width - self.width;
+        y: 0;
+        width: root.corner-size * 2;
+        height: root.corner-size * 2;
+        inner-radius: root.corner-size - root.size-offset;
+    }
+
+    bottom-right-corner-rect := Arc {
+        start: 270deg;
+        end: 360deg;
+        x: root.width - self.width;
+        y: root.height - self.height;
+        width: root.corner-size * 2;
+        height: root.corner-size * 2;
+        inner-radius: root.corner-size - root.size-offset;
+    }
+}
+
+component HoverDebug {
+    width: 125px;
+    height: 100px;
+
+    FocusHoverRect {
+        y: root.height / 2 - self.height / 2;
+        x: root.width / 2 - self.width / 2;
+    }
 }
 
 export component AnimatedFocusHoverRect inherits FocusHoverRect {
@@ -691,7 +848,7 @@ component ToggleBoxInner inherits Rectangle {
                 width: 10px;
                 height: self.width;
                 border-radius: self.height / 2;
-                background: green;
+                background: limegreen;
             }
         }
     }
@@ -725,6 +882,12 @@ export component ToggleBox inherits Button {
         accessible-mode: root.accessible-mode;
     }
 }
+
+// TODO: add slider component
+// should behave similar to combobox and take focus with global singleton
+
+// TODO: notifications
+// likely requires backend logic for timing and generating the images
 
 export struct Notification {
     id: string,

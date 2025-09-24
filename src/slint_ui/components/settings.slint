@@ -1,25 +1,7 @@
+import { Button, FocusDomain, ComboBox, ToggleBox, DebugHighlight } from "@lib";
 import { ApplicationState, AccessibilitySettings, DebugSettings, GeneralSettings } from "../data/application_state.slint";
 import { SUnitSystem } from "../data/units.slint";
 import { GlobalThemeData } from "../themes/themes.slint";
-import { Button, FocusDomain, ComboBox, ToggleBox, DebugHighlight } from "core.slint";
-
-export global SettingsState { }
-
-export struct SettingsContent {
-    setting-title: string,
-    setting-id: string,
-    setting-type: string,
-
-    setting-owner-id: string,
-}
-
-/*
-settings: [SettingsContent]
-
-for content in SettingsContent {
-
-}
-*/
 
 component DecorationBar inherits Rectangle {
     height: 2px;

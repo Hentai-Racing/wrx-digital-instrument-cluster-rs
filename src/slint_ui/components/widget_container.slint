@@ -1,9 +1,9 @@
 import { ScrollView } from "std-widgets.slint";
 
+import { Button, ControlledFocusScope, FocusDomain, FocusState } from "@lib";
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import { RoadIndicatorWidget } from "../themes/default/components/road_indicators.slint";
 import { ApplicationState, AccessibilitySettings } from "../data/application_state.slint";
-import { Button, ControlledFocusScope, FocusDomain, FocusState } from "../components/core.slint";
 import { CanDisplayWidget } from "can_display.slint";
 
 export global WidgetContainerState {
@@ -113,6 +113,8 @@ export component WidgetContainer {
     }
 
     VerticalLayout {
+        // TODO: add dynamic images
+        // requires backend
         center-widget-container-indicator := FocusDomain {
             property <length> indicator-width: self.height;
 
