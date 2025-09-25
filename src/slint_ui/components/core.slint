@@ -188,7 +188,7 @@ export component Arc inherits Path {
 export component FocusHoverRect inherits Rectangle {
     private property <brush> hover-color: white;
     private property <float> hover-fade: 100%;
-    private property <length> size-offset: 1.5px;
+    private property <length> size-offset: 3px;
     private property <length> new-height: FocusState.focus-box.height + size-offset * 2;
     private property <length> corner-size: self.border-radius;
 
@@ -251,6 +251,7 @@ export component FocusHoverRect inherits Rectangle {
         width: root.corner-size * 2;
         height: root.corner-size * 2;
         inner-radius: root.corner-size - root.size-offset;
+        anti-alias: true;
     }
 
     // Rectangle {
@@ -269,6 +270,7 @@ export component FocusHoverRect inherits Rectangle {
         width: top-left-corner-rect.width;
         height: top-left-corner-rect.height;
         inner-radius: root.corner-size - root.size-offset;
+        anti-alias: true;
     }
 
     top-right-corner-rect := Arc {
@@ -279,6 +281,7 @@ export component FocusHoverRect inherits Rectangle {
         width: root.corner-size * 2;
         height: root.corner-size * 2;
         inner-radius: root.corner-size - root.size-offset;
+        anti-alias: true;
     }
 
     bottom-right-corner-rect := Arc {
@@ -289,17 +292,32 @@ export component FocusHoverRect inherits Rectangle {
         width: root.corner-size * 2;
         height: root.corner-size * 2;
         inner-radius: root.corner-size - root.size-offset;
+        anti-alias: true;
     }
 }
 
-component HoverDebug {
-    width: 125px;
-    height: 100px;
+// TODO: finish slider
+// should behave similar to combobox and take focus with global singleton
 
-    FocusHoverRect {
-        y: root.height / 2 - self.height / 2;
-        x: root.width / 2 - self.width / 2;
+export component Slider {
+    in property <float> max-value: 100;
+    in property <float> min-value: 0;
+    in property <int> delim: 10;
+
+    property <int> sections: (max-value - min-value) / delim;
+
+    Rectangle {
+        height: 2px;
+        background: white.transparentize(25%);
     }
+
+    // HorizontalLayout {
+
+    //     for i in sections: Rectangle {
+    //         height: 6px;
+    //         width: 2px;
+    //     }
+    // }
 }
 
 export component AnimatedFocusHoverRect inherits FocusHoverRect {
@@ -882,9 +900,6 @@ export component ToggleBox inherits Button {
         accessible-mode: root.accessible-mode;
     }
 }
-
-// TODO: add slider component
-// should behave similar to combobox and take focus with global singleton
 
 // TODO: notifications
 // likely requires backend logic for timing and generating the images
