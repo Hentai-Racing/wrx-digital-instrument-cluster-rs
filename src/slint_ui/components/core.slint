@@ -17,8 +17,9 @@ enum ForceFailedReason {
     Stolen
 }
 
-
 export global FocusState {
+    in property <length> focus-highlight-size: 3px;
+
     out property <int> num-focuses: 1;
     out property <int> current-focus-id: 0;
     out property <int> force-focus-id;
@@ -188,7 +189,7 @@ export component Arc inherits Path {
 export component FocusHoverRect inherits Rectangle {
     private property <brush> hover-color: white;
     private property <float> hover-fade: 100%;
-    private property <length> size-offset: 3px;
+    private property <length> size-offset: FocusState.focus-highlight-size;
     private property <length> new-height: FocusState.focus-box.height + size-offset * 2;
     private property <length> corner-size: self.border-radius;
 
@@ -294,30 +295,6 @@ export component FocusHoverRect inherits Rectangle {
         inner-radius: root.corner-size - root.size-offset;
         anti-alias: true;
     }
-}
-
-// TODO: finish slider
-// should behave similar to combobox and take focus with global singleton
-
-export component Slider {
-    in property <float> max-value: 100;
-    in property <float> min-value: 0;
-    in property <int> delim: 10;
-
-    property <int> sections: (max-value - min-value) / delim;
-
-    Rectangle {
-        height: 2px;
-        background: white.transparentize(25%);
-    }
-
-    // HorizontalLayout {
-
-    //     for i in sections: Rectangle {
-    //         height: 6px;
-    //         width: 2px;
-    //     }
-    // }
 }
 
 export component AnimatedFocusHoverRect inherits FocusHoverRect {
@@ -901,6 +878,227 @@ export component ToggleBox inherits Button {
     }
 }
 
+export global SliderState {
+    in-out property <int> first-model-focus-id;
+    in-out property <int> last-model-focus-id;
+
+    out property <float> max-value: 100;
+    out property <float> min-value: 0;
+    out property <int> ticks: 10;
+
+    in property <string> current-value: self.min-value;
+    in property <string> title;
+
+    out property <float> value-range: self.max-value - self.min-value;
+
+    out property <bool> visible: false;
+    public function show-selection-box() {
+        self.visible = true;
+    }
+
+    out property <FocusBox> focus-box;
+    public function set-focus-coords(x: length, y: length, width: length, height: length) {
+        if self.focus-box.x != x {
+            self.focus-box.x = x;
+        }
+        if self.focus-box.y != y {
+            self.focus-box.y = y;
+        }
+        if self.focus-box.width != width {
+            self.focus-box.width = width;
+        }
+        if self.focus-box.height != height {
+            self.focus-box.height = height;
+        }
+    }
+
+    public function set-value-range(min: float, max: float, ticks: int) {
+        self.max-value = max;
+        self.min-value = min;
+        self.ticks = ticks;
+    }
+
+    out property <bool> selection-made;
+    out property <string> selection-value;
+    out property <int> selection-index;
+
+    in property <int> domain-id;
+
+    public function make-selection(value: string, index: int) {
+        self.selection-made = true;
+        self.selection-value = value;
+        self.selection-index = index;
+    }
+
+    public function complete-selection() {
+        DomainState.domain-exit(self.domain-id);
+        self.selection-made = false;
+        self.visible = false;
+    }
+}
+
+component SliderSelectionBoxButton inherits Button {
+    in property <bool> has-selection;
+    height: 14px;
+    width: self.height;
+    border-radius: self.height / 2;
+
+    Rectangle {
+        width: root.height + FocusState.focus-highlight-size * 2 + 7px;
+        height: self.width;
+        border-radius: self.height / 2;
+        background: transparent;
+        border-width: 2px;
+        border-color: root.background.brighter(25%);
+        visible: root.has-selection;
+    }
+}
+
+export component SliderSelectionBox inherits FocusDomain {
+    private property <bool> i-has-domain: SliderState.visible;
+    private property <int> i-init-selection-box-focus;
+
+    property <length> tick-size: 5px;
+    private property <length> tick-step: (interior.width - SliderState.ticks * tick-size) / (SliderState.ticks - 1);
+
+    width: 100%;
+    height: 100%;
+    force-exit-strategy: false;
+    background: black.transparentize(7.5%);
+
+    function open() {
+        if i-has-domain {
+            root.focus();
+        }
+    }
+
+    changed i-has-domain => open();
+
+    nav-front-forward => FocusState.force-focus(SliderState.first-model-focus-id);
+    nav-end-backward => FocusState.force-focus(SliderState.last-model-focus-id);
+    init => open();
+
+    forward-focus: init-focus-hack;
+
+    HorizontalLayout {
+        padding: 5px;
+        alignment: center;
+
+        i-layout := VerticalLayout {
+            spacing: 15px;
+            alignment: center;
+
+            Text {
+                height: self.font-size + 20px;
+                color: white;
+                text: SliderState.title;
+                font-size: 25px;
+                horizontal-alignment: left;
+                vertical-alignment: center;
+            }
+
+            interior := HorizontalLayout {
+                width: 400px;
+                alignment: center;
+                spacing: root.tick-step;
+
+                for value[i] in SliderState.ticks: HorizontalLayout {
+                    alignment: start;
+                    SliderSelectionBoxButton {
+                        has-selection: SliderState.current-value == value;
+
+                        init-ready => {
+                            if i == 0 {
+                                root.tick-size = self.height;
+                                SliderState.first-model-focus-id = self.focus-id;
+                            }
+                            if i == (SliderState.ticks - 1) {
+                                SliderState.last-model-focus-id = self.focus-id;
+                            }
+                            if self.has-selection {
+                                root.i-init-selection-box-focus = self.focus-id;
+                            }
+                        }
+
+                        activated => {
+                            SliderState.domain-id = root.domain-id;
+                            SliderState.make-selection(value, i);
+                        }
+                    }
+
+                    // if i != (SliderState.ticks - 1): VerticalLayout {
+                    //     width: root.tick-step;
+                    //     alignment: center;
+                    //     padding: 2px;
+
+                    //     Rectangle {
+                    //         background: white.transparentize(25%);
+                    //         height: 2px;
+                    //     }
+                    // }
+                }
+            }
+
+            init-focus-hack := FocusScope {
+                width: 0;
+                focus-gained(reason) => {
+                    self.enabled = false;
+                    FocusState.force-focus(root.i-init-selection-box-focus);
+                }
+            }
+        }
+    }
+}
+
+
+// TODO: complete slider
+/* missing:
+    -background bar
+    -interpolate real value
+*/
+export component Slider inherits Button {
+    in property <[string]> model;
+    in property <string> title;
+
+    in property <float> max-value: 100;
+    in property <float> min-value: 0;
+    in property <int> ticks: 10;
+
+    in-out property <int> current-index: 0;
+    in-out property <string> current-value: model[current-index];
+    out property <bool> open;
+
+    private property <float> value-range: self.max-value - self.min-value;
+
+    private property <bool> selection-state-made: SliderState.selection-made;
+    private property <int> domain-state-real-last;
+
+    text: current-value;
+    text-alignment: left;
+
+    changed selection-state-made => {
+        if open {
+            root.current-index = SliderState.selection-index;
+            root.current-value = SliderState.selection-value;
+            SliderState.complete-selection();
+            DomainState.set-last-domain-id(root.domain-state-real-last);
+            root.open = false;
+        }
+    }
+
+    function activate-open() {
+        root.domain-state-real-last = DomainState.last-domain-id;
+        SliderState.title = root.title;
+        SliderState.current-value = root.current-value;
+        SliderState.set-focus-coords(self.absolute-position.x, self.absolute-position.y, self.width, self.height);
+        SliderState.set-value-range(self.max-value, self.min-value, self.ticks);
+        SliderState.show-selection-box();
+        root.open = true;
+    }
+
+    activated => activate-open();
+}
+
 // TODO: notifications
 // likely requires backend logic for timing and generating the images
 
@@ -938,6 +1136,73 @@ export component NotificationObject {
 
 export component NotificationMain {
     for notification[i] in NotificationState.notifications: NotificationObject { }
+}
+
+export component TestComponentSuite inherits VerticalLayout {
+    spacing: 10px;
+
+    HorizontalLayout {
+        Text {
+            text: "Testing ComboBox";
+        }
+
+        ComboBox {
+            title: "Testing ComboBox";
+            current-index: 0;
+            model: ["test1", "test2", "test3"];
+        }
+    }
+
+    HorizontalLayout {
+        Text {
+            text: "Testing Button";
+        }
+
+        Button {
+            property <int> var: 0;
+            text: "Button " + var;
+            activated => {
+                var += 1;
+            }
+        }
+    }
+
+    HorizontalLayout {
+        Text {
+            text: "Testing ToggleBox";
+        }
+
+        ToggleBox {
+            var: false;
+            toggled => {
+                self.var = !self.var;
+            }
+        }
+    }
+
+    HorizontalLayout {
+        Text {
+            text: "Testing Accessible ToggleBox";
+        }
+
+        ToggleBox {
+            var: false;
+            force-accessible-enaled: true;
+            toggled => {
+                self.var = !self.var;
+            }
+        }
+    }
+
+    HorizontalLayout {
+        Text {
+            text: "Testing Slider";
+        }
+
+        Slider {
+            title: "Testing Slider";
+        }
+    }
 }
 
 export component ModuleDebug inherits VerticalLayout {
@@ -1034,5 +1299,25 @@ export component ModuleDebug inherits VerticalLayout {
     Text {
         color: white;
         text: ComboBoxState.domain-id;
+    }
+
+    Text {
+        color: purple;
+        text: "SliderState";
+    }
+
+    Text {
+        color: white;
+        text: SliderState.visible ? "visible" : "hidden";
+    }
+
+    Text {
+        color: white;
+        text: SliderState.first-model-focus-id + ", " + SliderState.last-model-focus-id;
+    }
+
+    Text {
+        color: white;
+        text: SliderState.domain-id;
     }
 }

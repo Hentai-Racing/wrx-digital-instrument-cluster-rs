@@ -1,4 +1,4 @@
-import { ControlledFocusScope, FocusDomain, FocusHoverRect, AnimatedFocusHoverRect, ComboBoxSelectionBox, ComboBoxState } from "@lib";
+import { ControlledFocusScope, FocusDomain, FocusHoverRect, AnimatedFocusHoverRect, ComboBoxSelectionBox, ComboBoxState, SliderSelectionBox, SliderState } from "@lib";
 import { DebugMenuWidget, DebugMenuState, DebugOverlay } from "components/debug.slint";
 import { SettingsMenu } from "components/settings.slint";
 import { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter } from "data/data_parameter.slint";
@@ -50,7 +50,9 @@ export component App inherits Window {
         //*
 
     // popup highest layer
+    // TODO: add single component that handles these singleton-popups
     if ComboBoxState.visible: ComboBoxSelectionBox { }
+    if SliderState.visible: SliderSelectionBox { }
 
     // Highest layer
     if AccessibilitySettings.animations-enabled: AnimatedFocusHoverRect { }

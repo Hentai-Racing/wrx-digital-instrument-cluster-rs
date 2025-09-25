@@ -105,7 +105,7 @@ parameter_struct! {pub AccessibilitySettings {
 }}
 
 parameter_struct! {pub DebugSessionSettings {
-    debug_highlights: bool = true,
+    debug_highlights: bool = false,
     debug_overlay_enabled: bool = true
 }}
 

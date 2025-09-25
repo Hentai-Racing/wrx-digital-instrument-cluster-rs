@@ -1,4 +1,4 @@
-import { ModuleDebug as FocusDebug, Button, ComboBox } from "@lib";
+import { ModuleDebug as FocusDebug, Button, ComboBox, Slider, ToggleBox, TestComponentSuite } from "@lib";
 import { SCarData } from "../data/car_data.slint";
 import { GridBox } from "std-widgets.slint";
 import { ModuleDebug as ApplicationStateDebug, BackendDebugModule } from "../data/application_state.slint";
@@ -17,6 +17,8 @@ export component DebugMenuWidget {
         spacing: 10px;
 
         GridLayout {
+            spacing: 10px;
+
             suspend-button := Button {
                 text: "Suspend";
 
@@ -34,11 +36,7 @@ export component DebugMenuWidget {
             }
         }
 
-        ComboBox {
-            title: "Testing ComboBox";
-            current-index: 0;
-            model: ["test1", "test2", "test3"];
-        }
+        TestComponentSuite { }
     }
 }
 
