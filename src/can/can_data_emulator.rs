@@ -202,11 +202,15 @@ pub fn run_can_data_emulator(
                 wrx_2018::ClimateControl::BLEND_DOOR_MIN..=wrx_2018::ClimateControl::BLEND_DOOR_MAX,
             );
             let rear_defrost_enabled = rand::rng().random_bool(0.5);
+            let air_vent_mode_enabled = rand::rng().random_bool(0.5);
+            let air_recirculation_mode_enabled = rand::rng().random_bool(0.5);
             let climatecontrol_frame = wrx_2018::ClimateControl::new(
                 airflow_distribution_mode,
                 blower_fan_level,
                 blend_door,
                 rear_defrost_enabled,
+                air_vent_mode_enabled,
+                air_recirculation_mode_enabled,
             )
             .expect("Failed to create frame");
             let _ = can_backend.write_frame(climatecontrol_frame);

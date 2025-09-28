@@ -8,7 +8,8 @@ use crate::application::settings::{SaveStatus, SettingsManager};
 use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
 use crate::can::can_data_emulator::run_can_data_emulator;
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
-use crate::data::car_data::{CarData, ParseResult};
+use crate::can::messages::wrx_2018::CanError;
+use crate::data::car_data::{CarData, ParseError, ParseResult};
 use crate::hardware::hardware_backend::{self, HardwareBackend};
 use crate::slint_ui::backend::{
     can_display::CanFrameDisplay, car_data_bridge, user_settings_bridge,
@@ -189,7 +190,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 },
                                 _ => {}
                             },
-                            Err(e) => println!("Failed to parse frame: {e:?}"),
+                            Err(e) => match e {
+                                ParseError::CanError(e) => match e {
+                                    CanError::UnknownMessageId(_id) => {
+                                        // ignore
+                                    }
+                                    _ => println!("Failed to parse frame: {e:?}"),
+                                },
+                                _ => println!("Failed to parse frame: {e:?}"),
+                            },
                         }
                     };
 

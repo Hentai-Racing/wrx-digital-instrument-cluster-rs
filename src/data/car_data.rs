@@ -202,6 +202,7 @@ CarData! {
 
     Cluster2 => {
         fog_lights_enabled: bool,
+        tpms_warning_light_enabled: bool,
     };
 
     Cabin => {

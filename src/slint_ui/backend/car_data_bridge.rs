@@ -112,6 +112,8 @@ pub fn bridge(ui: Weak<App>, car_data: Arc<CarData>, settings_manager: Arc<Setti
         mt_clutch_sw: SBDataParameter,
 
         fog_lights_enabled: SBDataParameter,
+        tpms_warning_light_enabled: SBDataParameter,
+
         left_front_door_open: SBDataParameter,
         right_front_door_open: SBDataParameter,
         right_rear_door_open: SBDataParameter,

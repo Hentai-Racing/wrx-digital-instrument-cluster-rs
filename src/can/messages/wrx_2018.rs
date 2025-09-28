@@ -8,7 +8,7 @@
 
 //! Message definitions from file `"WRX_2018.dbc"`
 //!
-//! - Version: `Version("0.7.0")`
+//! - Version: `Version("0.7.1")`
 
 use core::ops::BitOr;
 use bitvec::prelude::*;
@@ -2870,12 +2870,14 @@ impl ClimateControl {
     pub const BLEND_DOOR_MAX: f32 = 100_f32;
     
     /// Construct new climate_control from values
-    pub fn new(airflow_distribution_mode: u8, blower_fan_level: u8, blend_door: f32, rear_defrost_enabled: bool) -> Result<Self, CanError> {
+    pub fn new(airflow_distribution_mode: u8, blower_fan_level: u8, blend_door: f32, rear_defrost_enabled: bool, air_vent_mode_enabled: bool, air_recirculation_mode_enabled: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_airflow_distribution_mode(airflow_distribution_mode)?;
         res.set_blower_fan_level(blower_fan_level)?;
         res.set_blend_door(blend_door)?;
         res.set_rear_defrost_enabled(rear_defrost_enabled)?;
+        res.set_air_vent_mode_enabled(air_vent_mode_enabled)?;
+        res.set_air_recirculation_mode_enabled(air_recirculation_mode_enabled)?;
         Ok(res)
     }
     
@@ -3044,6 +3046,74 @@ impl ClimateControl {
         Ok(())
     }
     
+    /// air_vent_mode_enabled
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: ""
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn air_vent_mode_enabled(&self) -> bool {
+        self.air_vent_mode_enabled_raw()
+    }
+    
+    /// Get raw value of air_vent_mode_enabled
+    ///
+    /// - Start bit: 15
+    /// - Signal size: 1 bits
+    /// - Factor: 1
+    /// - Offset: 0
+    /// - Byte order: BigEndian
+    /// - Value type: Unsigned
+    #[inline(always)]
+    pub fn air_vent_mode_enabled_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[8..9].load_be::<u8>();
+        
+        signal == 1
+    }
+    
+    /// Set value of air_vent_mode_enabled
+    #[inline(always)]
+    pub fn set_air_vent_mode_enabled(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Msb0>()[8..9].store_be(value);
+        Ok(())
+    }
+    
+    /// air_recirculation_mode_enabled
+    ///
+    /// - Min: 0
+    /// - Max: 1
+    /// - Unit: ""
+    /// - Receivers: Vector__XXX
+    #[inline(always)]
+    pub fn air_recirculation_mode_enabled(&self) -> bool {
+        self.air_recirculation_mode_enabled_raw()
+    }
+    
+    /// Get raw value of air_recirculation_mode_enabled
+    ///
+    /// - Start bit: 14
+    /// - Signal size: 1 bits
+    /// - Factor: 1
+    /// - Offset: 0
+    /// - Byte order: BigEndian
+    /// - Value type: Unsigned
+    #[inline(always)]
+    pub fn air_recirculation_mode_enabled_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[9..10].load_be::<u8>();
+        
+        signal == 1
+    }
+    
+    /// Set value of air_recirculation_mode_enabled
+    #[inline(always)]
+    pub fn set_air_recirculation_mode_enabled(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Msb0>()[9..10].store_be(value);
+        Ok(())
+    }
+    
 }
 
 impl core::convert::TryFrom<&[u8]> for ClimateControl {
@@ -3102,6 +3172,8 @@ impl core::fmt::Debug for ClimateControl {
                 .field("blower_fan_level", &self.blower_fan_level())
                 .field("blend_door", &self.blend_door())
                 .field("rear_defrost_enabled", &self.rear_defrost_enabled())
+                .field("air_vent_mode_enabled", &self.air_vent_mode_enabled())
+                .field("air_recirculation_mode_enabled", &self.air_recirculation_mode_enabled())
             .finish()
         } else {
             f.debug_tuple("ClimateControl").field(&self.raw).finish()

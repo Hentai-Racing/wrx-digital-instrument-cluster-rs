@@ -625,9 +625,7 @@ export component DefaultTheme inherits Rectangle {
                     source: @image-url("../../../../resources/images/tpms-warning-light.png");
                     colorize: SymbolProperties.symbol-color-yellow;
 
-                    // visible: SCarData.tpms_warning_light_enabled.value;
-                    // TODO: find correct can signal
-                    visible: false;
+                    visible: SCarData.tpms_warning_light_enabled.value;
                 }
             }
         }
