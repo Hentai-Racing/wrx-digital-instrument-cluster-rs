@@ -1,154 +1,70 @@
+use crate::data::parameters::Parameter;
 #[cfg(feature = "apalis_imx8")]
 use crate::hardware::apalis_imx8;
 
+use std::sync::Arc;
+
+#[derive(Default)]
 pub enum Backend {
     #[cfg(feature = "apalis_imx8")]
     ApalisIMX8(apalis_imx8::ApalisIMX8),
-    None,
+    #[default]
+    Simulator,
 }
 
+#[derive(Default)]
 pub struct HardwareBackend {
     backend: Backend,
-}
-
-#[cfg(feature = "apalis_imx8")]
-fn create_uinput_dev(name: String) -> Result<uinput::Device, Box<dyn std::error::Error>> {
-    use uinput::event::keyboard::Key;
-
-    let dev = uinput::default()?
-        .name(name)?
-        .event(Key::Up)? // todo: tab
-        .event(Key::Down)? // todo: alt+tab
-        .event(Key::Enter)? // todo: space
-        .create()?;
-
-    Ok(dev)
+    pub nav_forward: Arc<Parameter<bool>>,
+    pub nav_backward: Arc<Parameter<bool>>,
+    pub nav_enter: Arc<Parameter<bool>>,
 }
 
 impl HardwareBackend {
     pub fn new(backend: Backend) -> Self {
         match &backend {
             #[cfg(feature = "apalis_imx8")]
-            Backend::ApalisIMX8(_) => {
-                let gpio_1 = Arc::new(Parameter::<bool>::new(false));
+            Backend::ApalisIMX8(apalis_imx8) => {
+                use crate::hardware::apalis_imx8::{ApalisIMX8, ApalisIMX8ADC, ApalisIMX8GPIO};
+
+                let nav_forward: Arc<Parameter<bool>> = Default::default();
+                let nav_backward: Arc<Parameter<bool>> = Default::default();
+                let nav_enter: Arc<Parameter<bool>> = Default::default();
+
+                apalis_imx8.register_gpio_reader(ApalisIMX8GPIO::GPIO1);
+                let gpio_1 = apalis_imx8.get_gpio_param(ApalisIMX8GPIO::GPIO1);
 
                 {
                     let gpio_1 = gpio_1.clone();
+                    let nav_forward = nav_forward.clone();
                     tokio::spawn(async move {
-                        use gpio_cdev::{Chip, EventRequestFlags, EventType, LineRequestFlags};
-                        use std::os::unix::io::AsRawFd;
-                        use tokio::io::unix::AsyncFd;
-
-                        let mut chip = match Chip::new("/dev/gpiochip0") {
-                            Ok(chip) => chip,
-                            Err(e) => {
-                                eprintln!("chip error: {e}");
-                                return;
-                            }
-                        };
-
-                        let line = match chip.get_line(8) {
-                            Ok(line) => line,
-                            Err(e) => {
-                                eprintln!("line error: {e}");
-                                return;
-                            }
-                        };
-
-                        let mut event_handle = match line.events(
-                            LineRequestFlags::INPUT,
-                            EventRequestFlags::BOTH_EDGES,
-                            "gpio-async",
-                        ) {
-                            Ok(event_handle) => event_handle,
-                            Err(e) => {
-                                eprintln!("event request error: {e}");
-                                return;
-                            }
-                        };
-
-                        let async_fd = match AsyncFd::new(event_handle.as_raw_fd()) {
-                            Ok(fd) => fd,
-                            Err(e) => {
-                                eprintln!("async fd error: {e}");
-                                return;
-                            }
-                        };
-
-                        loop {
-                            match async_fd.readable().await {
-                                Ok(mut guard) => {
-                                    match event_handle.get_event() {
-                                        Ok(event) => match event.event_type() {
-                                            EventType::RisingEdge => {
-                                                gpio_1.set_value(true);
-                                            }
-                                            EventType::FallingEdge => {
-                                                gpio_1.set_value(false);
-                                            }
-                                        },
-                                        Err(e) => {
-                                            eprintln!("event read error: {e}");
-                                        }
-                                    }
-
-                                    guard.clear_ready();
-                                }
-                                Err(e) => {
-                                    eprintln!("await error: {e}");
-                                    break;
-                                }
-                            }
-                        }
-                    });
-                }
-
-                {
-                    let gpio_1 = gpio_1.clone();
-                    tokio::spawn(async move {
-                        use uinput::event::keyboard::Key;
-
-                        let mut device = match create_uinput_dev(format!(
-                            "{}-apalis_imx8-keyboard",
-                            env!("CARGO_PKG_NAME")
-                        )) {
-                            Ok(device) => device,
-                            Err(e) => {
-                                eprintln!("event request error: {e}");
-                                return;
-                            }
-                        };
-
                         let mut gpio_1_watch = gpio_1.watch();
                         loop {
                             use tokio::select;
 
                             select! {
                                 Ok(_) = gpio_1_watch.changed() => {
-                                    let value = *gpio_1_watch.borrow_and_update();
-
-                                    if value {
-                                        let _ = device.press(&Key::Up); // change to tab
-                                        println!("fake keyboard press");
-                                    } else {
-                                        let _ = device.release(&Key::Up); // change to tab
-                                        println!("fake keyboard release");
-                                    }
+                                    nav_forward.set_value(*gpio_1_watch.borrow_and_update());
                                 },
                                 else => {break;}
-                            }
-
-                            if let Err(e) = device.synchronize() {
-                                eprintln!("Failed to synchronize uinput device: {e}");
                             }
                         }
                     });
                 }
-            }
-            _ => {}
-        }
 
-        Self { backend }
+                Self {
+                    backend,
+                    nav_forward,
+                    nav_backward,
+                    nav_enter,
+                    ..Default::default()
+                }
+            }
+            Backend::Simulator => Self {
+                backend,
+                ..Default::default()
+            },
+        }
     }
 
     pub fn power_suspend(&self) {
@@ -158,7 +74,7 @@ impl HardwareBackend {
                 println!("Power suspend not yet implemented!");
                 // device.power_suspend();
             }
-            _ => println!("Tried to suspend with no hardware backend!"),
+            _ => println!("Simulator does not support `power_suspend`"),
         }
     }
 }

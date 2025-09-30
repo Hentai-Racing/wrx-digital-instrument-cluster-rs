@@ -12,7 +12,7 @@ use crate::can::messages::wrx_2018::CanError;
 use crate::data::car_data::{CarData, ParseError, ParseResult};
 use crate::hardware::hardware_backend::{self, HardwareBackend};
 use crate::slint_ui::backend::{
-    can_display::CanFrameDisplay, car_data_bridge, user_settings_bridge,
+    can_display::CanFrameDisplay, car_data_bridge, hardware_bridge, user_settings_bridge,
 };
 
 use tokio::select;
@@ -251,7 +251,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     runners.push(running_simulation.clone());
 
-    let debug_menu_state = ui.global::<DebugMenuState>();
     let application_state = ui.global::<ApplicationState>();
 
     application_state.set_virtual_cluster(virtual_cluster);
@@ -272,19 +271,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     SETTINGS_MANAGER.load_from_fs()?;
 
-    user_settings_bridge::bridge(ui.as_weak().clone(), SETTINGS_MANAGER.clone());
-    car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), SETTINGS_MANAGER.clone());
-
     #[cfg(feature = "apalis_imx8")]
     let device = hardware::apalis_imx8::ApalisIMX8::new();
     #[cfg(feature = "apalis_imx8")]
-    let hardware_backend = HardwareBackend::new(hardware_backend::Backend::ApalisIMX8(device));
+    let hardware_backend = Arc::new(HardwareBackend::new(hardware_backend::Backend::ApalisIMX8(
+        device,
+    )));
     #[cfg(not(feature = "apalis_imx8"))]
-    let hardware_backend = HardwareBackend::new(hardware_backend::Backend::None);
+    let hardware_backend = Arc::new(HardwareBackend::new(hardware_backend::Backend::Simulator));
+
+    user_settings_bridge::bridge(ui.as_weak(), SETTINGS_MANAGER.clone());
+    car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), SETTINGS_MANAGER.clone());
+    hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
 
     // main loop
-
-    debug_menu_state.on_debug_suspend(move || hardware_backend.power_suspend());
 
     // autosave interval
     tokio::spawn(async move {

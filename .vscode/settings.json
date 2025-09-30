@@ -7,5 +7,5 @@
     "evenBetterToml.formatter.columnWidth": 999,
     "evenBetterToml.formatter.indentEntries": true,
     "evenBetterToml.formatter.indentTables": true,
-    // "rust-analyzer.cargo.features": "all",
+    "rust-analyzer.cargo.features": "all",
 }
