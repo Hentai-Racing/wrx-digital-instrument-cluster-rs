@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 use std::env;
 use std::ffi::OsStr;
-use std::fs::{self, File};
+use std::fs::{self, File, OpenOptions};
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use syn;
 use walkdir::WalkDir;
 
@@ -21,14 +20,14 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
     let rs_messages_mod_dir = Path::new("src/can/messages/mod.rs");
 
     if rs_messages_out_dir.exists() {
-        fs::remove_dir_all(rs_messages_out_dir)?;
+        fs::remove_dir_all(rs_messages_out_dir).unwrap();
     }
-    fs::create_dir_all(rs_messages_out_dir)?;
+    fs::create_dir_all(rs_messages_out_dir).unwrap();
 
-    let mut mod_file = File::create(rs_messages_mod_dir)?;
+    let mut mod_file = File::create(rs_messages_mod_dir).unwrap();
 
     for entry in WalkDir::new(dbc_file_dir) {
-        let entry = entry?;
+        let entry = entry.unwrap();
         let file_name = entry.file_name();
         let entry_path = entry.path();
 
@@ -46,8 +45,8 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
                 .to_lowercase();
 
             let out_file_path = rs_messages_out_dir.join(format!("{stem}.rs"));
-            let out_file = File::create(out_file_path.clone())?;
-            let dbc_file = fs::read(entry_path)?;
+            let out_file = File::create(out_file_path.clone()).unwrap();
+            let dbc_file = fs::read(entry_path).unwrap();
 
             let config = Config::builder()
                 .dbc_name(dbc_name)
@@ -59,15 +58,11 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
                 .impl_debug(dbc_codegen::FeatureConfig::Always)
                 .build();
 
-            dbc_codegen::codegen(config, &mut BufWriter::new(out_file))?;
-
-            // Command::new("rustfmt")
-            //     .arg("--edition=2024")
-            //     .arg(out_file_path)
-            //     .status()?;
+            dbc_codegen::codegen(config, &mut BufWriter::new(out_file)).unwrap();
 
             mod_file
-                .write_all(format!("pub mod {stem}; // {}\n", entry_path.display()).as_bytes())?;
+                .write_all(format!("pub mod {stem}; // {}\n", entry_path.display()).as_bytes())
+                .unwrap();
         }
     }
 
@@ -76,14 +71,17 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Generates Rust code for virtual CAN data generation
 fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
-    // TODO: make this use the Parameter simulation_running
-    // Read the mod.rs file
-
     let messages_dir = Path::new("src/can/messages");
-    let mod_rs_content = fs::read_to_string(messages_dir.join("mod.rs"))?;
-    let mod_rs: syn::File = syn::parse_str(&mod_rs_content)?;
+    let outputs_dir = messages_dir.join("emulators");
 
-    // Extract module names
+    let mod_rs_content = fs::read_to_string(messages_dir.join("mod.rs")).unwrap();
+    let mod_rs: syn::File = syn::parse_str(&mod_rs_content).unwrap();
+
+    if outputs_dir.exists() {
+        fs::remove_dir_all(&outputs_dir).unwrap();
+    }
+    fs::create_dir_all(&outputs_dir).unwrap();
+
     let module_names: Vec<String> = mod_rs
         .items
         .iter()
@@ -96,17 +94,35 @@ fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
         })
         .collect();
 
-    let mut gen_output =
-        String::from("//! Generated code from build.rs::generate_can_data_emulator()!\n\n"); // full file contents
-    let mut gen_block = String::new(); // generated code
-    let mut imports: Vec<String> = Vec::new(); // imported can message modules
+    let mod_in_dir = &outputs_dir.parent().unwrap();
+    let mut mod_in_file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open(&mod_in_dir.join("mod.rs"))
+        .unwrap();
+    let mod_out_dir = &outputs_dir.join("mod.rs");
+    let mut mod_out_file = File::create(&mod_out_dir).unwrap();
 
-    // Process each module
-    for module_name in module_names {
-        imports.push(format!("use crate::can::messages::{};", module_name));
+    mod_in_file
+        .write(
+            format!(
+                "pub mod {};\n",
+                &outputs_dir.file_name().unwrap().to_str().unwrap()
+            )
+            .as_bytes(),
+        )
+        .unwrap();
 
-        let module_content = fs::read_to_string(messages_dir.join(format!("{module_name}.rs")))?;
-        let module_file: syn::File = syn::parse_str(&module_content)?;
+    for module in module_names {
+        let mut gen_output =
+            String::from("//! Generated code from build.rs::generate_can_data_emulator()!\n\n"); // full file contents
+        let mut gen_block = String::from("let mut ret_frames = vec![];");
+
+        let rs_out_dir = outputs_dir.join(format!("{module}_emulator.rs"));
+        let mut rs_out_file = File::create(&rs_out_dir).unwrap();
+
+        let module_content = fs::read_to_string(messages_dir.join(format!("{module}.rs"))).unwrap();
+        let module_file: syn::File = syn::parse_str(&module_content).unwrap();
 
         // Find the Messages enum
         let messages_enum = module_file
@@ -128,7 +144,6 @@ fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
             })
             .expect("Messages enum not found");
 
-        // Find all implementations for each message in messages_enum
         let impls: Vec<&syn::ItemImpl> = module_file
             .items
             .iter()
@@ -152,7 +167,7 @@ fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
             .collect();
 
         for (variant, item_impl) in messages_enum.iter().zip(impls.iter()) {
-            let signal_path = format!("{module_name}::{}", variant.ident);
+            let signal_path = format!("{module}::{}", variant.ident);
 
             for impl_item in &item_impl.items {
                 if let syn::ImplItem::Fn(func) = impl_item {
@@ -196,87 +211,73 @@ fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
                         let frame_ident =
                             format!("{}_frame", variant.ident.to_string().to_lowercase());
                         let frame_constructor_expression = format!(
-                            "let {frame_ident} = {signal_path}::new({}).expect(\"Failed to create frame\");",
+                            "\tlet {frame_ident} = {signal_path}::new({}).expect(\"Failed to create frame\");",
                             param_names.join(", ")
                         );
                         let write_frame_expression =
-                            format!("let _ = can_backend.write_frame({frame_ident});");
+                            format!("\tret_frames.push(CanFrame::from_frame({frame_ident}));",);
 
                         gen_block += &format!(
-                            "{}\n{frame_constructor_expression}\n{write_frame_expression}\n\n",
-                            value_expressions.join("\n"),
+                            "\t{}\n{frame_constructor_expression}\n{write_frame_expression}\n\n",
+                            value_expressions.join("\n\t"),
                         );
                     }
                 }
             }
         }
+        gen_block += "\tret_frames";
+
+        gen_output += &format!("use crate::can::messages::{module};\n");
+        gen_output += &format!("use crate::can::can_backend::CanFrame;\n");
+        gen_output += &format!("use rand::Rng;\n\n");
+        gen_output += &format!("pub fn generate_frames() -> Vec<CanFrame> {{\n\t{gen_block}\n}}");
+
+        rs_out_file.write_all(gen_output.as_bytes()).unwrap();
+        mod_out_file
+            .write(
+                format!(
+                    "pub mod {};\n",
+                    rs_out_dir.file_stem().unwrap().to_str().unwrap()
+                )
+                .as_bytes(),
+            )
+            .unwrap();
     }
-
-    gen_output += &format!(
-        r#"use crate::can::can_backend::CanBackend;
-        use rand::Rng;
-        use std::sync::Arc;
-        use std::sync::atomic::{{AtomicBool, Ordering}};
-        use std::thread::sleep;
-        use std::time::Duration;
-        {}
-
-        pub fn run_can_data_emulator(can_backend: &mut CanBackend, running: Arc<AtomicBool>, simulating: Arc<AtomicBool>, delay: Duration) {{
-            while running.load(Ordering::SeqCst) {{
-                while simulating.load(Ordering::SeqCst) {{
-                    {gen_block}
-
-                    sleep(delay);
-                }}
-            }}
-        }}
-        "#,
-        &imports.join("\n")
-    );
-
-    let rs_out_dir = Path::new("src/can/can_data_emulator.rs");
-    let mut rs_out_file = File::create(rs_out_dir)?;
-
-    rs_out_file.write_all(gen_output.as_bytes())?;
-
-    let _ = Command::new("rustfmt")
-        .arg("--edition=2024")
-        .arg(rs_out_dir)
-        .status();
 
     Ok(())
 }
 
-// generates slint car data globals
+/// generates slint car data globals
 fn generate_slint_car_data(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std::error::Error>> {
-    // Read the mod.rs file
-    let mod_rs_content = fs::read_to_string("src/can/messages/mod.rs")?;
-    let mod_rs: syn::File = syn::parse_str(&mod_rs_content)?;
+    let mod_rs_content = fs::read_to_string("src/can/messages/mod.rs").unwrap();
+    let mod_rs: syn::File = syn::parse_str(&mod_rs_content).unwrap();
 
-    // Extract module names
     let module_names: Vec<String> = mod_rs
         .items
         .iter()
         .filter_map(|item| {
             if let syn::Item::Mod(syn::ItemMod { ident, .. }) = item {
-                Some(ident.to_string())
+                let ident_str = ident.to_string();
+                if ident_str != "emulators" {
+                    Some(ident_str)
+                } else {
+                    None
+                }
             } else {
                 None
             }
         })
         .collect();
 
-    let mut gen_output = String::new(); // full file contents
-    let mut gen_block = String::new(); // generated code
+    let mut gen_output = String::new();
+    let mut gen_block = String::new();
 
-    // Process each module
     for module_name in module_names {
         let module_path = format!("src/can/messages/{}.rs", module_name);
 
-        let module_content = fs::read_to_string(&module_path)?;
-        let module_file: syn::File = syn::parse_str(&module_content)?;
+        let module_content = fs::read_to_string(&module_path).unwrap();
+        let module_file: syn::File = syn::parse_str(&module_content).unwrap();
 
-        // Find the Messages enum
         let messages_enum = module_file
             .items
             .iter()
@@ -296,7 +297,6 @@ fn generate_slint_car_data(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn s
             })
             .expect("Messages enum not found");
 
-        // Find all implementations for each message in messages_enum
         let impls: Vec<&syn::ItemImpl> = module_file
             .items
             .iter()
@@ -402,9 +402,9 @@ fn generate_slint_car_data(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn s
     gen_output += "}";
 
     let slint_out_dir = slint_path.as_ref().join("data/car_data.slint");
-    let mut slint_out_file = File::create(slint_out_dir)?;
+    let mut slint_out_file = File::create(slint_out_dir).unwrap();
 
-    slint_out_file.write(gen_output.as_bytes())?;
+    slint_out_file.write(gen_output.as_bytes()).unwrap();
 
     Ok(())
 }
@@ -441,7 +441,8 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
 
     let mut theme_components: Vec<String> = vec![];
 
-    let mut theme_entries: Vec<std::fs::DirEntry> = fs::read_dir(&themes_dir)?
+    let mut theme_entries: Vec<std::fs::DirEntry> = fs::read_dir(&themes_dir)
+        .unwrap()
         .filter_map(|entry| entry.ok())
         .collect();
 
@@ -457,7 +458,7 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
         if let Some(parent_dir) = path.file_name() {
             let parent_dir = parent_dir.to_string_lossy().into_owned();
             if path.is_dir() {
-                for entry in path.read_dir()?.filter_map(Result::ok) {
+                for entry in path.read_dir().unwrap().filter_map(Result::ok) {
                     let path = entry.path();
 
                     if path.is_file()
@@ -497,9 +498,9 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
     gen_output += "}";
 
     let slint_out_dir = themes_dir.join("theme_loader_gen.slint");
-    let mut slint_out_file = File::create(slint_out_dir)?;
+    let mut slint_out_file = File::create(slint_out_dir).unwrap();
 
-    slint_out_file.write(gen_output.as_bytes())?;
+    slint_out_file.write(gen_output.as_bytes()).unwrap();
 
     Ok(())
 }

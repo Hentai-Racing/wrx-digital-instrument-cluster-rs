@@ -6,8 +6,8 @@ mod slint_ui;
 
 use crate::application::settings::{SaveStatus, SettingsManager};
 use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
-use crate::can::can_data_emulator::run_can_data_emulator;
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
+use crate::can::messages::emulators::wrx_2018_emulator;
 use crate::can::messages::wrx_2018::CanError;
 use crate::data::car_data::{CarData, ParseError, ParseResult};
 use crate::hardware::hardware_backend::{self, HardwareBackend};
@@ -15,19 +15,15 @@ use crate::slint_ui::backend::{
     can_display::CanFrameDisplay, car_data_bridge, hardware_bridge, user_settings_bridge,
 };
 
-use tokio::select;
 use tokio::sync::mpsc;
 
 use std::collections::VecDeque;
 use std::env;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock};
-use std::thread;
 use std::time::{Duration, Instant};
 
 slint::include_modules!();
 
-#[allow(unused)]
 const VCAN_IF_NAME: &str = "vcan0";
 const CAN_IF_NAME: &str = "can0";
 
@@ -113,10 +109,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ui = App::new()?;
     ui.show()?;
 
-    let mut handles = vec![];
-    let mut runners = vec![];
-
-    let running_simulation = Arc::new(AtomicBool::new(false));
     let mut _created_interface = false;
 
     let mut interface_path = match &selected_interface {
@@ -169,14 +161,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ),
             ]);
 
-            loop {
-                let running_can = SETTINGS_MANAGER
-                    .session_settings
-                    .can_settings
-                    .running_can
-                    .value();
+            let running_can = &SETTINGS_MANAGER.session_settings.can_settings.running_can;
 
-                if running_can {
+            loop {
+                if running_can.value() {
                     if let Some(frame) = can_backend.read_frame() {
                         frame_display.update(&frame, false);
                         match car_data.parse_frame(&frame) {
@@ -214,18 +202,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     //         }
                     //     }
                     // }
+                } else {
+                    let _ = running_can.watch().wait_for(|v| *v).await;
                 }
             }
         });
 
         if virtual_cluster {
-            let running_vcan = Arc::new(AtomicBool::new(false));
-
-            running_simulation.store(true, Ordering::SeqCst);
-            running_vcan.store(true, Ordering::SeqCst);
-
-            let running_simulation_clone = running_simulation.clone();
-            let running_vcan_clone = running_vcan.clone();
             let mut backend = CanBackend::new(&selected_interface, interface_path).unwrap();
 
             if !matches!(
@@ -235,21 +218,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 panic!("Do not run the can generator on a real socket!")
             }
 
-            let vcan_handle = thread::spawn(move || {
-                // TODO: change generator function to only generate once, and move the loop logic here
-                run_can_data_emulator(
-                    &mut backend,
-                    running_vcan_clone,
-                    running_simulation_clone,
-                    Duration::from_millis(1),
-                );
-            });
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(10));
 
-            handles.push(vcan_handle);
-            runners.push(running_vcan);
+                let running_vcan = &SETTINGS_MANAGER
+                    .session_settings
+                    .simulation_settings
+                    .simulation_running;
+
+                loop {
+                    let gen_frames = wrx_2018_emulator::generate_frames();
+
+                    for frame in gen_frames {
+                        if running_vcan.value() {
+                            if let Err(e) = backend.write_frame(frame) {
+                                eprintln!("Failed to write simulated frame: {e:?}");
+                            }
+                        } else {
+                            let _ = running_vcan.watch().wait_for(|v| *v).await;
+                        }
+                    }
+
+                    interval.tick().await;
+                }
+            });
         }
     }
-    runners.push(running_simulation.clone());
 
     let application_state = ui.global::<ApplicationState>();
 
@@ -298,14 +292,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     let cleanup = move || {
-        for runner in runners {
-            runner.store(false, Ordering::SeqCst);
-        }
-
-        for handle in handles {
-            handle.join().unwrap();
-        }
-
         if let Err(e) = slint::quit_event_loop() {
             panic!("Failed to quit Slint event loop: {e:?}");
         }
@@ -315,29 +301,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             panic!("Failed to send `shutdown_finished` signal: {e:?}")
         }
     };
-
-    let running_simulation = running_simulation.clone();
-
-    // simulation control
-    tokio::spawn(async move {
-        let mut simulation_running_setting = SETTINGS_MANAGER
-            .session_settings
-            .simulation_settings
-            .simulation_running
-            .watch();
-
-        loop {
-            select! {
-                Ok(_) = simulation_running_setting.changed() => {
-                    let value = *simulation_running_setting.borrow_and_update();
-                    running_simulation.store(value, Ordering::SeqCst);
-                },
-                else => {
-                    break;
-                },
-            }
-        }
-    });
 
     // graceful shutdown
     {

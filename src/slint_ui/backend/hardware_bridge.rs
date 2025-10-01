@@ -7,6 +7,8 @@ use tokio::select;
 
 use std::sync::Arc;
 
+// TODO: add ui debug for testing hardware backend interactions
+
 pub fn bridge(ui: Weak<App>, backend: Arc<HardwareBackend>) {
     if let Some(ui) = ui.upgrade() {
         let debug_menu_state = ui.global::<DebugMenuState>();

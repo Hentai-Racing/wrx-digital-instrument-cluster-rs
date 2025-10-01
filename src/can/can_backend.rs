@@ -1,4 +1,4 @@
-use crossbeam::channel::{Receiver, RecvTimeoutError, Sender, TrySendError, bounded};
+use crossbeam::channel::{Receiver, RecvTimeoutError, Sender, TrySendError, unbounded};
 use embedded_can::{Frame, Id};
 use std::collections::HashMap;
 use std::error::Error;
@@ -264,7 +264,7 @@ impl FakeCanBus {
     ) -> Result<(Sender<CanFrame>, Receiver<CanFrame>), Box<dyn std::error::Error>> {
         match self.subscribers.lock() {
             Ok(mut subscribers) => {
-                let (tx, rx) = bounded::<CanFrame>(1);
+                let (tx, rx) = unbounded::<CanFrame>();
                 subscribers.push(tx.clone());
                 Ok((tx, rx))
             }
