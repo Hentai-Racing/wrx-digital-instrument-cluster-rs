@@ -42,6 +42,11 @@ export global DebugSettings {
     callback update-debug-overlay-enabled(bool);
 }
 
+export global HardwareBackendData {
+    in-out property <int> adc-val;
+    callback update-adc-val(int);
+}
+
 export component ModuleDebug inherits VerticalLayout {
     Text {
         color: purple;
@@ -108,5 +113,15 @@ export component BackendDebugModule inherits VerticalLayout {
     Text {
         color: white;
         text: ApplicationState.running-can ? "running" : "halted";
+    }
+
+    Text {
+        color: darkviolet;
+        text: "DebugData";
+    }
+
+    Text {
+        color: white;
+        text: "ADC0: " + HardwareBackendData.adc-val;
     }
 }

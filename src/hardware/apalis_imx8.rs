@@ -2,6 +2,7 @@
 use crate::data::parameters::Parameter;
 
 use gpio_cdev::{Chip, EventRequestFlags, EventType, LineRequestFlags};
+use industrial_io;
 use tokio::io::unix::AsyncFd;
 
 use std::fs::OpenOptions;
@@ -53,7 +54,9 @@ impl ApalisIMX8GPIO {
 #[repr(u8)]
 #[derive(Clone)]
 pub enum ApalisIMX8ADC {
-    ADC1, // LSIO.GPIO3.IO18
+    ADC0, // LSIO.GPIO3.IO18 // /sys/bus/iio/devices/iio:device0/voltage0
+    ADC1, // LSIO.GPIO3.IO18 //
+    ADC2, // LSIO.GPIO3.IO18 //
     //
     __COUNT,
 }
@@ -61,7 +64,7 @@ pub enum ApalisIMX8ADC {
 impl ApalisIMX8ADC {
     pub const fn chip(&self) -> u32 {
         match self {
-            Self::ADC1 => 3,
+            Self::ADC0 | Self::ADC1 | Self::ADC2 => 3,
             //
             Self::__COUNT => unreachable!(),
         }
@@ -69,7 +72,28 @@ impl ApalisIMX8ADC {
 
     pub const fn line(&self) -> u32 {
         match self {
-            Self::ADC1 => 18,
+            Self::ADC0 => 18,
+            Self::ADC1 => 19,
+            Self::ADC2 => 20,
+            //
+            Self::__COUNT => unreachable!(),
+        }
+    }
+
+    pub const fn device_id(&self) -> &str {
+        match self {
+            Self::ADC0 | Self::ADC1 | Self::ADC2 => "iio:device0",
+            //
+            Self::__COUNT => unreachable!(),
+        }
+    }
+
+    pub const fn channel_id(&self) -> &str {
+        match self {
+            Self::ADC0 => "voltage0",
+            // TODO: not needed and not obviously connected to their respective gpio pins
+            Self::ADC1 => unimplemented!(), // likely voltage 4
+            Self::ADC2 => unimplemented!(), // likely voltage 5
             //
             Self::__COUNT => unreachable!(),
         }
@@ -147,14 +171,10 @@ impl ApalisIMX8 {
         same for this
     */
     /*
-       TODO: make a better method to get any gpio from an enum
-       making the enums contain `Chip` is not likely to be useful to the caller
-       the enum should only contain the directory(chip and line number)
-
        TODO: allow unregistering to not do extra kernel calls when not needed, or handling sleep states
     */
     pub fn register_gpio_reader(&self, gpio_pin: ApalisIMX8GPIO) {
-        let param = self.gpios[gpio_pin.clone() as usize].clone();
+        let param = self.get_gpio_param(gpio_pin.clone());
         tokio::spawn(async move {
             let mut chip = match Chip::new(format!("/dev/gpiochip{}", gpio_pin.chip())) {
                 Ok(chip) => chip,
@@ -223,6 +243,75 @@ impl ApalisIMX8 {
 
     pub fn get_gpio_param(&self, gpio_pin: ApalisIMX8GPIO) -> Arc<Parameter<bool>> {
         self.gpios[gpio_pin as usize].clone()
+    }
+
+    pub fn register_adc_reader(&self, adc_pin: ApalisIMX8ADC) {
+        let param = self.get_adc_param(adc_pin.clone());
+        tokio::spawn(async move {
+            match industrial_io::Context::new() {
+                Ok(iio_context) => match iio_context.find_device(adc_pin.device_id()) {
+                    Some(device) => {
+                        match device
+                            .find_channel(adc_pin.channel_id(), industrial_io::Direction::Input)
+                        {
+                            Some(channel) => {
+                                channel.enable();
+                                println!("Buffer capable: {}", device.is_buffer_capable());
+
+                                // match device.create_buffer(10, false) {
+                                //     Ok(mut buffer) => {
+                                //         let offset =
+                                //             channel.attr_read_float("offset").unwrap_or(0.0);
+                                //         let scale = channel.attr_read_float("scale").unwrap_or(0.0);
+
+                                //         loop {
+                                //             if let Ok(size) = buffer.refill() {
+                                //                 println!("Filled buffer by {size}");
+                                //             } else {
+                                //                 eprintln!("Failed to refill buffer");
+                                //             }
+                                //         }
+                                //     }
+                                //     Err(e) => eprintln!("Failed to create buffer: {e:?}"),
+                                // }
+                            }
+                            None => eprintln!("Failed to find channel {}", adc_pin.channel_id()),
+                        }
+                    }
+                    None => eprintln!("Failed to find device {}", adc_pin.device_id()),
+                },
+                Err(e) => {
+                    eprintln!("Failed to get iio context: {e:?}")
+                }
+            }
+            // if let Ok(iio_context) = industrial_io::Context::new() {
+            //     if let Some(device) = iio_context.find_device(adc_pin.device_id()) {
+            //         if let Some(channel) =
+
+            //         {
+            //             channel.enable();
+            //             if let Ok(mut buffer) = device.create_buffer(256, false) {
+
+            //                 loop {
+            //                     if let Ok(size) = buffer.refill() {
+            //                         for sample in buffer.channel_iter::<i32>(&channel) {
+            //                             println!("{sample}");
+            //                         }
+            //                     }
+            //                 }
+            //             }
+            //         }
+            //     } else {
+            //         eprintln!("Failed to get iio device")
+            //     }
+            // } else {
+            //     eprintln!("Failed to get iio context");
+            // }
+        });
+    }
+
+    pub fn get_adc_param(&self, adc_pin: ApalisIMX8ADC) -> Arc<Parameter<u32>> {
+        self.adcs[adc_pin as usize].clone()
     }
 }
 

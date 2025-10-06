@@ -52,6 +52,8 @@ impl HardwareBackend {
                     });
                 }
 
+                apalis_imx8.register_adc_reader(ApalisIMX8ADC::ADC0);
+
                 Self {
                     backend,
                     nav_forward,

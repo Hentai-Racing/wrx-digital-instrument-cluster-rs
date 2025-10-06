@@ -1,6 +1,7 @@
 use crate::application::settings::SettingsManager;
 use crate::slint_generatedApp::{
     AccessibilitySettings, App, ApplicationState, DebugSettings, GeneralSettings, GlobalThemeData,
+    HardwareBackendData,
 };
 
 use pastey::paste;
@@ -46,6 +47,7 @@ pub fn bridge(handle_weak: Weak<App>, settings_manager: Arc<SettingsManager>) {
         bind!(AccessibilitySettings.accessible_switches <=> settings_manager.user_settings.accessibility.accessible_switches);
         bind!(DebugSettings.debug_highlights <=> settings_manager.session_settings.debug_session_settings.debug_highlights);
         bind!(DebugSettings.debug_overlay_enabled <=> settings_manager.session_settings.debug_session_settings.debug_overlay_enabled);
+        bind!(HardwareBackendData.adc_val <=> settings_manager.session_settings.debug_hardware_backend_data.adc_val);
     })) {
         Err(e) => eprintln!("Failure in settings loader: {e}"),
         _ => {}

@@ -104,6 +104,10 @@ parameter_struct! {pub AccessibilitySettings {
     accessible_switches: bool = false,
 }}
 
+parameter_struct! {pub DebugHardwareBackendData {
+    adc_val: i32
+}}
+
 parameter_struct! {pub DebugSessionSettings {
     debug_highlights: bool = false,
     debug_overlay_enabled: bool = true
@@ -124,6 +128,7 @@ parameter_struct! {pub StaticCarData {
 
 settings_root! {pub SessionSettings {
     debug_session_settings: DebugSessionSettings,
+    debug_hardware_backend_data: DebugHardwareBackendData,
     simulation_settings: SimulationSettings,
     can_settings: CanSettings,
 }}

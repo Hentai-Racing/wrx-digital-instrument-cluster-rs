@@ -297,6 +297,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         save_settings();
+
         if let Err(e) = shutdown_finished.send(true) {
             panic!("Failed to send `shutdown_finished` signal: {e:?}")
         }
@@ -339,6 +340,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn save_settings() {
+    //! TODO: possible failure when saving where the file will be incomplete, causing reloading to be paused indefinitely
     match SETTINGS_MANAGER.save_to_fs() {
         Ok(status) => match status {
             SaveStatus::Success => {}
