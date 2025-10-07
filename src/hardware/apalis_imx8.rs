@@ -10,6 +10,9 @@ use std::io::Write;
 use std::os::unix::io::AsRawFd;
 use std::process;
 use std::sync::Arc;
+use std::{thread, time::Duration};
+
+const TARGET_ADC_SAMPLE_HZ: u64 = 60;
 
 #[repr(u8)]
 #[derive(Clone)]
@@ -247,66 +250,46 @@ impl ApalisIMX8 {
 
     pub fn register_adc_reader(&self, adc_pin: ApalisIMX8ADC) {
         let param = self.get_adc_param(adc_pin.clone());
-        tokio::spawn(async move {
-            match industrial_io::Context::new() {
-                Ok(iio_context) => match iio_context.find_device(adc_pin.device_id()) {
-                    Some(device) => {
-                        match device
-                            .find_channel(adc_pin.channel_id(), industrial_io::Direction::Input)
-                        {
-                            Some(channel) => {
-                                channel.enable();
-                                println!("Buffer capable: {}", device.is_buffer_capable());
 
-                                // match device.create_buffer(10, false) {
-                                //     Ok(mut buffer) => {
-                                //         let offset =
-                                //             channel.attr_read_float("offset").unwrap_or(0.0);
-                                //         let scale = channel.attr_read_float("scale").unwrap_or(0.0);
+        thread::spawn(move || match industrial_io::Context::new() {
+            Ok(iio_context) => match iio_context.find_device(adc_pin.device_id()) {
+                Some(device) => {
+                    match device.find_channel(adc_pin.channel_id(), industrial_io::Direction::Input)
+                    {
+                        Some(channel) => {
+                            channel.enable();
 
-                                //         loop {
-                                //             if let Ok(size) = buffer.refill() {
-                                //                 println!("Filled buffer by {size}");
-                                //             } else {
-                                //                 eprintln!("Failed to refill buffer");
-                                //             }
-                                //         }
-                                //     }
-                                //     Err(e) => eprintln!("Failed to create buffer: {e:?}"),
-                                // }
+                            let scale = channel.attr_read_float("scale").unwrap_or(1.0);
+                            let offset = channel.attr_read_float("offset").unwrap_or(0.0);
+                            // let sampling_frequency = channel
+                            //     .attr_read_int("sampling_frequency")
+                            //     .unwrap_or(1_000_000_000)
+                            //     as u64;
+
+                            let period = Duration::from_nanos(1_000_000_000 / TARGET_ADC_SAMPLE_HZ);
+
+                            loop {
+                                match channel.attr_read_int("raw") {
+                                    Ok(raw) => {
+                                        param.set_value(raw as u32);
+                                    }
+                                    Err(e) => {
+                                        eprintln!(
+                                            "Failed to read `raw` attribute from channel: {e:?}"
+                                        )
+                                    }
+                                }
+                                thread::sleep(period);
                             }
-                            None => eprintln!("Failed to find channel {}", adc_pin.channel_id()),
                         }
+                        None => eprintln!("Failed to find channel {}", adc_pin.channel_id()),
                     }
-                    None => eprintln!("Failed to find device {}", adc_pin.device_id()),
-                },
-                Err(e) => {
-                    eprintln!("Failed to get iio context: {e:?}")
                 }
+                None => eprintln!("Failed to find device {}", adc_pin.device_id()),
+            },
+            Err(e) => {
+                eprintln!("Failed to get iio context: {e:?}")
             }
-            // if let Ok(iio_context) = industrial_io::Context::new() {
-            //     if let Some(device) = iio_context.find_device(adc_pin.device_id()) {
-            //         if let Some(channel) =
-
-            //         {
-            //             channel.enable();
-            //             if let Ok(mut buffer) = device.create_buffer(256, false) {
-
-            //                 loop {
-            //                     if let Ok(size) = buffer.refill() {
-            //                         for sample in buffer.channel_iter::<i32>(&channel) {
-            //                             println!("{sample}");
-            //                         }
-            //                     }
-            //                 }
-            //             }
-            //         }
-            //     } else {
-            //         eprintln!("Failed to get iio device")
-            //     }
-            // } else {
-            //     eprintln!("Failed to get iio context");
-            // }
         });
     }
 

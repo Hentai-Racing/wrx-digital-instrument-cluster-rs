@@ -45,6 +45,9 @@ export global DebugSettings {
 export global HardwareBackendData {
     in-out property <int> adc-val;
     callback update-adc-val(int);
+
+    in-out property <string> navigation-state;
+    callback update-navigation-state(string);
 }
 
 export component ModuleDebug inherits VerticalLayout {
@@ -117,11 +120,16 @@ export component BackendDebugModule inherits VerticalLayout {
 
     Text {
         color: darkviolet;
-        text: "DebugData";
+        text: "HardwareBackendData";
     }
 
     Text {
         color: white;
         text: "ADC0: " + HardwareBackendData.adc-val;
+    }
+
+    Text {
+        color: white;
+        text: "Nav state: " + HardwareBackendData.navigation-state;
     }
 }
