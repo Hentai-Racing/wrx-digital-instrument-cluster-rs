@@ -4,7 +4,7 @@ mod data;
 mod hardware;
 mod slint_ui;
 
-use crate::application::user::{ConfigManager, SaveError};
+use crate::application::user::ConfigManager;
 use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
 use crate::can::messages::emulators::wrx_2018_emulator;
