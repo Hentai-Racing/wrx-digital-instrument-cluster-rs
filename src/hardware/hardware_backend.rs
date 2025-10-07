@@ -43,9 +43,9 @@ impl HardwareBackend {
                 let adc0: Arc<Parameter<u32>> = apalis_imx8.get_adc_param(ApalisIMX8ADC::ADC0);
 
                 {
-                    const IDLE_RANGE: u32 = 4000;
-                    const DOWN_RANGE: u32 = 2500;
-                    const ENTER_RANGE: u32 = 1000;
+                    const IDLE_RANGE: u32 = 1000;
+                    const DOWN_RANGE: u32 = 900;
+                    const ENTER_RANGE: u32 = 500;
                     const _UP_RANGE: u32 = 0;
 
                     let adc0 = adc0.clone();
