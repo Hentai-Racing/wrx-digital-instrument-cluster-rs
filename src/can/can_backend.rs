@@ -1,5 +1,6 @@
 use crossbeam::channel::{Receiver, RecvTimeoutError, Sender, TrySendError, unbounded};
 use embedded_can::{Frame, Id};
+
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
@@ -27,6 +28,17 @@ impl CanInterface {
             Self::SocketCan => "can",
             Self::SerialCan => "slcan",
             Self::Fake => "fake",
+        }
+    }
+}
+
+impl std::fmt::Display for CanInterface {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::VirtualSocketCan => write!(f, "vcan(socketcan)"),
+            Self::SocketCan => write!(f, "socketcan"),
+            Self::SerialCan => write!(f, "slcan"),
+            Self::Fake => write!(f, "fake"),
         }
     }
 }

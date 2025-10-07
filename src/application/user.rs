@@ -3,17 +3,31 @@ use crate::data::units::UnitSystem;
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::watch;
+use tokio::time::{Duration, timeout};
 use toml;
 
 use std::any::Any;
 use std::env;
-use std::fs::{self, File};
+use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::PathBuf;
 
-pub enum SaveStatus {
-    Success,
-    Failed(Box<dyn std::error::Error>),
+const CONFIG_NAME: &str = "user_config.toml";
+const LOAD_TIMEOUT_SECS: u64 = 10;
+
+#[derive(Debug)]
+pub enum SaveError {
+    DirError, // TODO: make proper errors
+    Error(Box<dyn std::error::Error>),
+}
+
+impl std::fmt::Display for SaveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::DirError => write!(f, "Directory error"),
+            Self::Error(e) => write!(f, "Failed to save: {e:?}"),
+        }
+    }
 }
 
 macro_rules! default_value {
@@ -73,7 +87,7 @@ macro_rules! parameter_struct {
     };
 }
 
-macro_rules! settings_root {
+macro_rules! config_root {
     ($visible:vis $root:ident {$($param:ident: $param_ty:ty),+ $(,)?}) => {
         #[derive(Default, Serialize, Deserialize)]
         $visible struct $root {
@@ -90,16 +104,16 @@ macro_rules! settings_root {
     };
 }
 
-parameter_struct! {pub ThemeSettings {
+parameter_struct! {pub ThemeConfig {
     selected_theme: String = String::from("Default"),
 }}
 
-parameter_struct! {pub GeneralSettings {
+parameter_struct! {pub GeneralConfig {
     unit_system: UnitSystem,
     disable_hill_assist: bool = false,
 }}
 
-parameter_struct! {pub AccessibilitySettings {
+parameter_struct! {pub AccessibilityConfig {
     animations_enabled: bool = true,
     accessible_switches: bool = false,
 }}
@@ -108,16 +122,16 @@ parameter_struct! {pub DebugHardwareBackendData {
     adc_val: i32
 }}
 
-parameter_struct! {pub DebugSessionSettings {
+parameter_struct! {pub DebugSessionConfig {
     debug_highlights: bool = false,
     debug_overlay_enabled: bool = true
 }}
 
-parameter_struct! {pub CanSettings {
+parameter_struct! {pub CanConfig {
     running_can: bool = true,
 }}
 
-parameter_struct! {pub SimulationSettings {
+parameter_struct! {pub SimulationConfig {
     simulation_running: bool = true,
 }}
 
@@ -126,27 +140,27 @@ parameter_struct! {pub StaticCarData {
     odometer: u32,
 }}
 
-settings_root! {pub SessionSettings {
-    debug_session_settings: DebugSessionSettings,
+config_root! {pub SessionConfig {
+    debug_session: DebugSessionConfig,
     debug_hardware_backend_data: DebugHardwareBackendData,
-    simulation_settings: SimulationSettings,
-    can_settings: CanSettings,
+    simulation: SimulationConfig,
+    can: CanConfig,
 }}
 
-settings_root! {pub UserSettings {
-    theme: ThemeSettings,
-    general: GeneralSettings,
-    accessibility: AccessibilitySettings,
+config_root! {pub UserConfig {
+    theme: ThemeConfig,
+    general: GeneralConfig,
+    accessibility: AccessibilityConfig,
 }}
 
 #[derive(Default)]
-pub struct SettingsManager {
+pub struct ConfigManager {
     loaded: Parameter<bool>,
-    pub user_settings: UserSettings,
-    pub session_settings: SessionSettings,
+    pub user: UserConfig,
+    pub session: SessionConfig,
 }
 
-impl SettingsManager {
+impl ConfigManager {
     pub fn get_config_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
         let exe_dir = Some(env::current_exe()?.to_path_buf()).unwrap();
 
@@ -154,7 +168,7 @@ impl SettingsManager {
             "{}-config/",
             exe_dir.file_name().unwrap().display()
         ));
-        match fs::create_dir(&config_dir) {
+        match fs::create_dir_all(&config_dir) {
             Err(ref e) if e.kind() == io::ErrorKind::AlreadyExists => (),
             Err(e) => return Err(e.into()),
             _ => (),
@@ -163,55 +177,72 @@ impl SettingsManager {
         Ok(config_dir)
     }
 
-    pub fn get_user_settings_dir(&self) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    pub fn get_user_config_path(&self) -> Result<PathBuf, Box<dyn std::error::Error>> {
         let config_dir = Self::get_config_dir()?;
 
-        let user_settings_dir = config_dir.join("user_settings.toml");
-        match File::create_new(&user_settings_dir) {
+        let user_config_dir = config_dir.join(CONFIG_NAME);
+        match File::create_new(&user_config_dir) {
             Ok(mut file) => {
-                let toml_string = toml::to_string_pretty(&self.user_settings)?;
+                let toml_string = toml::to_string_pretty(&self.user)?;
                 file.write(toml_string.as_bytes())?;
             }
             _ => {}
         };
 
-        Ok(user_settings_dir)
+        Ok(user_config_dir)
     }
 
-    pub fn load_from_fs(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let user_settings_dir = self.get_user_settings_dir()?;
-        let user_settings_file = fs::read_to_string(&user_settings_dir)?;
-        let loaded_user_settings = toml::from_str(user_settings_file.as_str())?;
+    pub async fn load_from_fs(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let user_config_dir = self.get_user_config_path()?;
+        let user_config_file = fs::read_to_string(&user_config_dir)?;
 
-        self.user_settings.apply(loaded_user_settings);
-        self.loaded.set_value(true);
+        if let Err(_) = timeout(Duration::from_secs(LOAD_TIMEOUT_SECS), async move {
+            if let Ok(loaded_user_config) = toml::from_str(user_config_file.as_str()) {
+                self.user.apply(loaded_user_config);
+                self.loaded.set_value(true);
+            }
+        })
+        .await
+        {}
 
         Ok(())
     }
 
-    pub fn save_to_fs(&self) -> Result<SaveStatus, Box<dyn std::error::Error>> {
-        let user_settings_dir = self.get_user_settings_dir()?;
+    pub fn save_to_fs(&self) -> Result<(), SaveError> {
+        let toml_str =
+            toml::to_string_pretty(&self.user).map_err(|e| SaveError::Error(e.into()))?;
 
-        let save_status = match File::options()
+        let user_config_path = self
+            .get_user_config_path()
+            .map_err(|e| SaveError::Error(e.into()))?;
+        let dir = user_config_path.parent().ok_or(SaveError::DirError)?;
+        let temp_dir = dir.join(format!("{CONFIG_NAME}.tmp"));
+
+        let mut temp_file = OpenOptions::new()
             .write(true)
+            .create(true)
             .truncate(true)
-            .open(&user_settings_dir)
-        {
-            Ok(mut file) => {
-                let toml_string = toml::to_string_pretty(&self.user_settings)?;
-                file.write(toml_string.as_bytes())?;
-                SaveStatus::Success
-            }
-            Err(e) => {
-                eprintln!(
-                    "Failed to open {} as write: {e}",
-                    user_settings_dir.display()
-                );
-                SaveStatus::Failed(e.into())
-            }
-        };
+            .open(&temp_dir)
+            .map_err(|e| SaveError::Error(e.into()))?;
 
-        Ok(save_status)
+        temp_file
+            .write_all(toml_str.as_bytes())
+            .map_err(|e| SaveError::Error(e.into()))?;
+
+        temp_file
+            .sync_all()
+            .map_err(|e| SaveError::Error(e.into()))?;
+
+        fs::rename(&temp_dir, &user_config_path).map_err(|e| SaveError::Error(e.into()))?;
+
+        OpenOptions::new()
+            .read(true)
+            .open(dir)
+            .map_err(|e| SaveError::Error(e.into()))?
+            .sync_all()
+            .map_err(|e| SaveError::Error(e.into()))?;
+
+        Ok(())
     }
 
     #[allow(unused)]

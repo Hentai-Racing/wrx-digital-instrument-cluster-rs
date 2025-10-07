@@ -1,4 +1,4 @@
-use crate::application::settings::SettingsManager;
+use crate::application::user::ConfigManager;
 use crate::slint_generatedApp::{
     AccessibilitySettings, App, ApplicationState, DebugSettings, GeneralSettings, GlobalThemeData,
     HardwareBackendData,
@@ -9,7 +9,7 @@ use slint::{ComponentHandle, Weak};
 
 use std::sync::Arc;
 
-pub fn bridge(handle_weak: Weak<App>, settings_manager: Arc<SettingsManager>) {
+pub fn bridge(handle_weak: Weak<App>, config_manager: Arc<ConfigManager>) {
     match slint::spawn_local(async_compat::Compat::new(async move {
         macro_rules! bind {
             {$slint_global:ident.$param:tt <=> $root:ident.$($tail:tt)+} => {{paste!{
@@ -38,16 +38,16 @@ pub fn bridge(handle_weak: Weak<App>, settings_manager: Arc<SettingsManager>) {
         }
 
         // TODO: auto-generate entire settings menu and bindings
-        bind!(ApplicationState.user_unit <=> settings_manager.user_settings.general.unit_system);
-        bind!(ApplicationState.simulation_running <=> settings_manager.session_settings.simulation_settings.simulation_running);
-        bind!(ApplicationState.running_can <=> settings_manager.session_settings.can_settings.running_can);
-        bind!(GeneralSettings.disable_hill_assist <=> settings_manager.user_settings.general.disable_hill_assist);
-        bind!(GlobalThemeData.current_theme <=> settings_manager.user_settings.theme.selected_theme);
-        bind!(AccessibilitySettings.animations_enabled <=> settings_manager.user_settings.accessibility.animations_enabled);
-        bind!(AccessibilitySettings.accessible_switches <=> settings_manager.user_settings.accessibility.accessible_switches);
-        bind!(DebugSettings.debug_highlights <=> settings_manager.session_settings.debug_session_settings.debug_highlights);
-        bind!(DebugSettings.debug_overlay_enabled <=> settings_manager.session_settings.debug_session_settings.debug_overlay_enabled);
-        bind!(HardwareBackendData.adc_val <=> settings_manager.session_settings.debug_hardware_backend_data.adc_val);
+        bind!(ApplicationState.user_unit <=> config_manager.user.general.unit_system);
+        bind!(ApplicationState.simulation_running <=> config_manager.session.simulation.simulation_running);
+        bind!(ApplicationState.running_can <=> config_manager.session.can.running_can);
+        bind!(GeneralSettings.disable_hill_assist <=> config_manager.user.general.disable_hill_assist);
+        bind!(GlobalThemeData.current_theme <=> config_manager.user.theme.selected_theme);
+        bind!(AccessibilitySettings.animations_enabled <=> config_manager.user.accessibility.animations_enabled);
+        bind!(AccessibilitySettings.accessible_switches <=> config_manager.user.accessibility.accessible_switches);
+        bind!(DebugSettings.debug_highlights <=> config_manager.session.debug_session.debug_highlights);
+        bind!(DebugSettings.debug_overlay_enabled <=> config_manager.session.debug_session.debug_overlay_enabled);
+        bind!(HardwareBackendData.adc_val <=> config_manager.session.debug_hardware_backend_data.adc_val);
     })) {
         Err(e) => eprintln!("Failure in settings loader: {e}"),
         _ => {}

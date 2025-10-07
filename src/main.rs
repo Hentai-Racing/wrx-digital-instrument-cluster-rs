@@ -4,7 +4,7 @@ mod data;
 mod hardware;
 mod slint_ui;
 
-use crate::application::settings::{SaveStatus, SettingsManager};
+use crate::application::user::{ConfigManager, SaveError};
 use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
 use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
 use crate::can::messages::emulators::wrx_2018_emulator;
@@ -12,15 +12,15 @@ use crate::can::messages::wrx_2018::CanError;
 use crate::data::car_data::{CarData, ParseError, ParseResult};
 use crate::hardware::hardware_backend::{self, HardwareBackend};
 use crate::slint_ui::backend::{
-    can_display::CanFrameDisplay, car_data_bridge, hardware_bridge, user_settings_bridge,
+    can_display::CanFrameDisplay, car_data_bridge, config_bridge, hardware_bridge,
 };
 
 use tokio::sync::mpsc;
+use tokio::time::{self, Duration};
 
 use std::collections::VecDeque;
 use std::env;
 use std::sync::{Arc, LazyLock};
-use std::time::{Duration, Instant};
 
 slint::include_modules!();
 
@@ -32,7 +32,13 @@ const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
 #[cfg(target_vendor = "apple")]
 const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 
-static SETTINGS_MANAGER: LazyLock<Arc<SettingsManager>> = LazyLock::new(|| Default::default());
+static CONFIG_MANAGER: LazyLock<Arc<ConfigManager>> = LazyLock::new(|| {
+    let ret = Default::default();
+
+    tokio::spawn(async move { CONFIG_MANAGER.load_from_fs() });
+
+    ret
+});
 static CAR_DATA: LazyLock<Arc<CarData>> = LazyLock::new(|| Default::default());
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -161,7 +167,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ),
             ]);
 
-            let running_can = &SETTINGS_MANAGER.session_settings.can_settings.running_can;
+            let running_can = &CONFIG_MANAGER.session.can.running_can;
 
             loop {
                 if running_can.value() {
@@ -219,12 +225,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             tokio::spawn(async move {
-                let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(10));
+                let mut interval = time::interval(Duration::from_millis(10));
 
-                let running_vcan = &SETTINGS_MANAGER
-                    .session_settings
-                    .simulation_settings
-                    .simulation_running;
+                let running_vcan = &CONFIG_MANAGER.session.simulation.simulation_running;
 
                 loop {
                     let gen_frames = wrx_2018_emulator::generate_frames();
@@ -248,22 +251,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let application_state = ui.global::<ApplicationState>();
 
     application_state.set_virtual_cluster(virtual_cluster);
-    application_state.set_interface_type(
-        format!(
-            "{}: {}",
-            match selected_interface {
-                CanInterface::Fake => "fake",
-                CanInterface::SerialCan => "slcan",
-                CanInterface::SocketCan => "socketcan",
-                CanInterface::VirtualSocketCan => "vcan(socketcan)",
-            },
-            interface_path
-        )
-        .into(),
-    );
+    application_state.set_interface_type(format!("{selected_interface}: {interface_path}").into());
     application_state.set_debug_mode(cfg!(debug_assertions));
-
-    SETTINGS_MANAGER.load_from_fs()?;
 
     #[cfg(feature = "apalis_imx8")]
     let device = hardware::apalis_imx8::ApalisIMX8::new();
@@ -274,20 +263,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(not(feature = "apalis_imx8"))]
     let hardware_backend = Arc::new(HardwareBackend::new(hardware_backend::Backend::Simulator));
 
-    user_settings_bridge::bridge(ui.as_weak(), SETTINGS_MANAGER.clone());
-    car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), SETTINGS_MANAGER.clone());
+    config_bridge::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
+    car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), CONFIG_MANAGER.clone());
     hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
 
-    // main loop
-
-    // autosave interval
+    // autosave
     tokio::spawn(async move {
-        let mut now = Instant::now();
+        let mut interval = time::interval(Duration::from_secs(60));
         loop {
-            if now.elapsed() >= Duration::from_secs(30) {
-                now = Instant::now();
-                save_settings();
-            }
+            interval.tick().await;
+            save_config();
         }
     });
 
@@ -296,7 +281,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             panic!("Failed to quit Slint event loop: {e:?}");
         }
 
-        save_settings();
+        save_config();
 
         if let Err(e) = shutdown_finished.send(true) {
             panic!("Failed to send `shutdown_finished` signal: {e:?}")
@@ -339,13 +324,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn save_settings() {
-    //! TODO: possible failure when saving where the file will be incomplete, causing reloading to be paused indefinitely
-    match SETTINGS_MANAGER.save_to_fs() {
-        Ok(status) => match status {
-            SaveStatus::Success => {}
-            SaveStatus::Failed(e) => eprintln!("Failed to write settings: {e:?}"),
-        },
-        Err(e) => eprintln!("Failed to save settings: {e:?}"),
+fn save_config() {
+    if let Err(e) = CONFIG_MANAGER.save_to_fs() {
+        eprintln!("Failed to save user config: {e:?}");
     }
 }
