@@ -758,12 +758,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "color"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a18ef4657441fb193b65f34dc39b3781f0dfec23d3bd94d0eeb4e88cde421edb"
-
-[[package]]
 name = "color_quant"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -797,7 +791,7 @@ dependencies = [
 [[package]]
 name = "const-field-offset"
 version = "0.1.5"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "const-field-offset-macro",
  "field-offset",
@@ -806,7 +800,7 @@ dependencies = [
 [[package]]
 name = "const-field-offset-macro"
 version = "0.1.5"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1396,30 +1390,11 @@ checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
 name = "font-types"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02a596f5713680923a2080d86de50fe472fb290693cf0f701187a1c8b36996b7"
-dependencies = [
- "bytemuck",
-]
-
-[[package]]
-name = "font-types"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "511e2c18a516c666d27867d2f9821f76e7d591f762e9fc41dd6cc5c90fe54b0b"
 dependencies = [
  "bytemuck",
-]
-
-[[package]]
-name = "fontconfig-cache-parser"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7f8afb20c8069fd676d27b214559a337cc619a605d25a87baa90b49a06f3b18"
-dependencies = [
- "bytemuck",
- "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -1447,25 +1422,25 @@ dependencies = [
 
 [[package]]
 name = "fontique"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39f97079e1293b8c1e9fb03a2875d328bd2ee8f3b95ce62959c0acc04049c708"
+checksum = "ff3336bc0b87fe42305047263fa60d2eabd650d29cbe62fdeb2a66c7a0a595f9"
 dependencies = [
  "bytemuck",
- "fontconfig-cache-parser",
  "hashbrown 0.15.5",
- "icu_locid",
+ "icu_locale_core",
+ "linebender_resource_handle",
  "memmap2",
  "objc2 0.6.3",
  "objc2-core-foundation",
  "objc2-core-text",
  "objc2-foundation 0.3.2",
- "peniko",
- "read-fonts 0.29.3",
+ "read-fonts",
  "roxmltree",
  "smallvec",
  "windows 0.58.0",
  "windows-core 0.58.0",
+ "yeslogic-fontconfig-sys",
 ]
 
 [[package]]
@@ -1780,6 +1755,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "harfrust"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f3fd23d35c2d8bcf34a1f0e9ea8c0ad263f0c8a9a47108eee23aac76e71645a"
+dependencies = [
+ "bitflags 2.9.4",
+ "bytemuck",
+ "core_maths",
+ "read-fonts",
+ "smallvec",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1836,7 +1824,7 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 [[package]]
 name = "i-slint-backend-linuxkms"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "calloop 0.14.3",
  "drm 0.14.1",
@@ -1855,7 +1843,7 @@ dependencies = [
 [[package]]
 name = "i-slint-backend-selector"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "cfg-if",
  "i-slint-backend-linuxkms",
@@ -1869,7 +1857,7 @@ dependencies = [
 [[package]]
 name = "i-slint-backend-winit"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "cfg-if",
  "cfg_aliases",
@@ -1902,7 +1890,7 @@ dependencies = [
 [[package]]
 name = "i-slint-common"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "fontique",
  "ttf-parser 0.25.1",
@@ -1911,7 +1899,7 @@ dependencies = [
 [[package]]
 name = "i-slint-compiler"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "by_address",
  "codemap",
@@ -1940,7 +1928,7 @@ dependencies = [
 [[package]]
 name = "i-slint-core"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "auto_enums",
  "bitflags 2.9.4",
@@ -1984,7 +1972,7 @@ dependencies = [
 [[package]]
 name = "i-slint-core-macros"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "quote",
  "serde_json",
@@ -1994,7 +1982,7 @@ dependencies = [
 [[package]]
 name = "i-slint-renderer-skia"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "bytemuck",
  "cfg-if",
@@ -2016,7 +2004,7 @@ dependencies = [
  "pin-weak",
  "raw-window-handle",
  "raw-window-metal",
- "read-fonts 0.35.0",
+ "read-fonts",
  "scoped-tls-hkt",
  "skia-safe",
  "softbuffer",
@@ -2073,22 +2061,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0cde2700ccaed3872079a65fb1a78f6c0a36c91570f28755dda67bc8f7d9f00a"
 dependencies = [
  "displaydoc",
- "litemap 0.8.0",
- "tinystr 0.8.1",
- "writeable 0.6.1",
+ "litemap",
+ "tinystr",
+ "writeable",
  "zerovec",
-]
-
-[[package]]
-name = "icu_locid"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13acbb8371917fc971be86fc8057c41a64b521c184808a698c02acc242dbf637"
-dependencies = [
- "displaydoc",
- "litemap 0.7.5",
- "tinystr 0.7.6",
- "writeable 0.5.5",
 ]
 
 [[package]]
@@ -2143,8 +2119,8 @@ dependencies = [
  "displaydoc",
  "icu_locale_core",
  "stable_deref_trait",
- "tinystr 0.8.1",
- "writeable 0.6.1",
+ "tinystr",
+ "writeable",
  "yoke",
  "zerofrom",
  "zerotrie",
@@ -2541,12 +2517,6 @@ name = "linux-raw-sys"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df1d3c3b53da64cf5760482273a98e575c651a67eec7f77df96b5b642de8f039"
-
-[[package]]
-name = "litemap"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23fb14cb19457329c82206317a5663005a4d404783dc74f4252769b0d5f42856"
 
 [[package]]
 name = "litemap"
@@ -3314,14 +3284,15 @@ checksum = "f38d5652c16fde515bb1ecef450ab0f6a219d619a7274976324d5e377f7dceba"
 
 [[package]]
 name = "parley"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13e57638545cf2ba4c3e72cc5715e53b1880b829cc3dbefda3d1700c58efe723"
+checksum = "26746861bb76dbc9bcd5ed1b0b55d2fedf291100961251702a031ab2abd2ce52"
 dependencies = [
  "fontique",
+ "harfrust",
  "hashbrown 0.15.5",
- "peniko",
- "skrifa 0.31.3",
+ "linebender_resource_handle",
+ "skrifa",
  "swash",
 ]
 
@@ -3336,18 +3307,6 @@ name = "pastey"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35fb2e5f958ec131621fdd531e9fc186ed768cbe395337403ae56c17a74c68ec"
-
-[[package]]
-name = "peniko"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b44f9ddd2f480176b34278eb653ec1c8062f3b143a4e16eeff5ffac3334e288"
-dependencies = [
- "color",
- "kurbo 0.11.3",
- "linebender_resource_handle",
- "smallvec",
-]
 
 [[package]]
 name = "percent-encoding"
@@ -3742,22 +3701,13 @@ dependencies = [
 
 [[package]]
 name = "read-fonts"
-version = "0.29.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04ca636dac446b5664bd16c069c00a9621806895b8bb02c2dc68542b23b8f25d"
-dependencies = [
- "bytemuck",
- "font-types 0.9.0",
-]
-
-[[package]]
-name = "read-fonts"
 version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6717cf23b488adf64b9d711329542ba34de147df262370221940dfabc2c91358"
 dependencies = [
  "bytemuck",
- "font-types 0.10.0",
+ "core_maths",
+ "font-types",
 ]
 
 [[package]]
@@ -4179,22 +4129,12 @@ dependencies = [
 
 [[package]]
 name = "skrifa"
-version = "0.31.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dbeb4ca4399663735553a09dd17ce7e49a0a0203f03b706b39628c4d913a8607"
-dependencies = [
- "bytemuck",
- "read-fonts 0.29.3",
-]
-
-[[package]]
-name = "skrifa"
 version = "0.37.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c31071dedf532758ecf3fed987cdb4bd9509f900e026ab684b4ecb81ea49841"
 dependencies = [
  "bytemuck",
- "read-fonts 0.35.0",
+ "read-fonts",
 ]
 
 [[package]]
@@ -4216,7 +4156,7 @@ dependencies = [
 [[package]]
 name = "slint"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "const-field-offset",
  "i-slint-backend-selector",
@@ -4233,7 +4173,7 @@ dependencies = [
 [[package]]
 name = "slint-build"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "derive_more",
  "i-slint-compiler",
@@ -4244,7 +4184,7 @@ dependencies = [
 [[package]]
 name = "slint-macros"
 version = "1.14.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "i-slint-compiler",
  "proc-macro2",
@@ -4463,7 +4403,7 @@ version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47846491253e976bdd07d0f9cc24b7daf24720d11309302ccbbc6e6b6e53550a"
 dependencies = [
- "skrifa 0.37.0",
+ "skrifa",
  "yazi",
  "zeno",
 ]
@@ -4661,15 +4601,6 @@ dependencies = [
  "arrayref",
  "bytemuck",
  "strict-num",
-]
-
-[[package]]
-name = "tinystr"
-version = "0.7.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9117f5d4db391c1cf6927e7bea3db74b9a1c1add8f7eda9ffd5364f40f57b82f"
-dependencies = [
- "displaydoc",
 ]
 
 [[package]]
@@ -5055,7 +4986,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 [[package]]
 name = "vtable"
 version = "0.3.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "const-field-offset",
  "portable-atomic",
@@ -5066,7 +4997,7 @@ dependencies = [
 [[package]]
 name = "vtable-macro"
 version = "0.3.0"
-source = "git+https://github.com/slint-ui/slint.git#188f940182893b17c3cf4bdcdb1f943a934789c7"
+source = "git+https://github.com/slint-ui/slint.git#1c3569c021c3741d6d2ba7cde7b48efe5bb12caa"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5923,18 +5854,12 @@ version = "0.43.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "886614b5ce857341226aa091f3c285e450683894acaaa7887f366c361efef79d"
 dependencies = [
- "font-types 0.10.0",
+ "font-types",
  "indexmap",
  "kurbo 0.12.0",
  "log",
- "read-fonts 0.35.0",
+ "read-fonts",
 ]
-
-[[package]]
-name = "writeable"
-version = "0.5.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
 
 [[package]]
 name = "writeable"
@@ -5944,7 +5869,7 @@ checksum = "ea2f10b9bb0928dfb1b42b65e1f9e36f7f54dbdf08457afefb38afcdec4fa2bb"
 
 [[package]]
 name = "wrx-digital-instrument-cluster-rs"
-version = "0.16.1"
+version = "0.16.2"
 dependencies = [
  "async-compat",
  "bitvec",
@@ -6043,6 +5968,17 @@ name = "yazi"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e01738255b5a16e78bbb83e7fbba0a1e7dd506905cfc53f4622d89015a03fbb5"
+
+[[package]]
+name = "yeslogic-fontconfig-sys"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "503a066b4c037c440169d995b869046827dbc71263f6e8f3be6d77d4f3229dbd"
+dependencies = [
+ "dlib",
+ "once_cell",
+ "pkg-config",
+]
 
 [[package]]
 name = "yoke"

@@ -1,4 +1,5 @@
 pub mod can_display;
 pub mod car_data_bridge;
 pub mod config_bridge;
+pub mod core_components;
 pub mod hardware_bridge;
