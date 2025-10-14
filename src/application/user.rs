@@ -87,7 +87,7 @@ macro_rules! parameter_struct {
     };
 }
 
-macro_rules! config_root {
+macro_rules! data_root {
     ($visible:vis $root:ident {$($param:ident: $param_ty:ty),+ $(,)?}) => {
         #[derive(Default, Serialize, Deserialize)]
         $visible struct $root {
@@ -140,14 +140,25 @@ parameter_struct! {pub StaticCarData {
     odometer: u32,
 }}
 
-config_root! {pub SessionConfig {
+parameter_struct! {pub SystemInfo {
+    total_memory_mb: i32,
+    used_memory_mb: i32,
+    process_memory_mb: i32,
+    process_memory_max_mb: i32,
+    num_cpus: i32,
+    cpu_usage: f32,
+    fps: i32
+}}
+
+data_root! {pub SessionData {
     debug_session: DebugSessionConfig,
     debug_hardware_backend_data: DebugHardwareBackendData,
     simulation: SimulationConfig,
     can: CanConfig,
+    system_info: SystemInfo,
 }}
 
-config_root! {pub UserConfig {
+data_root! {pub UserConfig {
     theme: ThemeConfig,
     general: GeneralConfig,
     accessibility: AccessibilityConfig,
@@ -157,7 +168,7 @@ config_root! {pub UserConfig {
 pub struct ConfigManager {
     loaded: Parameter<bool>,
     pub user: UserConfig,
-    pub session: SessionConfig,
+    pub session: SessionData,
 }
 
 impl ConfigManager {

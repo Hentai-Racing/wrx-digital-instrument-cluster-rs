@@ -1,7 +1,7 @@
 import { ModuleDebug as FocusDebug, Button, ComboBox, Slider, ToggleBox, TestComponentSuite } from "@lib";
 import { SCarData } from "../data/car_data.slint";
 import { GridBox } from "std-widgets.slint";
-import { ModuleDebug as ApplicationStateDebug, BackendDebugModule } from "../data/application_state.slint";
+import { ModuleDebug as ApplicationStateDebug, BackendDebugModule, SystemInfoDebugModule } from "../data/application_state.slint";
 import { DebugSettings, ApplicationState } from "../data/application_state.slint";
 
 export global DebugMenuState {
@@ -48,28 +48,48 @@ export component DebugOverlay {
         alignment: start;
         spacing: 20px;
 
-        VerticalLayout {
-            alignment: start;
+        Rectangle {
+            background: black.transparentize(20%);
+            VerticalLayout {
+                alignment: start;
 
-            Text {
-                color: purple;
-                text: "UI DEBUG";
+                Text {
+                    color: purple;
+                    text: "UI DEBUG";
+                }
+
+                ApplicationStateDebug { }
+
+                FocusDebug { }
             }
-
-            ApplicationStateDebug { }
-
-            FocusDebug { }
         }
 
-        VerticalLayout {
-            alignment: start;
+        Rectangle {
+            background: black.transparentize(20%);
+            VerticalLayout {
+                alignment: start;
 
-            Text {
-                color: darkviolet;
-                text: "BACKEND DEBUG";
+                Text {
+                    color: darkviolet;
+                    text: "BACKEND DEBUG";
+                }
+
+                BackendDebugModule { }
             }
+        }
 
-            BackendDebugModule { }
+        Rectangle {
+            background: black.transparentize(20%);
+            VerticalLayout {
+                alignment: start;
+
+                Text {
+                    color: yellowgreen;
+                    text: "SYSTEM DEBUG";
+                }
+
+                SystemInfoDebugModule { }
+            }
         }
     }
 }

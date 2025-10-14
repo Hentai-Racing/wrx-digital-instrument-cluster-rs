@@ -1,11 +1,12 @@
 use crate::application::user::ConfigManager;
 use crate::slint_generatedApp::{
     AccessibilitySettings, App, ApplicationState, DebugSettings, GeneralSettings, GlobalThemeData,
-    HardwareBackendData,
+    HardwareBackendData, SystemInfo,
 };
 
 use pastey::paste;
 use slint::{ComponentHandle, Weak};
+use tokio::select;
 
 use std::sync::Arc;
 
@@ -35,6 +36,28 @@ pub fn bridge(handle_weak: Weak<App>, config_manager: Arc<ConfigManager>) {
                     });
                 }
             }}};
+
+            {$slint_global:ident.$param:tt <=| $root:ident.$($tail:tt)+} => {{paste!{
+                let root = $root.clone();
+                if let Some(handle) = handle_weak.upgrade() {
+                    let _= slint::spawn_local(async_compat::Compat::new(async move {
+                        let g = handle.global::<$slint_global>();
+                        let mut watch = root.$($tail)+.watch();
+                        g.[<set_ $param>](root.$($tail)+.value().into());
+
+
+                        loop {
+                            select!{
+                            Ok(_) = watch.changed() => {
+                                let value = *watch.borrow_and_update();
+                                g.[<set_ $param>](value.into());
+                            },
+                            else => {break;}
+                            }
+                        }
+                    }));
+                }
+            }}};
         }
 
         // TODO: auto-generate entire settings menu and bindings
@@ -47,7 +70,14 @@ pub fn bridge(handle_weak: Weak<App>, config_manager: Arc<ConfigManager>) {
         bind!(AccessibilitySettings.accessible_switches <=> config_manager.user.accessibility.accessible_switches);
         bind!(DebugSettings.debug_highlights <=> config_manager.session.debug_session.debug_highlights);
         bind!(DebugSettings.debug_overlay_enabled <=> config_manager.session.debug_session.debug_overlay_enabled);
-        bind!(HardwareBackendData.adc_val <=> config_manager.session.debug_hardware_backend_data.adc_val);
+
+        bind!(SystemInfo.total_memory <=| config_manager.session.system_info.total_memory_mb);
+        bind!(SystemInfo.used_memory <=| config_manager.session.system_info.used_memory_mb);
+        bind!(SystemInfo.process_memory <=| config_manager.session.system_info.process_memory_mb);
+        bind!(SystemInfo.process_memory_max <=| config_manager.session.system_info.process_memory_max_mb);
+        bind!(SystemInfo.num_cpus <=| config_manager.session.system_info.num_cpus);
+        bind!(SystemInfo.cpu_usage <=| config_manager.session.system_info.cpu_usage);
+        bind!(SystemInfo.fps <=| config_manager.session.system_info.fps);
     })) {
         Err(e) => eprintln!("Failure in settings loader: {e}"),
         _ => {}

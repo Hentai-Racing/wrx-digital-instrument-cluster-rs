@@ -43,11 +43,20 @@ export global DebugSettings {
 }
 
 export global HardwareBackendData {
-    in-out property <int> adc-val;
-    callback update-adc-val(int);
+    in property <int> adc-val;
 
     in-out property <string> navigation-state;
     callback update-navigation-state(string);
+}
+
+export global SystemInfo {
+    in property <int> total-memory;
+    in property <int> used-memory;
+    in property <int> process-memory;
+    in property <int> process-memory-max;
+    in property <int> num-cpus;
+    in property <float> cpu-usage;
+    in property <int> fps;
 }
 
 export component ModuleDebug inherits VerticalLayout {
@@ -131,5 +140,47 @@ export component BackendDebugModule inherits VerticalLayout {
     Text {
         color: white;
         text: "Nav state: " + HardwareBackendData.navigation-state;
+    }
+}
+
+export component SystemInfoDebugModule inherits VerticalLayout {
+    Text {
+        color: yellowgreen;
+        text: "SystemInfo";
+    }
+
+    Text {
+        color: white;
+        text: "FPS: " + SystemInfo.fps;
+    }
+
+    Text {
+        color: white;
+        text: "Total mem: " + SystemInfo.total-memory + "mb";
+    }
+
+    Text {
+        color: white;
+        text: "Used mem: " + SystemInfo.used-memory + "mb";
+    }
+
+    Text {
+        color: white;
+        text: "Process mem: " + SystemInfo.process-memory + "mb";
+    }
+
+    Text {
+        color: white.mix(red, 50%);
+        text: "Mem max: " + SystemInfo.process-memory-max + "mb";
+    }
+
+    Text {
+        color: white;
+        text: "Num CPUs: " + SystemInfo.num-cpus;
+    }
+
+    Text {
+        color: white;
+        text: "CPU Usage: " + SystemInfo.cpu-usage + "%";
     }
 }

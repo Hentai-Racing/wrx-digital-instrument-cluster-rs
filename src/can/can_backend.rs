@@ -236,7 +236,8 @@ impl CanBackend {
         match self.socket {
             #[cfg(target_os = "linux")]
             CanSocket::SocketCan(ref socket) => {
-                let socketcan_frame = socketcan::CanFrame::new(frame.id(), frame.data());
+                let socketcan_frame =
+                    socketcan::CanFrame::new(frame.id(), &frame.data()[..frame.dlc()]);
                 if let Some(frame) = socketcan_frame {
                     match socket.write_frame(&frame) {
                         Ok(_) => Ok(()),
@@ -248,10 +249,12 @@ impl CanBackend {
             }
 
             #[cfg(feature = "slcan")]
-            CanSocket::Serial(ref mut socket) => match socket.write(frame.id(), &frame.data()) {
-                Ok(_) => Ok(()),
-                Err(e) => Err(e.into()),
-            },
+            CanSocket::Serial(ref mut socket) => {
+                match socket.write(frame.id(), &frame.data()[..frame.dlc()]) {
+                    Ok(_) => Ok(()),
+                    Err(e) => Err(e.into()),
+                }
+            }
 
             CanSocket::Fake(ref mut socket) => match socket.write(CanFrame::from_frame(frame)) {
                 Ok(_) => Ok(()),

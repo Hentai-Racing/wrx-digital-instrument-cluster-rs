@@ -15,11 +15,14 @@ use crate::slint_ui::backend::{
     can_display::CanFrameDisplay, car_data_bridge, config_bridge, hardware_bridge,
 };
 
-use tokio::sync::mpsc;
-use tokio::time::{self, Duration};
+use sysinfo::{CpuRefreshKind, MemoryRefreshKind};
+use tokio::sync::mpsc::{self, UnboundedSender};
+use tokio::time::{self, Duration, Instant};
 
 use std::collections::VecDeque;
 use std::env;
+use std::io::Write;
+use std::sync::atomic::AtomicU32;
 use std::sync::{Arc, LazyLock};
 
 slint::include_modules!();
@@ -96,21 +99,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let tokio_runtime = tokio::runtime::Runtime::new().unwrap();
+    let tokio_runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
     let _guard = tokio_runtime.enter();
 
     let (shutdown_send, mut shutdown_recv) = mpsc::unbounded_channel::<bool>();
     let (shutdown_finished, mut shutdown_finished_recv) = mpsc::unbounded_channel::<bool>();
 
-    #[cfg(debug_assertions)]
-    if env::var("SLINT_DEBUG_PERFORMANCE")
-        .unwrap_or_default()
-        .is_empty()
-    {
-        unsafe {
-            env::set_var("SLINT_DEBUG_PERFORMANCE", "refresh_full_speed,overlay");
-        }
-    }
+    // #[cfg(debug_assertions)]
+    // if env::var("SLINT_DEBUG_PERFORMANCE")
+    //     .unwrap_or_default()
+    //     .is_empty()
+    // {
+    //     unsafe {
+    //         env::set_var("SLINT_DEBUG_PERFORMANCE", "refresh_full_speed,overlay");
+    //     }
+    // }
 
     let ui = App::new()?;
     ui.show()?;
@@ -149,23 +155,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let car_data = CAR_DATA.clone();
 
         tokio::spawn(async move {
-            let obd_id =
-                unsafe { embedded_can::Id::from(embedded_can::StandardId::new_unchecked(0x7E0)) };
+            // let obd_id =
+            //     unsafe { embedded_can::Id::from(embedded_can::StandardId::new_unchecked(0x7E0)) };
 
             // TESTING
-            let mut queue = VecDeque::from(vec![
-                CanFrame::new(obd_id, 8, &[0x02, OBD2Service::CurrentData.into(), 0x0c]),
-                CanFrame::new(
-                    obd_id,
-                    8,
-                    &[0x02, OBD2Service::VehicleInformation.into(), 0x00],
-                ),
-                CanFrame::new(
-                    obd_id,
-                    8,
-                    &[0x02, OBD2Service::VehicleInformation.into(), 0x02],
-                ),
-            ]);
+            // let mut queue = VecDeque::from(vec![
+            //     CanFrame::new(obd_id, 8, &[0x02, OBD2Service::CurrentData.into(), 0x0c]),
+            //     CanFrame::new(
+            //         obd_id,
+            //         8,
+            //         &[0x02, OBD2Service::VehicleInformation.into(), 0x00],
+            //     ),
+            //     CanFrame::new(
+            //         obd_id,
+            //         8,
+            //         &[0x02, OBD2Service::VehicleInformation.into(), 0x02],
+            //     ),
+            // ]);
 
             let running_can = &CONFIG_MANAGER.session.can.running_can;
 
@@ -177,8 +183,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             Ok(result) => match result {
                                 ParseResult::Mux(result) => match result {
                                     MuxParseResult::AwaitingBroadcastAck => {
-                                        let ack = ISOTPAckFrame::new(obd_id);
-                                        queue.push_front(CanFrame::from_frame(ack));
+                                        // let ack = ISOTPAckFrame::new(obd_id);
+                                        // queue.push_front(CanFrame::from_frame(ack));
                                     }
                                     _ => {}
                                 },
@@ -189,9 +195,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     CanError::UnknownMessageId(_id) => {
                                         // ignore
                                     }
-                                    _ => println!("Failed to parse frame: {e:?}"),
+                                    _ => println!("Failed to parse frame {frame:?}: {e:?}"),
                                 },
-                                _ => println!("Failed to parse frame: {e:?}"),
+                                _ => println!("Failed to parse frame {frame:?}: {e:?}"),
                             },
                         }
                     };
@@ -249,7 +255,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let application_state = ui.global::<ApplicationState>();
-
     application_state.set_virtual_cluster(virtual_cluster);
     application_state.set_interface_type(format!("{selected_interface}: {interface_path}").into());
     application_state.set_debug_mode(cfg!(debug_assertions));
@@ -263,18 +268,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(not(feature = "apalis_imx8"))]
     let hardware_backend = Arc::new(HardwareBackend::new(hardware_backend::Backend::Simulator));
 
+    // ui backend bridges
     config_bridge::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
     car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), CONFIG_MANAGER.clone());
     hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
 
     // autosave
-    tokio::spawn(async move {
-        let mut interval = time::interval(Duration::from_secs(60));
-        loop {
-            interval.tick().await;
-            save_config();
-        }
-    });
+    tokio::spawn(run_autosave_loop());
+    tokio::spawn(bridge_system_info());
+    tokio::spawn(cli_mode(shutdown_send.clone(), hardware_backend.clone()));
+
+    let frames: Arc<AtomicU32> = Default::default();
+
+    {
+        let frames = frames.clone();
+        let _ = ui.window().set_rendering_notifier(move |state, _api| {
+            if matches!(state, slint::RenderingState::AfterRendering) {
+                frames.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            }
+        });
+    }
+    {
+        let frames = frames.clone();
+        tokio::spawn(async move {
+            let mut last = Instant::now();
+            let mut interval = time::interval(Duration::from_millis(200));
+
+            loop {
+                interval.tick().await;
+                let secs = last.elapsed().as_secs_f32();
+
+                CONFIG_MANAGER.session.system_info.fps.set_value(
+                    ((frames.swap(0, std::sync::atomic::Ordering::Relaxed) as f32) / secs) as i32,
+                );
+
+                last = Instant::now();
+            }
+        });
+    }
 
     let cleanup = move || {
         if let Err(e) = slint::quit_event_loop() {
@@ -327,5 +358,149 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn save_config() {
     if let Err(e) = CONFIG_MANAGER.save_to_fs() {
         eprintln!("Failed to save user config: {e:?}");
+    }
+}
+
+async fn run_autosave_loop() {
+    let mut interval = time::interval(Duration::from_secs(60));
+    loop {
+        interval.tick().await;
+        save_config();
+    }
+}
+
+async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<HardwareBackend>) {
+    use std::io::{stdin, stdout};
+
+    let mut buf = String::new();
+    let cli_in = stdin();
+    let mut cli_out = stdout();
+
+    loop {
+        print!("CLI > ");
+        let _ = cli_out.flush();
+
+        if cli_in.read_line(&mut buf).is_ok() {
+            if buf.ends_with('\n') {
+                buf.pop();
+                if buf.ends_with('\r') {
+                    buf.pop();
+                }
+            }
+
+            let command = buf.to_lowercase();
+            let cmd_splt: Vec<&str> = command.as_str().split(" ").collect();
+            match *cmd_splt.get(0).unwrap_or(&"") {
+                "q" | "quit" => {
+                    let _ = shutdown_send.send(true);
+                    break;
+                }
+                "h" | "help" => {
+                    println!();
+                    println!("h | help  => show this help menu");
+                    println!("\nq | quit  => close application");
+                    println!("\nnav up    => force ui navigation up");
+                    println!("    down  => force ui navigation down");
+                    println!("    enter => force ui navigation enter");
+                    println!();
+                }
+                "nav" => {
+                    match *cmd_splt.get(1).unwrap_or(&"") {
+                        "up" => {
+                            hardware_backend
+                                .navigation_state
+                                .set_value(hardware_backend::HardwareNavigationState::Backward);
+                        }
+                        "down" => {
+                            hardware_backend
+                                .navigation_state
+                                .set_value(hardware_backend::HardwareNavigationState::Forward);
+                        }
+                        "enter" => {
+                            hardware_backend
+                                .navigation_state
+                                .set_value(hardware_backend::HardwareNavigationState::Enter);
+                        }
+                        _ => {}
+                    };
+                    let mut interval = time::interval(Duration::from_millis(100));
+                    interval.tick().await;
+                    interval.tick().await;
+                    println!("resetting input");
+                    hardware_backend
+                        .navigation_state
+                        .set_value(hardware_backend::HardwareNavigationState::Idle);
+                }
+                _ => {}
+            }
+            buf.clear();
+        }
+    }
+}
+
+async fn bridge_system_info() {
+    use sysinfo::{Pid, ProcessRefreshKind, RefreshKind, System};
+
+    let pid = Pid::from_u32(std::process::id());
+
+    let mut sys = System::new_all();
+    sys.refresh_all();
+
+    let mut process_memory_max = 0;
+
+    let sys_refresh = RefreshKind::nothing()
+        .with_memory(MemoryRefreshKind::nothing().with_ram())
+        .with_cpu(CpuRefreshKind::nothing().with_cpu_usage())
+        .with_processes(ProcessRefreshKind::nothing().with_memory());
+
+    CONFIG_MANAGER
+        .session
+        .system_info
+        .num_cpus
+        .set_value(sys.cpus().len() as i32);
+
+    CONFIG_MANAGER
+        .session
+        .system_info
+        .total_memory_mb
+        .set_value((sys.total_memory() / 1_048_576) as i32);
+
+    let mut interval = time::interval(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
+    loop {
+        sys.refresh_specifics(sys_refresh);
+        sys.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[pid]), false);
+
+        let used_memory = (sys.used_memory() / 1_048_576) as i32;
+
+        if let Some(this) = sys.process(pid) {
+            let process_memory = (this.memory() / 1_048_576) as i32;
+            process_memory_max = std::cmp::max(process_memory, process_memory_max);
+
+            CONFIG_MANAGER
+                .session
+                .system_info
+                .process_memory_mb
+                .set_value(process_memory);
+
+            CONFIG_MANAGER
+                .session
+                .system_info
+                .process_memory_max_mb
+                .set_value(process_memory_max);
+        }
+
+        CONFIG_MANAGER
+            .session
+            .system_info
+            .used_memory_mb
+            .set_value(used_memory);
+
+        CONFIG_MANAGER
+            .session
+            .system_info
+            .cpu_usage
+            .set_value(sys.global_cpu_usage());
+
+        interval.tick().await;
     }
 }
