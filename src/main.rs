@@ -15,7 +15,7 @@ use crate::slint_ui::backend::{
     can_display::CanFrameDisplay, car_data_bridge, config_bridge, hardware_bridge,
 };
 
-use sysinfo::{CpuRefreshKind, MemoryRefreshKind};
+use sysinfo::{CpuRefreshKind, MemoryRefreshKind, Pid, ProcessRefreshKind, RefreshKind, System};
 use tokio::sync::mpsc::{self, UnboundedSender};
 use tokio::time::{self, Duration, Instant};
 
@@ -439,8 +439,6 @@ async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<Ha
 }
 
 async fn bridge_system_info() {
-    use sysinfo::{Pid, ProcessRefreshKind, RefreshKind, System};
-
     let pid = Pid::from_u32(std::process::id());
 
     let mut sys = System::new_all();

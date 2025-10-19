@@ -42,44 +42,46 @@ macro_rules! param_convertion_handle {
     )};
 }
 
+#[allow(unused)]
 pub fn bridge(ui: Weak<App>, car_data: Arc<CarData>, config_manager: Arc<ConfigManager>) {
-    macro_rules! bridge {
-    ($($param:ident: $type:tt),+ $(,)? ) => {$({
+    macro_rules! bridge {($($param:ident: $type:tt),+ $(,)? ) => {$({
         let ui = ui.clone();
         let car_data = car_data.clone();
-
         let config_manager = config_manager.clone();
-        slint::spawn_local(async_compat::Compat::new(async move {
+        tokio::spawn(async move {
             let mut thread_watch = car_data.$param().watch();
             let unit_system_parameter = &(config_manager.user.general.unit_system);
             let mut unit_system_changed = unit_system_parameter.watch();
+            let mut unit_system: UnitSystem = unit_system_parameter.value();
+            let mut value = car_data.$param().value();
 
-            if let Some(ui) = ui.upgrade() {
-                let ui_car_data = ui.global::<SCarData>();
-                let mut unit_system: UnitSystem = unit_system_parameter.value();
-                let mut value = car_data.$param().value();
-
-                loop { // do-while for initial setting of values, then wait for update events
-                    param_convertion_handle!(car_data, ui_car_data, unit_system, $param: $type = value);
-
-                    select! {
-                        biased; // always check the unit system first
-                        Ok(_) = unit_system_changed.changed() => {
-                            unit_system = *unit_system_changed.borrow_and_update();
-                        },
-                        Ok(_) = thread_watch.changed() => {
-                            value = *thread_watch.borrow_and_update()
-                        },
-                        else => {
-                            // if for any reason one of the watches errors (by being dropped early), break the loop to stop deadlock
-                            // this should never happen, but we cannot not break the entire application if it does
-                            break;
-                        },
-                    };
+            loop { // do-while for initial setting of values, then wait for update events
+                {
+                    let car_data = car_data.clone();
+                    ui.upgrade_in_event_loop(move |ui| {
+                        let ui_car_data = ui.global::<SCarData>();
+                        param_convertion_handle!(car_data, ui_car_data, unit_system, $param: $type = value);
+                    });
                 }
+
+                select! {
+                    biased; // always check the unit system first
+                    Ok(_) = unit_system_changed.changed() => {
+                        unit_system = *unit_system_changed.borrow_and_update();
+                    },
+                    Ok(_) = thread_watch.changed() => {
+                        value = *thread_watch.borrow_and_update()
+                    },
+                    else => {
+                        // if for any reason one of the watches errors (by being dropped early), break the loop to stop deadlock
+                        // this should never happen, but we cannot not break the entire application if it does
+                        break;
+                    },
+                };
             }
-        })).unwrap();}
-    )*};}
+        });
+    })*};
+}
 
     bridge! {
         engine_rpm: SIDataParameter,
