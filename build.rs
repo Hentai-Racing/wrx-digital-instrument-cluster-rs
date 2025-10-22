@@ -511,7 +511,7 @@ fn main() {
     let library_paths = HashMap::from([(
         // TODO: make properly organized component library
         "lib".to_string(),
-        manifest_dir.join("src/slint_ui/components/core.slint"),
+        manifest_dir.join(SLINT_PATH).join("components/core.slint"),
     )]);
 
     build_dbc().unwrap();

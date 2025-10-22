@@ -8,4 +8,5 @@
     "evenBetterToml.formatter.indentEntries": true,
     "evenBetterToml.formatter.indentTables": true,
     "rust-analyzer.cargo.features": "all",
+    "chat.disableAIFeatures": true
 }
