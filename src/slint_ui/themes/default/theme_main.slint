@@ -15,7 +15,10 @@ import { InstrumentGauge } from "components/instrument_gauge.slint";
 import { SymbolProperties } from "symbol_properties.slint";
 import { SCarData } from "../../data/car_data.slint";
 import { SUnitSystem } from "../../data/units.slint";
-import { ApplicationState, GeneralSettings } from "../../data/application_state.slint";
+import {
+    ApplicationState,
+    GeneralSettings,
+} from "../../data/application_state.slint";
 import { WidgetContainer } from "../../components/widget_container.slint";
 
 global DefaultThemeParams {
@@ -51,7 +54,7 @@ export component DefaultTheme inherits Rectangle {
     background: transparent;
 
     width: self.height * (1920 / 720);
-    height: 500px;
+    height: 720px;
 
     VerticalLayout {
         top-span := PrimarySection {
@@ -354,7 +357,10 @@ export component DefaultTheme inherits Rectangle {
             }
 
             mid-tri := PrimarySection {
-                WidgetContainer { }
+                WidgetContainer {
+                    width: 100%;
+                    height: 100%;
+                }
             }
 
             right-tri := PrimarySection {
@@ -587,6 +593,20 @@ export component DefaultTheme inherits Rectangle {
                     colorize: SymbolProperties.symbol-color-yellow;
 
                     visible: SCarData.hill_assist_enabled.value;
+                }
+
+                low-washer-fluid-indicator := GaugeAttachedSymbol {
+                    center-radius: speedometer.width / 2;
+                    center-x: speedometer.x + speedometer.width / 2;
+                    center-y: speedometer.y + speedometer.height / 2;
+
+                    angle: 360deg - 40deg + SymbolProperties.symbol_angle_padding;
+
+                    source: @image-url("../../../../resources/images-svg/windshield-washer-fluid-warning.svg");
+                    colorize: SymbolProperties.symbol-color-yellow;
+
+                    // TODO: windshield-washer-fluid-indicator
+                    visible: false;
                 }
 
                 vdc-off-warning-indicator := GaugeAttachedSymbol {

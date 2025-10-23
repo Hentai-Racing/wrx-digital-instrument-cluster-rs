@@ -17,7 +17,7 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
 
     let dbc_file_dir = Path::new("resources/database/can/");
     let rs_messages_out_dir = Path::new("src/can/messages/");
-    let rs_messages_mod_dir = Path::new("src/can/messages/mod.rs");
+    let rs_messages_mod_dir = rs_messages_out_dir.join("mod.rs");
 
     if rs_messages_out_dir.exists() {
         fs::remove_dir_all(rs_messages_out_dir).unwrap();
