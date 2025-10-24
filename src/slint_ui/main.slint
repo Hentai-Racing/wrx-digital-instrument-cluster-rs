@@ -1,10 +1,33 @@
-import { ControlledFocusScope, FocusDomain, FocusHoverRect, AnimatedFocusHoverRect, ComboBoxSelectionBox, ComboBoxState, SliderSelectionBox, SliderState } from "@lib";
-import { DebugMenuWidget, DebugMenuState, DebugOverlay } from "components/debug.slint";
+import {
+    ControlledFocusScope,
+    FocusDomain,
+    FocusHoverRect,
+    AnimatedFocusHoverRect,
+    ComboBoxSelectionBox,
+    ComboBoxState,
+    SliderSelectionBox,
+    SliderState,
+} from "@lib";
+import {
+    DebugMenuWidget,
+    DebugMenuState,
+    DebugOverlay,
+} from "components/debug.slint";
 import { SettingsMenu } from "components/settings.slint";
-import { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter } from "data/data_parameter.slint";
+import {
+    SFDataParameter,
+    SIDataParameter,
+    SBDataParameter,
+    SStrDataParameter,
+} from "data/data_parameter.slint";
 import { SCarData } from "data/car_data.slint";
 import { SUnitSystem } from "data/units.slint";
-import { ApplicationState, AccessibilitySettings, DebugSettings, GeneralSettings } from "data/application_state.slint";
+import {
+    ApplicationState,
+    AccessibilitySettings,
+    DebugSettings,
+    GeneralSettings,
+} from "data/application_state.slint";
 import { GlobalThemeData } from "themes/themes.slint";
 import { ThemeLoader } from "themes/theme_loader_gen.slint";
 import { CanDisplay, SCanFrameDisplay } from "components/can_display.slint";
@@ -60,5 +83,5 @@ export component App inherits Window {
     if !AccessibilitySettings.animations-enabled: FocusHoverRect { }
 
     // debug layer
-    if (ApplicationState.debug-mode && DebugSettings.debug-overlay-enabled): DebugOverlay { }
+    if (DebugSettings.debug-mode && DebugSettings.debug-overlay-enabled): DebugOverlay { }
 }

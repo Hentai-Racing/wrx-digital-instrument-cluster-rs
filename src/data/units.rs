@@ -1,6 +1,6 @@
 #![allow(dead_code, unused)]
 use serde::{Deserialize, Serialize};
-use std::default;
+use std::{default, str::FromStr};
 
 #[derive(Copy, Clone, Default, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub enum UnitSystem {
@@ -155,6 +155,21 @@ impl ToString for PressureUnit {
             Self::PSI => String::from("PSI"),
             Self::KPA => String::from("KPA"),
             Self::BAR => String::from("BAR"),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct UnitSystemParseError;
+
+impl FromStr for UnitSystem {
+    type Err = UnitSystemParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_lowercase().as_str() {
+            "si" => Ok(Self::SI),
+            "uscs" => Ok(Self::USCS),
+            _ => Err(UnitSystemParseError),
         }
     }
 }

@@ -45,30 +45,34 @@ static CONFIG_MANAGER: LazyLock<Arc<ConfigManager>> = LazyLock::new(|| {
 static CAR_DATA: LazyLock<Arc<CarData>> = LazyLock::new(|| Default::default());
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let cli = clap::Command::new("").version(env!("CARGO_PKG_VERSION"))
+    let conflicting_args = ["virtual", "fakedev", "candev", "sldev"];
+    let cli_args = clap::Command::new("").version(env!("CARGO_PKG_VERSION"))
         .args([
             #[cfg(target_os = "linux")]
             clap::arg!(-v --virtual "Runs the application in virtual mode using socketcan vcan")
                 .required(false)
-                .exclusive(true),
+                .conflicts_with_all(conflicting_args.iter().filter(|&x| x != &"virtual")),
             clap::arg!(-f --fakedev "Runs the application in virtual mode using a fake can socket emulator")
                 .required(false)
-                .exclusive(true),
+                .conflicts_with_all(conflicting_args.iter().filter(|&x| x != &"fakedev")),
             clap::arg!(-c --candev <PATH> "Path to the desired CAN device to use")
                 .required(false)
                 .default_value(CAN_IF_NAME)
-                .exclusive(true),
+                .conflicts_with_all(conflicting_args.iter().filter(|&x| x != &"candev")),
             clap::arg!(-s --sldev <PATH> "Path to the desired serial CAN device to use")
                 .required(false)
                 .default_value(DEFAULT_SL_DEV)
-                .exclusive(true),
+                .conflicts_with_all(conflicting_args.iter().filter(|&x| x != &"sldev")),
+            clap::arg!(--cli "Enable internal cli")
+                .required(false),
         ])
         .get_matches();
 
-    let fake_dev = cli.get_flag("fakedev");
+    let fake_dev = cli_args.get_flag("fakedev");
+    let is_cli_mode = cli_args.get_flag("cli");
 
     #[cfg(target_os = "linux")]
-    let virtual_cluster = cli.get_flag("virtual") | fake_dev;
+    let virtual_cluster = cli_args.get_flag("virtual") | fake_dev;
     #[cfg(not(target_os = "linux"))]
     let virtual_cluster = fake_dev;
 
@@ -84,9 +88,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         {
             CanInterface::Fake
         }
-    } else if cli.value_source("candev") == Some(clap::parser::ValueSource::CommandLine) {
+    } else if cli_args.value_source("candev") == Some(clap::parser::ValueSource::CommandLine) {
         CanInterface::SocketCan
-    } else if cli.value_source("sldev") == Some(clap::parser::ValueSource::CommandLine) {
+    } else if cli_args.value_source("sldev") == Some(clap::parser::ValueSource::CommandLine) {
         CanInterface::SerialCan
     } else {
         #[cfg(feature = "apalis_imx8")]
@@ -126,14 +130,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut interface_path = match &selected_interface {
         CanInterface::VirtualSocketCan | CanInterface::Fake => VCAN_IF_NAME,
         CanInterface::SerialCan => {
-            if let Some(sldev) = cli.get_one::<String>("sldev") {
+            if let Some(sldev) = cli_args.get_one::<String>("sldev") {
                 sldev.as_str()
             } else {
                 DEFAULT_SL_DEV
             }
         }
         CanInterface::SocketCan => {
-            if let Some(candev) = cli.get_one::<String>("candev") {
+            if let Some(candev) = cli_args.get_one::<String>("candev") {
                 candev.as_str()
             } else {
                 CAN_IF_NAME
@@ -257,7 +261,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let application_state = ui.global::<ApplicationState>();
     application_state.set_virtual_cluster(virtual_cluster);
     application_state.set_interface_type(format!("{selected_interface}: {interface_path}").into());
-    application_state.set_debug_mode(cfg!(debug_assertions));
 
     #[cfg(feature = "apalis_imx8")]
     let device = hardware::apalis_imx8::ApalisIMX8::new();
@@ -268,15 +271,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(not(feature = "apalis_imx8"))]
     let hardware_backend = Arc::new(HardwareBackend::new(hardware_backend::Backend::Simulator));
 
+    tokio::spawn(run_autosave_loop());
+    tokio::spawn(bridge_system_info());
+    if is_cli_mode {
+        tokio::spawn(cli_mode(shutdown_send.clone(), hardware_backend.clone()));
+    }
+
     // ui backend bridges
     config_bridge::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
     car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), CONFIG_MANAGER.clone());
     hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
-
-    // autosave
-    tokio::spawn(run_autosave_loop());
-    tokio::spawn(bridge_system_info());
-    tokio::spawn(cli_mode(shutdown_send.clone(), hardware_backend.clone()));
 
     let frames: Arc<AtomicU32> = Default::default();
 
@@ -402,6 +406,11 @@ async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<Ha
                     println!("\nnav up    => force ui navigation up");
                     println!("    down  => force ui navigation down");
                     println!("    enter => force ui navigation enter");
+                    println!(
+                        "\nset_param => set the value of any `<Parameter>` in `CONFIG_MANAGER`"
+                    );
+                    println!("    usage |  <path> <value>");
+                    println!("  example |  set_param user.general.unit_system uscs");
                     println!();
                 }
                 "nav" => {
@@ -431,7 +440,26 @@ async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<Ha
                         .navigation_state
                         .set_value(hardware_backend::HardwareNavigationState::Idle);
                 }
-                _ => {}
+                "set_param" => {
+                    let param_path: Vec<&str> =
+                        (*cmd_splt.get(1).unwrap_or(&"")).split(".").collect();
+                    let value = *cmd_splt.get(2).unwrap_or(&"");
+                    if let Some((root, path)) = param_path.split_first() {
+                        match *root {
+                            "user" => CONFIG_MANAGER
+                                .user
+                                .set_by_name(path.join(".").as_str(), value),
+                            "session" => CONFIG_MANAGER
+                                .session
+                                .set_by_name(path.join(".").as_str(), value),
+                            "" => eprintln!("Missing param root"),
+                            x => eprintln!("Param root `{x}` out-of-range"),
+                        }
+                    } else {
+                        eprintln!("Failed to parse param path")
+                    }
+                }
+                x => eprintln!("Unknown command `{x}`"),
             }
             buf.clear();
         }

@@ -1,12 +1,12 @@
 use crate::data::parameters::Parameter;
 use crate::data::units::UnitSystem;
+use crate::parameter_struct;
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::watch;
 use tokio::time::{Duration, timeout};
 use toml;
 
-use std::any::Any;
 use std::env;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
@@ -30,63 +30,6 @@ impl std::fmt::Display for SaveError {
     }
 }
 
-macro_rules! default_value {
-    ($type:ty| $param_default:expr) => {
-        $param_default.into()
-    };
-    (String| ) => {
-        String::from("Unknown").into()
-    };
-    ($type:ty| ) => {
-        Default::default()
-    };
-}
-
-macro_rules! parameter_struct {
-    ($struct_visibillity:vis $struct_name:ident {$($param:ident: $param_type:ty $(= $param_default:expr)?),+ $(,)?}) => {
-        #[derive(Serialize, Deserialize)]
-        $struct_visibillity struct $struct_name {
-            $(
-                #[serde(default)]
-                pub $param: Parameter<$param_type>,
-            )+
-        }
-
-        impl $struct_name {
-            #[allow(unused)]
-            fn apply(&self, from: Self) {
-                $( self.$param.set_value(from.$param.value()) );*
-            }
-
-            #[allow(unused)]
-            pub fn set_by_name(&self, param_name: &str, value: &dyn Any) {
-                match param_name {
-                    $(stringify!($param) => {
-                        if let Some(value) = value.downcast_ref::<$param_type>() {
-                            self.$param.set_value(value.clone())
-                        } else {
-                            // TODO: return err Result
-                        }
-                    }),+
-                    _ => {
-                        // TODO: return err Result
-                    }
-                }
-            }
-        }
-
-        impl Default for $struct_name {
-            fn default() -> Self {
-                Self {
-                    $(
-                        $param: default_value!($param_type| $($param_default)?)
-                    ),+
-                }
-            }
-        }
-    };
-}
-
 macro_rules! data_root {
     ($visible:vis $root:ident {$($param:ident: $param_ty:ty),+ $(,)?}) => {
         #[derive(Default, Serialize, Deserialize)]
@@ -95,10 +38,20 @@ macro_rules! data_root {
             $(pub $param: $param_ty),+
         }
 
+        #[allow(unused)]
         impl $root {
-            #[allow(unused)]
             fn apply(&self, from: Self) {
                 $(self.$param.apply(from.$param));*
+            }
+
+            pub fn set_by_name(&self, param_path: &str, value: &str) {
+                let param_path_split: Vec<&str> = param_path.split(".").collect();
+                match *param_path_split.get(0).unwrap_or(&"") {
+                    $(stringify!($param) => {
+                        self.$param.set_by_name(*param_path_split.get(1).unwrap_or(&""), value);
+                    }),+
+                    _ => {eprintln!("{param_path} does not exist in {}", stringify!($root))}
+                }
             }
         }
     };
@@ -123,6 +76,7 @@ parameter_struct! {pub DebugHardwareBackendData {
 }}
 
 parameter_struct! {pub DebugSessionConfig {
+    debug_mode: bool = cfg!(debug_assertions),
     debug_highlights: bool = false,
     debug_overlay_enabled: bool = true
 }}

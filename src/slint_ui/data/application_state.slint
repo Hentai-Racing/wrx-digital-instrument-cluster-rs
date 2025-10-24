@@ -3,8 +3,6 @@ import { SUnitSystem } from "../data/units.slint";
 // TODO: move all settings to be auto-generated from `settings.rs` in a different `settings.slint` file
 
 export global ApplicationState {
-    in-out property <bool> debug-mode: true;
-
     in property <bool> virtual-cluster: true;
 
     in-out property <bool> simulation-running;
@@ -35,6 +33,9 @@ export global AccessibilitySettings {
 }
 
 export global DebugSettings {
+    in-out property <bool> debug-mode: true;
+    callback update-debug-mode(bool);
+
     in-out property <bool> debug-highlights: false;
     callback update-debug-highlights(bool);
 

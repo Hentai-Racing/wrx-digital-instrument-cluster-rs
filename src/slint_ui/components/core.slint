@@ -1,4 +1,8 @@
-import { ApplicationState, AccessibilitySettings, DebugSettings } from "../data/application_state.slint";
+import {
+    ApplicationState,
+    AccessibilitySettings,
+    DebugSettings,
+} from "../data/application_state.slint";
 
 export global GlobalSizing {
     out property <length> button-height: 40px;
@@ -128,7 +132,7 @@ export component DebugHighlight {
 
     i-rect := Rectangle {
         background: transparent;
-        visible: ApplicationState.debug-mode && DebugSettings.debug-highlights;
+        visible: DebugSettings.debug-mode && DebugSettings.debug-highlights;
 
         border-width: 2px;
         border-color: purple;

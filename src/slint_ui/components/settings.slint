@@ -1,5 +1,10 @@
 import { Button, FocusDomain, ComboBox, ToggleBox, DebugHighlight } from "@lib";
-import { ApplicationState, AccessibilitySettings, DebugSettings, GeneralSettings } from "../data/application_state.slint";
+import {
+    ApplicationState,
+    AccessibilitySettings,
+    DebugSettings,
+    GeneralSettings,
+} from "../data/application_state.slint";
 import { SUnitSystem } from "../data/units.slint";
 import { GlobalThemeData } from "../themes/themes.slint";
 
@@ -260,7 +265,7 @@ export component SettingsMenu inherits FocusDomain {
                 }
             }
 
-            if ApplicationState.debug-mode: VerticalLayout {
+            if DebugSettings.debug-mode: VerticalLayout {
                 spacing: parent.spacing;
                 alignment: parent.alignment;
 

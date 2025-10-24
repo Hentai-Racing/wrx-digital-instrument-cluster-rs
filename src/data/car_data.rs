@@ -111,9 +111,9 @@ macro_rules! HandleSignalProcess {
 /// Note: ```bool``` data types default to `true` unless otherwise stated
 ///
 macro_rules! CarData {
-    { {$( $visible:vis $struct_param:ident: $struct_param_ty:tt $(= $struct_param_init:expr)?),+}; $($msg:ident => { $($(<$unit:path$(:$unit_system:path)?>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; } => {
+    { {$( $visible:vis $struct_param:ident: $struct_param_ty:tt $(= $struct_param_init:expr)?),*}; $($msg:ident => { $($(<$unit:path$(:$unit_system:path)?>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; } => {
         pub struct CarData {
-            $($visible $struct_param: $struct_param_ty,)+
+            $($visible $struct_param: $struct_param_ty),*
             $($($param: DataParameter<$type>,)*)*
         }
 
@@ -140,7 +140,7 @@ macro_rules! CarData {
         impl Default for CarData {
             fn default() -> Self {
                 Self {
-                    $($struct_param: default_value!($struct_param_ty| $($struct_param_init)?),)+
+                    $($struct_param: default_value!($struct_param_ty| $($struct_param_init)?)),*
                     $($($param: param!(wrx_2018::$msg => $param: $type $([$unit| $($unit_system)?])? $(= $init)?),)*)*
                 }
             }
@@ -150,7 +150,7 @@ macro_rules! CarData {
 
 CarData! {
     {
-        pub obd_mux_context: MuxContext
+        // pub obd_mux_context: MuxContext
     };
 
     Engine => {

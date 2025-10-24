@@ -178,3 +178,89 @@ where
         Self::new(Default::default(), Default::default(), Some(value), None)
     }
 }
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __default_value {
+    ($type:ty| $param_default:expr) => {
+        $param_default.into()
+    };
+    (String| ) => {
+        String::from("Unknown").into()
+    };
+    ($type:ty| ) => {
+        Default::default()
+    };
+}
+
+/// Defines a serdes capable structure with parameter fields and optional default values.
+#[macro_export]
+macro_rules! parameter_struct {
+    ($struct_visibillity:vis $struct_name:ident {$($param:ident: $param_type:ty $(= $param_default:expr)?),+ $(,)?}) => {
+        #[derive(Serialize, Deserialize)]
+        $struct_visibillity struct $struct_name {
+            $(
+                #[serde(default)]
+                pub $param: Parameter<$param_type>
+            ),+
+        }
+
+        #[allow(unused)]
+        impl $struct_name {
+            fn apply(&self, from: Self) {
+                $( self.$param.set_value(from.$param.value()) );*
+            }
+
+            pub fn set_by_name(&self, param_name: &str, value: &str) {
+                match param_name {
+                    $(stringify!($param) => {
+                        match value.parse::<$param_type>() {
+                            Ok(value) => self.$param.set_value(value),
+                            Err(e) => eprintln!("Failed to set {} to {value}: {e:?}", stringify!($param))
+                        }
+                    }),+
+                    _ => {
+                        eprintln!("Failed to set {param_name} to {value}: {param_name} is not a valid parameter")
+                    }
+                }
+            }
+        }
+
+        impl Default for $struct_name {
+            fn default() -> Self {
+                Self {
+                    $(
+                        $param: crate::__default_value!($param_type| $($param_default)?)
+                    ),+
+                }
+            }
+        }
+    };
+}
+
+/// Executes a match on the value of the specified parameter.
+/// Re-executes upon parameter updates.
+#[macro_export]
+macro_rules! parameter_match {
+    ($param:expr => { $($val:pat => $blk:block),* $(,)? }) => {{
+        let __param = $param;
+        tokio::spawn(async move {
+            let mut watch = $param.watch();
+            let mut value = $param.value();
+
+            loop {
+                 match value {
+                    $($val => $blk),*
+                    _ => {}
+                }
+
+                tokio::select! {
+                    Ok(_) = watch.changed() => {
+                        value = *watch.borrow_and_update();
+                    },
+                    else => {break;}
+                }
+            }
+        });
+    }}
+}

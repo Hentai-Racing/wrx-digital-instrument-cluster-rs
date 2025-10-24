@@ -71,9 +71,9 @@ fi
 printf "[5/5] Starting new process on board...\n"
 
 if [[ "$PROFILE" == "debug" ]]; then
-    ssh -F "$SSH_CONFIG" -o StrictHostKeyChecking=accept-new apalis-board "export WAYLAND_DISPLAY=/run/wayland-0; /bin/$APPLICATION_NAME"
+    ssh -F "$SSH_CONFIG" -o StrictHostKeyChecking=accept-new apalis-board "export WAYLAND_DISPLAY=/run/wayland-0; /bin/$APPLICATION_NAME --cli"
 else
-    ssh -F "$SSH_CONFIG" -o StrictHostKeyChecking=accept-new apalis-board "export WAYLAND_DISPLAY=/run/wayland-0; nohup /bin/$APPLICATION_NAME > /tmp/$APPLICATION_NAME.log 2>&1 &" > /dev/null 2>&1
+    ssh -F "$SSH_CONFIG" -o StrictHostKeyChecking=accept-new apalis-board "export WAYLAND_DISPLAY=/run/wayland-0; nohup /bin/$APPLICATION_NAME --cli > /tmp/$APPLICATION_NAME.log 2>&1 &" > /dev/null 2>&1
 fi
 
 printf "\tDone! Deployed profile: $PROFILE\n"
