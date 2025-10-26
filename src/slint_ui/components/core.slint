@@ -554,6 +554,12 @@ export component FocusDomain inherits Rectangle {
         @children
     }
 
+    touch-lockout := TouchArea {
+        enabled: !root.domain-active;
+        width: 100%;
+        height: 100%;
+    }
+
     HorizontalLayout {
         alignment: center;
         y: root.height - exit.height;
