@@ -2,7 +2,7 @@
     name         = "wrx-digital-instrument-cluster-rs"
     description  = "A digital instrument cluster for the 2018 Subaru WRX"
     repository   = "https://github.com/Hentai-Racing/wrx-digital-instrument-cluster-rs"
-    version      = "0.16.6"                                                             # Only 1.0.0 when all factory features exist
+    version      = "0.16.7"                                                             # Only 1.0.0 when all factory features exist
     authors      = ["Bryce Happel Walton <brycewaltonmail@gmail.com>"]
     edition      = "2024"
     build        = "build.rs"
@@ -16,7 +16,7 @@
     slcan       = ["dep:slcan", "dep:serial"]
 
 [dependencies]
-    slint        = { git = "https://github.com/slint-ui/slint.git", default-features = false, features = ["compat-1-2", "std"], rev = "9c20beadbaaa11a0e2b540a3d5f0140fba419da0" } #! https://github.com/slint-ui/slint/issues/9782
+    slint        = { git = "https://github.com/slint-ui/slint.git", default-features = false, features = ["compat-1-2", "std"] }   #! https://github.com/slint-ui/slint/issues/9782
     async-compat = "*"
     rand         = "*"
     pastey       = "*"
@@ -42,7 +42,7 @@
     socketcan = "*"
 
 [build-dependencies]
-    slint-build = { git = "https://github.com/slint-ui/slint.git", rev = "9c20beadbaaa11a0e2b540a3d5f0140fba419da0" }
+    slint-build = { git = "https://github.com/slint-ui/slint.git" }
     dbc-codegen = { git = "https://github.com/bryce-happel-walton/dbc-codegen.git", branch = "feature/inverted-bit-signals", features = ["std"] } #* https://github.com/technocreatives/dbc-codegen/pull/97
     syn         = "*"
     walkdir     = "*"

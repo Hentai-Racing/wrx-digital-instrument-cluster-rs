@@ -1,11 +1,17 @@
-import { Button, FocusDomain, ComboBox, ToggleBox, DebugHighlight } from "@lib";
+import {
+    Button,
+    FocusDomain,
+    ComboBox,
+    ToggleBox,
+    DebugHighlight,
+} from "@lib/core.slint";
 import {
     ApplicationState,
     AccessibilitySettings,
     DebugSettings,
     GeneralSettings,
-} from "../data/application_state.slint";
-import { SUnitSystem } from "../data/units.slint";
+} from "@lib/state.slint";
+import { SUnitSystem } from "@lib/units.slint";
 import { GlobalThemeData } from "../themes/themes.slint";
 
 component DecorationBar inherits Rectangle {

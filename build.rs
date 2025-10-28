@@ -508,11 +508,17 @@ fn generate_slint_themes(slint_path: impl AsRef<Path>) -> Result<(), Box<dyn std
 fn main() {
     let slint_path = Path::new(SLINT_PATH);
     let manifest_dir = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
-    let library_paths = HashMap::from([(
-        // TODO: make properly organized component library
-        "lib".to_string(),
-        manifest_dir.join(SLINT_PATH).join("components/core.slint"),
-    )]);
+    let library_paths = HashMap::from([
+        (
+            // TODO: make properly organized component library
+            "lib".to_string(),
+            manifest_dir.join(SLINT_PATH).join("lib/"),
+        ),
+        (
+            "data".to_string(),
+            manifest_dir.join(SLINT_PATH).join("data/"),
+        ),
+    ]);
 
     build_dbc().unwrap();
     generate_can_data_emulator().unwrap();

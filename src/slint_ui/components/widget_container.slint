@@ -1,6 +1,11 @@
 import { ScrollView } from "std-widgets.slint";
 
-import { Button, ControlledFocusScope, FocusDomain, FocusState } from "@lib";
+import {
+    Button,
+    ControlledFocusScope,
+    FocusDomain,
+    FocusState,
+} from "@lib/core.slint";
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import {
     RoadIndicatorWidget,
@@ -9,7 +14,7 @@ import {
     ApplicationState,
     DebugSettings,
     AccessibilitySettings,
-} from "../data/application_state.slint";
+} from "@lib/state.slint";
 import { CanDisplayWidget } from "can_display.slint";
 
 export global WidgetContainerState {

@@ -7,7 +7,7 @@ import {
     ComboBoxState,
     SliderSelectionBox,
     SliderState,
-} from "@lib";
+} from "@lib/core.slint";
 import {
     DebugMenuWidget,
     DebugMenuState,
@@ -19,15 +19,15 @@ import {
     SIDataParameter,
     SBDataParameter,
     SStrDataParameter,
-} from "data/data_parameter.slint";
-import { SCarData } from "data/car_data.slint";
-import { SUnitSystem } from "data/units.slint";
+} from "@data/data_parameter.slint";
+import { SCarData } from "@data/car_data.slint";
+import { SUnitSystem } from "@lib/units.slint";
 import {
     ApplicationState,
     AccessibilitySettings,
     DebugSettings,
     GeneralSettings,
-} from "data/application_state.slint";
+} from "@lib/state.slint";
 import { GlobalThemeData } from "themes/themes.slint";
 import { ThemeLoader } from "themes/theme_loader_gen.slint";
 import { CanDisplay, SCanFrameDisplay } from "components/can_display.slint";
@@ -52,7 +52,7 @@ import "../../resources/fonts/JetBrainsMono/fonts/ttf/JetBrainsMono-Regular.ttf"
 export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, SUnitSystem, SCanFrameDisplay }
 // Export globals
 export { SCarData, DebugMenuState, GlobalThemeData, CanDisplay, WidgetContainerState }
-export * from "data/application_state.slint";
+export * from "@lib/state.slint";
 
 export component App inherits Window {
     default-font-family: "Montserrat";

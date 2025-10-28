@@ -45,7 +45,13 @@ static CONFIG_MANAGER: LazyLock<Arc<ConfigManager>> = LazyLock::new(|| {
 static CAR_DATA: LazyLock<Arc<CarData>> = LazyLock::new(|| Default::default());
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let conflicting_args = ["virtual", "fakedev", "candev", "sldev"];
+    #[allow(unused_mut)]
+    let mut conflicting_args = vec!["fakedev", "candev", "sldev"];
+    #[cfg(target_os = "linux")]
+    {
+        conflicting_args += "virtual";
+    }
+
     let cli_args = clap::Command::new("").version(env!("CARGO_PKG_VERSION"))
         .args([
             #[cfg(target_os = "linux")]
@@ -72,7 +78,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let is_cli_mode = cli_args.get_flag("cli");
 
     #[cfg(target_os = "linux")]
-    let virtual_cluster = cli_args.get_flag("virtual") | fake_dev;
+    let virtual_cluster = cli_args.get_flag("virtual") || fake_dev;
     #[cfg(not(target_os = "linux"))]
     let virtual_cluster = fake_dev;
 
@@ -409,7 +415,7 @@ async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<Ha
                     println!(
                         "\nset_param => set the value of any `<Parameter>` in `CONFIG_MANAGER`"
                     );
-                    println!("    usage |  <path> <value>");
+                    println!("    usage |  set_param <path> <value>");
                     println!("  example |  set_param user.general.unit_system uscs");
                     println!();
                 }

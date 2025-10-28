@@ -9,16 +9,16 @@ import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
 
 import { VerticalBox, ComboBox } from "std-widgets.slint";
 
-import { Arc } from "@lib";
+import { Arc } from "@lib/core.slint";
 import { ThemeParams } from "../themes.slint";
 import { InstrumentGauge } from "components/instrument_gauge.slint";
 import { SymbolProperties } from "symbol_properties.slint";
-import { SCarData } from "../../data/car_data.slint";
-import { SUnitSystem } from "../../data/units.slint";
+import { SCarData } from "@data/car_data.slint";
+import { SUnitSystem } from "@lib/units.slint";
 import {
     ApplicationState,
     GeneralSettings,
-} from "../../data/application_state.slint";
+} from "@lib/state.slint";
 import { WidgetContainer } from "../../components/widget_container.slint";
 
 global DefaultThemeParams {
@@ -528,7 +528,7 @@ export component DefaultTheme inherits Rectangle {
                         Text {
                             color: parent.colorize;
                             font-size: 20px;
-                            text: "►";
+                            text: ">"; //TODO: "►" (original character) seems to not render on some versions of slint, and cause massive memory leaks on others
                             x: parent.width - 5px;
                             y: parent.height / 2 - self.height / 2 + 3px;
                         }
