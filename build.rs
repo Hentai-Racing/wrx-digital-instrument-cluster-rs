@@ -539,6 +539,8 @@ fn main() {
             SLINT_PATH.join("lib/"),
         ),
         ("data".to_string(), SLINT_PATH.join("data/")),
+        ("themes".to_string(), SLINT_PATH.join("themes/")),
+        ("widgets".to_string(), SLINT_PATH.join("widgets/")),
     ]);
 
     build_dbc().unwrap();

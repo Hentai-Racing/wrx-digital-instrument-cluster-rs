@@ -8,6 +8,8 @@
     "chat.disableAIFeatures": true,
     "slint.libraryPaths": {
         "data": "src/slint_ui/data",
-        "lib": "src/slint_ui/lib"
+        "lib": "src/slint_ui/lib",
+        "themes": "src/slint_ui/themes",
+        "widgets": "src/slint_ui/widgets"
     }
 }

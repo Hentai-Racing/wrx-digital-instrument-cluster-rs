@@ -9,13 +9,14 @@ import {
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import {
     RoadIndicatorWidget,
-} from "../themes/default/components/road_indicators.slint";
+} from "@themes/default/components/road_indicators.slint";
 import {
     ApplicationState,
     DebugSettings,
     AccessibilitySettings,
 } from "@lib/state.slint";
-import { CanDisplayWidget } from "can_display.slint";
+import { CanDisplayWidget } from "@widgets/can_display.slint";
+import { CarDisplayWidget } from "@widgets/car_display.slint";
 
 export global WidgetContainerState {
     in-out property <int> current-page: 0;
@@ -194,6 +195,13 @@ export component WidgetContainer {
             clip: true;
 
             center-widget-container-layout := InternalContainerLayout {
+
+                car-display-widget := Widget {
+                    CarDisplayWidget {
+                        height: 100%;
+                        width: 100%;
+                    }
+                }
 
                 road-indicator-widget := Widget {
                     RoadIndicatorWidget {

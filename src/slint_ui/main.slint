@@ -12,8 +12,8 @@ import {
     DebugMenuWidget,
     DebugMenuState,
     DebugOverlay,
-} from "components/debug.slint";
-import { SettingsMenu } from "components/settings.slint";
+} from "@widgets/debug.slint";
+import { SettingsMenu } from "@widgets/settings.slint";
 import {
     SFDataParameter,
     SIDataParameter,
@@ -28,13 +28,13 @@ import {
     DebugSettings,
     GeneralSettings,
 } from "@lib/state.slint";
-import { GlobalThemeData } from "themes/themes.slint";
-import { ThemeLoader } from "themes/theme_loader_gen.slint";
-import { CanDisplay, SCanFrameDisplay } from "components/can_display.slint";
-import { WidgetContainerState } from "components/widget_container.slint";
+import { GlobalThemeData } from "@themes/themes.slint";
+import { ThemeLoader } from "@themes/theme_loader_gen.slint";
+import { CanDisplay, SCanFrameDisplay } from "@widgets/can_display.slint";
+import { WidgetContainerState } from "@widgets/widget_container.slint";
 
 // themes
-import { DefaultTheme } from "themes/default/theme_main.slint";
+import { DefaultTheme } from "@themes/default/theme_main.slint";
 
 // default fonts
 import "../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Black.ttf";

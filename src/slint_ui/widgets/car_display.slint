@@ -1,0 +1,67 @@
+import { SCarData } from "@data/car_data.slint";
+
+// TODO: add tire pressures when decoded
+// TODO: add 3d model or something better at least
+export component CarDisplayWidget inherits Rectangle {
+    property <length> part-padding: 10px;
+
+    VerticalLayout {
+        HorizontalLayout {
+            Rectangle {
+                hood := Rectangle {
+                    width: body.width;
+                    height: 75px;
+                    y: body.y - self.height - part-padding;
+                    x: body.x;
+                    background: SCarData.hood_open.value ? red : body.background;
+                }
+
+                trunk := Rectangle {
+                    width: hood.width;
+                    height: 50px;
+                    y: body.y + body.height + part-padding;
+                    x: body.x;
+                    background: SCarData.trunk_open.value ? red : body.background;
+                }
+
+                body := Rectangle {
+                    width: 125px;
+                    height: 200px;
+                    background: gray;
+                }
+
+                left-front-door := Rectangle {
+                    width: 25px;
+                    height: (body.height - part-padding) / 2;
+                    y: body.y;
+                    x: body.x - self.width - part-padding;
+                    background: SCarData.left_front_door_open.value ? red : body.background;
+                }
+
+                left-rear-door := Rectangle {
+                    width: left-front-door.width;
+                    height: left-front-door.height;
+                    y: body.y + body.height - self.height;
+                    x: left-front-door.x;
+                    background: SCarData.left_rear_door_open.value ? red : body.background;
+                }
+
+                right-front-door := Rectangle {
+                    width: 25px;
+                    height: (body.height - part-padding) / 2;
+                    y: body.y;
+                    x: body.x + body.width + part-padding;
+                    background: SCarData.right_front_door_open.value ? red : body.background;
+                }
+
+                right-rear-door := Rectangle {
+                    width: right-front-door.width;
+                    height: right-front-door.height;
+                    y: body.y + body.height - self.height;
+                    x: right-front-door.x;
+                    background: SCarData.right_rear_door_open.value ? red : body.background;
+                }
+            }
+        }
+    }
+}

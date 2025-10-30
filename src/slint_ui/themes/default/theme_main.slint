@@ -10,7 +10,7 @@ import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
 import { VerticalBox, ComboBox } from "std-widgets.slint";
 
 import { Arc } from "@lib/core.slint";
-import { ThemeParams } from "../themes.slint";
+import { ThemeParams } from "@themes/themes.slint";
 import { InstrumentGauge } from "components/instrument_gauge.slint";
 import { SymbolProperties } from "symbol_properties.slint";
 import { SCarData } from "@data/car_data.slint";
@@ -19,7 +19,7 @@ import {
     ApplicationState,
     GeneralSettings,
 } from "@lib/state.slint";
-import { WidgetContainer } from "../../components/widget_container.slint";
+import { WidgetContainer } from "@widgets/widget_container.slint";
 
 global DefaultThemeParams {
     out property <ThemeParams> default-theme-params: { font-family: "Montserrat", font-weight: 400 };
