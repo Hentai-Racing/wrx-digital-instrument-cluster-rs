@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut conflicting_args = vec!["fakedev", "candev", "sldev"];
     #[cfg(target_os = "linux")]
     {
-        conflicting_args += "virtual";
+        conflicting_args.push("virtual");
     }
 
     let cli_args = clap::Command::new("").version(env!("CARGO_PKG_VERSION"))
