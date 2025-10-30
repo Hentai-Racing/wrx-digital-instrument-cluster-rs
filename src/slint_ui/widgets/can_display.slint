@@ -1,4 +1,4 @@
-import { ScrollView, StandardTableView } from "std-widgets.slint";
+import { ScrollView } from "std-widgets.slint";
 
 import { ControlledFocusScope } from "@lib/core.slint";
 
@@ -6,9 +6,10 @@ export struct SCanFrameDisplay {
     id: int,
     formatted_id: string,
     dlc: int,
+    raw: [int],
     data: [string],
     bit_display: [bool],
-    byte_changes: [bool]
+    byte_changes: [duration],
 }
 
 export global CanDisplay {
@@ -107,6 +108,7 @@ export component CanDisplayWidget inherits Rectangle {
 
         VerticalLayout {
             for frame_display[i] in CanDisplay.CanFrames: Rectangle {
+                height: 30px;
                 background: mod(i, 2) == 1 ? transparent : #ffffff30;
             }
         }
@@ -134,6 +136,7 @@ export component CanDisplayWidget inherits Rectangle {
                 for frame-display[j] in CanDisplay.CanFrames: TableRect {
                     text: i < frame-display.dlc ? frame-display.data[i] : "";
                     visible: i < frame-display.dlc;
+                    background: (frame-display.byte_changes[i] != 0) ? green : transparent;
 
                     function byte-clicked() {
                         frame-display.bit_display[i] = !frame-display.bit_display[i];

@@ -1,16 +1,17 @@
 use crate::{App, CanDisplay, SCanFrameDisplay};
 
 use embedded_can::{Frame, Id};
-use slint::{ComponentHandle, Model, ModelRc, SharedString, VecModel, Weak};
+use slint::{ComponentHandle, Model, ModelRc, SharedString, Timer, VecModel, Weak};
 
-use std::cmp::max;
+use std::{cmp::max, time::Duration};
+
+const CHANGE_DURATION_MS: i64 = 2000;
 
 pub struct CanFrameDisplay {
     ui: Weak<App>,
 }
 
 impl CanFrameDisplay {
-    // TODO: implement byte changes
     pub fn new(ui: Weak<App>) -> Self {
         Self { ui }
     }
@@ -59,21 +60,30 @@ impl CanFrameDisplay {
                             Id::Standard(id) => format!("{:03X}", id.as_raw()),
                         };
 
+                        let raw: Vec<i32> = frame_data.clone().iter().map(|x| *x as i32).collect();
+
                         frames.push(SCanFrameDisplay {
                             dlc: frame_dlc as i32,
                             formatted_id: formatted_frame_id.into(),
                             id: raw_id,
+                            raw: ModelRc::new(VecModel::from(raw)),
                             data: ModelRc::new(VecModel::default()),
                             bit_display: ModelRc::new(VecModel::from(vec![false; frame_dlc])),
+                            byte_changes: ModelRc::new(VecModel::from(vec![
+                                CHANGE_DURATION_MS;
+                                frame_dlc
+                            ])),
                             ..Default::default()
                         });
 
                         frames.iter().last().unwrap() //* guaranteed unwrap
                     });
 
-                if let (Some(data), Some(bit_display)) = (
+                if let (Some(raw), Some(data), Some(bit_display), Some(byte_changes)) = (
+                    frame.raw.as_any().downcast_ref::<VecModel<i32>>(),
                     frame.data.as_any().downcast_ref::<VecModel<SharedString>>(),
                     frame.bit_display.as_any().downcast_ref::<VecModel<bool>>(),
+                    frame.byte_changes.as_any().downcast_ref::<VecModel<i64>>(),
                 ) {
                     let format_data = frame_data.iter().enumerate().map(|(i, byte)| {
                         match bit_display.row_data(i) {
@@ -81,8 +91,18 @@ impl CanFrameDisplay {
                             _ => format!("{byte:02X}").into(),
                         }
                     });
-
                     data.set_vec(Vec::from_iter(format_data));
+
+                    for (i, (new, stored)) in frame_data.iter().zip(raw.iter()).enumerate() {
+                        byte_changes.set_row_data(
+                            i,
+                            if (*new as i32) != stored {
+                                CHANGE_DURATION_MS
+                            } else {
+                                0 // TODO: count down to 0
+                            },
+                        );
+                    }
                 }
             }
 

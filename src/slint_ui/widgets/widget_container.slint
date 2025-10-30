@@ -195,7 +195,7 @@ export component WidgetContainer {
             clip: true;
 
             center-widget-container-layout := InternalContainerLayout {
-
+                // todo: disable all widgets when they're not in use
                 car-display-widget := Widget {
                     CarDisplayWidget {
                         height: 100%;
@@ -240,9 +240,20 @@ export component WidgetContainer {
                     nav-end-backward => FocusState.force-focus(can-display-widget.last-focus-id);
 
                     can-display-widget := CanDisplayWidget {
-                        running: WidgetContainerState.current-page == parent.page-number;
+                        running: parent.has-focus && (WidgetContainerState.current-page == parent.page-number);
                         height: 100%;
                         width: 100%;
+                    }
+
+                    if !self.has-focus: Rectangle {
+                        height: 80%;
+                        width: 80%;
+
+                        background: black.transparentize(5%);
+                        Text {
+                            text: "Enter to run";
+                            font-size: 25px;
+                        }
                     }
                 }
 

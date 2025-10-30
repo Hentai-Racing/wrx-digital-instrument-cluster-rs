@@ -1331,3 +1331,21 @@ export component ModuleDebug inherits VerticalLayout {
         text: SliderState.domain-id;
     }
 }
+
+// TODO: add static blinker item that has a live resettable timer
+// ex: Blinker { blink_times: 3; blink_duration: 200ms; blinking: logical_eval; }
+/*
+    async blink {
+        timer trigger {
+            if blinking {
+                blink
+                interval reset
+            } else {
+                no blink // probably disable element too
+            }
+        }
+        if !blinking -> timer interrupt {
+            interval reset
+        }
+    }
+*/
