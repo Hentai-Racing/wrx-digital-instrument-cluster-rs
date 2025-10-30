@@ -1,12 +1,13 @@
 {
-    "slint.libraryPaths": {
-        "lib": "src/slint_ui/components/core.slint"
-    },
     "evenBetterToml.formatter.alignEntries": true,
     "evenBetterToml.formatter.allowedBlankLines": 1,
     "evenBetterToml.formatter.columnWidth": 999,
     "evenBetterToml.formatter.indentEntries": true,
     "evenBetterToml.formatter.indentTables": true,
     "rust-analyzer.cargo.features": "all",
-    "chat.disableAIFeatures": true
+    "chat.disableAIFeatures": true,
+    "slint.libraryPaths": {
+        "data": "src/slint_ui/data",
+        "lib": "src/slint_ui/lib"
+    }
 }
