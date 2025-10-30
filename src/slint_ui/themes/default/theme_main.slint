@@ -246,7 +246,7 @@ export component DefaultTheme inherits Rectangle {
                     colorize: SymbolProperties.symbol_color_green;
 
                     visible: SCarData.left_turn_signal_enabled.value;
-                    rotation-angle: 180deg;
+                    transform-rotation: 180deg;
                 }
 
                 highbeam-indicator := GaugeAttachedSymbol {
@@ -528,7 +528,7 @@ export component DefaultTheme inherits Rectangle {
                         Text {
                             color: parent.colorize;
                             font-size: 20px;
-                            text: "►"; //TODO: "►" (original character) seems to not render on some versions of slint, and cause massive memory leaks on others
+                            text: ">"; //TODO: "►" (original character) seems to not render on some versions of slint, and cause massive memory leaks on others
                             x: parent.width - 5px;
                             y: parent.height / 2 - self.height / 2 + 3px;
                         }
