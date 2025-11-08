@@ -528,7 +528,7 @@ export component DefaultTheme inherits Rectangle {
                         Text {
                             color: parent.colorize;
                             font-size: 20px;
-                            text: ">"; //TODO: "►" (original character) seems to not render on some versions of slint, and cause massive memory leaks on others
+                            text: ">"; //TODO: "►" (original character) seems to not render and cause massive memory leaks on some versions of slint
                             x: parent.width - 5px;
                             y: parent.height / 2 - self.height / 2 + 3px;
                         }

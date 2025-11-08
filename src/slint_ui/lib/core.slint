@@ -8,7 +8,7 @@ export global GlobalSizing {
     out property <length> button-height: 40px;
 }
 
-struct FocusBox {
+export struct ItemBox {
     x: length,
     y: length,
     width: length,
@@ -16,7 +16,7 @@ struct FocusBox {
     border-radius: length,
 }
 
-enum ForceFailedReason {
+export enum ForceFailedReason {
     FocusDisabled,
     Stolen
 }
@@ -29,7 +29,7 @@ export global FocusState {
     out property <int> force-focus-id;
     out property <bool> attempting-force-focus;
     out property <int> last-focus-id;
-    out property <FocusBox> focus-box: { x: 4px, y: 4px, width: 100px, height: 75px, border-radius: 75px / 3 };
+    out property <ItemBox> focus-box: { x: 4px, y: 4px, width: 100px, height: 75px, border-radius: 75px / 3 };
     out property <int> failed-forces: 0;
 
     private property <bool> i-force-complete;
@@ -62,7 +62,7 @@ export global FocusState {
         self.attempting-force-focus = false;
     }
 
-    public function set-focus-box(focus-box: FocusBox) {
+    public function set-focus-box(focus-box: ItemBox) {
         self.focus-box = focus-box;
     }
 
@@ -80,7 +80,7 @@ export global DomainState {
     out property <int> last-domain-id: 0;
     out property <int> navigation-errors: 0;
 
-    in-out property <FocusBox> focus-box: { x: 0, y: 0, width: 0, height: 0 };
+    in-out property <ItemBox> focus-box: { x: 0, y: 0, width: 0, height: 0 };
 
     public function create-domain-id() -> int {
         num-domains += 1;
@@ -614,7 +614,7 @@ export global ComboBoxState {
         self.visible = true;
     }
 
-    out property <FocusBox> focus-box;
+    out property <ItemBox> focus-box;
     public function set-focus-coords(x: length, y: length, width: length, height: length) {
         if self.focus-box.x != x {
             self.focus-box.x = x;
@@ -906,7 +906,7 @@ export global SliderState {
         self.visible = true;
     }
 
-    out property <FocusBox> focus-box;
+    out property <ItemBox> focus-box;
     public function set-focus-coords(x: length, y: length, width: length, height: length) {
         if self.focus-box.x != x {
             self.focus-box.x = x;
