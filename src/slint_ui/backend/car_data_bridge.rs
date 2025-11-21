@@ -142,6 +142,7 @@ pub fn bridge(ui: Weak<App>, car_data: Arc<CarData>, config_manager: Arc<ConfigM
 
         srs_warning_light_enabled: SBDataParameter,
 
+        /* dimmer_dial_value has its own handler due to having a notification update */
         hood_open: SBDataParameter,
     }
 }

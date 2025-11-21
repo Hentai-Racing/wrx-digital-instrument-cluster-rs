@@ -1,5 +1,5 @@
 use crate::can::can_mux_manager::{MuxContext, MuxParseError, MuxParseResult};
-use crate::can::messages::wrx_2018::{self, EngineMtGear, Messages};
+use crate::can::messages::wrx_2018::{self, DimmerAndHoodDimmerDialValue, EngineMtGear, Messages};
 use crate::data::parameters::DataParameter;
 #[allow(unused_imports)]
 use crate::data::units::Unit::{self, *};
@@ -102,7 +102,7 @@ macro_rules! HandleSignalProcess {
 /// }
 ///
 /// impl CarData {
-///     (fn OverrideSetterFn(&mut self, input: &dyn Any, param: Message) {
+///     (fn SpeedOverride(&mut self, input: u16 /* &dyn Any */, param: MessageEnum) {
 ///         ...
 ///     })?
 /// }
@@ -240,6 +240,7 @@ CarData! {
     };
 
     DimmerAndHood => {
+        [dimmer_dial_override] dimmer_dial_value: DimmerAndHoodDimmerDialValue,
         hood_open: bool,
     };
 }
@@ -286,6 +287,35 @@ impl CarData {
         //     Err(e) => return Err(ParseError::MuxError(e)),
         // }
     }
+
+    pub fn dimmer_dial_override(
+        &self,
+        value: &DimmerAndHoodDimmerDialValue,
+        _message: &crate::can::messages::wrx_2018::DimmerAndHood,
+    ) {
+        let raw = u8::from(*value);
+
+        if raw <= u8::from(DimmerAndHoodDimmerDialValue::X0) {
+            self.dimmer_dial_value
+                .set_value(DimmerAndHoodDimmerDialValue::X0);
+        } else if raw <= u8::from(DimmerAndHoodDimmerDialValue::X1) {
+            self.dimmer_dial_value
+                .set_value(DimmerAndHoodDimmerDialValue::X1);
+        } else if raw <= u8::from(DimmerAndHoodDimmerDialValue::X2) {
+            self.dimmer_dial_value
+                .set_value(DimmerAndHoodDimmerDialValue::X2);
+        } else if raw <= u8::from(DimmerAndHoodDimmerDialValue::X3) {
+            self.dimmer_dial_value
+                .set_value(DimmerAndHoodDimmerDialValue::X3);
+        } else if raw <= u8::from(DimmerAndHoodDimmerDialValue::X4) {
+            self.dimmer_dial_value
+                .set_value(DimmerAndHoodDimmerDialValue::X4);
+        } else {
+            // there is a different parameter for max brightness
+            self.dimmer_dial_value
+                .set_value(DimmerAndHoodDimmerDialValue::X5);
+        }
+    }
 }
 
 //
@@ -299,6 +329,29 @@ impl Default for EngineMtGear {
 }
 
 impl PartialOrd for EngineMtGear {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        let v1 = u8::from(*self);
+        let v2 = u8::from(*other);
+
+        if v1 > v2 {
+            Some(std::cmp::Ordering::Greater)
+        } else if v1 < v2 {
+            Some(std::cmp::Ordering::Less)
+        } else if v1 == v2 {
+            Some(std::cmp::Ordering::Equal)
+        } else {
+            std::option::Option::None
+        }
+    }
+}
+
+impl Default for DimmerAndHoodDimmerDialValue {
+    fn default() -> Self {
+        DimmerAndHoodDimmerDialValue::X5
+    }
+}
+
+impl PartialOrd for DimmerAndHoodDimmerDialValue {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         let v1 = u8::from(*self);
         let v2 = u8::from(*other);
