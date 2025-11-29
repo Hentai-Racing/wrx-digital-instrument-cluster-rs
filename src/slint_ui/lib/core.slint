@@ -139,6 +139,35 @@ export component DebugHighlight {
     }
 }
 
+// export global TimerState {
+//     callback create-timer() -> int;
+//     callback trigger-timer();
+// }
+
+// export component Timer {
+//     in property <duration> interval: 1s;
+//     in property <bool> repeat: false;
+//     in property <bool> trigger-on-start: false;
+
+//     out property <bool> running: false;
+
+//     private property <int> timer-id: -1;
+//     init => {
+//         root.timer-id = TimerState.create-timer();
+//     }
+
+//     callback triggered();
+
+//     function restart() {
+//     }
+
+//     function start() {
+//     }
+
+//     function stop() {
+//     }
+// }
+
 export component Arc inherits Path {
     in property <angle> start: 90deg;
     in property <angle> end: 180deg;

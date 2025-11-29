@@ -1,11 +1,7 @@
 use crate::{App, CanDisplay, SCanFrameDisplay};
 
 use embedded_can::{Frame, Id};
-use slint::{ComponentHandle, Model, ModelRc, SharedString, Timer, VecModel, Weak};
-
-use std::{cmp::max, time::Duration};
-
-const CHANGE_DURATION_MS: i64 = 2000;
+use slint::{ComponentHandle, Model, ModelRc, SharedString, VecModel, Weak};
 
 pub struct CanFrameDisplay {
     ui: Weak<App>,
@@ -69,21 +65,18 @@ impl CanFrameDisplay {
                             raw: ModelRc::new(VecModel::from(raw)),
                             data: ModelRc::new(VecModel::default()),
                             bit_display: ModelRc::new(VecModel::from(vec![false; frame_dlc])),
-                            byte_changes: ModelRc::new(VecModel::from(vec![
-                                CHANGE_DURATION_MS;
-                                frame_dlc
-                            ])),
+                            byte_changed: ModelRc::new(VecModel::from(vec![false; frame_dlc])),
                             ..Default::default()
                         });
 
                         frames.iter().last().unwrap() //* guaranteed unwrap
                     });
 
-                if let (Some(raw), Some(data), Some(bit_display), Some(byte_changes)) = (
+                if let (Some(raw), Some(data), Some(bit_display), Some(byte_changed)) = (
                     frame.raw.as_any().downcast_ref::<VecModel<i32>>(),
                     frame.data.as_any().downcast_ref::<VecModel<SharedString>>(),
                     frame.bit_display.as_any().downcast_ref::<VecModel<bool>>(),
-                    frame.byte_changes.as_any().downcast_ref::<VecModel<i64>>(),
+                    frame.byte_changed.as_any().downcast_ref::<VecModel<bool>>(),
                 ) {
                     let format_data = frame_data.iter().enumerate().map(|(i, byte)| {
                         match bit_display.row_data(i) {
@@ -94,20 +87,17 @@ impl CanFrameDisplay {
                     data.set_vec(Vec::from_iter(format_data));
 
                     for (i, (new, stored)) in frame_data.iter().zip(raw.iter()).enumerate() {
-                        byte_changes.set_row_data(
-                            i,
-                            if (*new as i32) != stored {
-                                CHANGE_DURATION_MS
-                            } else {
-                                0 // TODO: count down to 0
-                            },
-                        );
+                        byte_changed
+                            .set_row_data(i, if new != &(stored as u8) { true } else { false });
                     }
                 }
             }
 
             can_display.set_CanFrames(display_frames);
-            can_display.set_highest_dlc(max(frame_dlc as i32, can_display.get_highest_dlc()));
+            can_display.set_highest_dlc(std::cmp::max(
+                frame_dlc as i32,
+                can_display.get_highest_dlc(),
+            ));
         });
     }
 }

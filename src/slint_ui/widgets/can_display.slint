@@ -9,7 +9,7 @@ export struct SCanFrameDisplay {
     raw: [int],
     data: [string],
     bit_display: [bool],
-    byte_changes: [duration],
+    byte_changed: [bool],
 }
 
 export global CanDisplay {
@@ -134,9 +134,36 @@ export component CanDisplayWidget inherits Rectangle {
 
             for data_col[i] in CanDisplay.highest-dlc: VerticalLayout {
                 for frame-display[j] in CanDisplay.CanFrames: TableRect {
+                    property <bool> byte-change: frame-display.byte_changed[i] && root.running;
+                    property <bool> showing-change <=> frame-change-timer.running;
+
                     text: i < frame-display.dlc ? frame-display.data[i] : "";
                     visible: i < frame-display.dlc;
-                    background: (frame-display.byte_changes[i] != 0) ? green : transparent;
+                    background: showing-change ? green : transparent;
+
+                    changed byte-change => {
+                        if byte-change {
+                            frame-change-timer.start();
+                            frame-change-timer.restart();
+                        }
+                    }
+
+                    Rectangle {
+                        x: parent.width - self.width - 2px;
+                        height: 5px;
+                        width: self.height;
+                        border-radius: self.height / 2;
+
+                        background: green;
+                        visible: byte-change;
+                    }
+
+                    frame-change-timer := Timer {
+                        interval: 1s;
+                        triggered => {
+                            self.stop();
+                        }
+                    }
 
                     function byte-clicked() {
                         frame-display.bit_display[i] = !frame-display.bit_display[i];
