@@ -134,32 +134,21 @@ export component CanDisplayWidget inherits Rectangle {
 
             for data_col[i] in CanDisplay.highest-dlc: VerticalLayout {
                 for frame-display[j] in CanDisplay.CanFrames: TableRect {
-                    property <bool> byte-change: frame-display.byte_changed[i] && root.running;
+                    property <bool> byte-change: frame-display.byte_changed[i];
                     property <bool> showing-change <=> frame-change-timer.running;
 
                     text: i < frame-display.dlc ? frame-display.data[i] : "";
                     visible: i < frame-display.dlc;
-                    background: showing-change ? green : transparent;
+                    background: showing-change ? green.transparentize(25%) : transparent;
 
                     changed byte-change => {
-                        if byte-change {
-                            frame-change-timer.start();
-                            frame-change-timer.restart();
-                        }
-                    }
-
-                    Rectangle {
-                        x: parent.width - self.width - 2px;
-                        height: 5px;
-                        width: self.height;
-                        border-radius: self.height / 2;
-
-                        background: green;
-                        visible: byte-change;
+                        frame-change-timer.start();
+                        frame-change-timer.restart();
                     }
 
                     frame-change-timer := Timer {
                         interval: 1s;
+
                         triggered => {
                             self.stop();
                         }

@@ -86,9 +86,20 @@ impl CanFrameDisplay {
                     });
                     data.set_vec(Vec::from_iter(format_data));
 
-                    for (i, (new, stored)) in frame_data.iter().zip(raw.iter()).enumerate() {
-                        byte_changed
-                            .set_row_data(i, if new != &(stored as u8) { true } else { false });
+                    for (i, ((new, stored), current_changed)) in frame_data
+                        .iter()
+                        .zip(raw.iter())
+                        .zip(byte_changed.iter())
+                        .enumerate()
+                    {
+                        byte_changed.set_row_data(
+                            i,
+                            if new != &(stored as u8) {
+                                !current_changed
+                            } else {
+                                current_changed
+                            },
+                        );
                     }
                 }
             }
