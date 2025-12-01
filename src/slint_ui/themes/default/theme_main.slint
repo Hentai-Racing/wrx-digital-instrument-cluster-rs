@@ -12,6 +12,9 @@ import { VerticalBox, ComboBox } from "std-widgets.slint";
 import { Arc } from "@lib/core.slint";
 import { ThemeParams } from "@themes/themes.slint";
 import { InstrumentGauge } from "components/instrument_gauge.slint";
+import {
+    InteriorBrightnessIndicator,
+} from "components/car_interior_brightness_indicator.slint";
 import { SymbolProperties } from "symbol_properties.slint";
 import { SCarData } from "@data/car_data.slint";
 import { SUnitSystem } from "@lib/units.slint";
@@ -652,6 +655,13 @@ export component DefaultTheme inherits Rectangle {
 
         bottom-span := PrimarySection {
             height: 8%;
+
+            InteriorBrightnessIndicator {
+                width: 250px;
+                height: 50px;
+                y: odometer-text-section.y - self.height - 50px;
+            }
+
             HorizontalLayout {
                 alignment: center;
                 odometer-text-section := Rectangle {

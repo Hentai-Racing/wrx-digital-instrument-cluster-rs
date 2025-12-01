@@ -139,35 +139,6 @@ export component DebugHighlight {
     }
 }
 
-// export global TimerState {
-//     callback create-timer() -> int;
-//     callback trigger-timer();
-// }
-
-// export component Timer {
-//     in property <duration> interval: 1s;
-//     in property <bool> repeat: false;
-//     in property <bool> trigger-on-start: false;
-
-//     out property <bool> running: false;
-
-//     private property <int> timer-id: -1;
-//     init => {
-//         root.timer-id = TimerState.create-timer();
-//     }
-
-//     callback triggered();
-
-//     function restart() {
-//     }
-
-//     function start() {
-//     }
-
-//     function stop() {
-//     }
-// }
-
 export component Arc inherits Path {
     in property <angle> start: 90deg;
     in property <angle> end: 180deg;
@@ -1138,43 +1109,115 @@ export component Slider inherits Button {
     activated => activate-open();
 }
 
-// TODO: notifications
-// likely requires backend logic for timing and generating the images
+component NotificationCore {
+    // TODO: add backend support to allow debug triggering of notification ids
+    in property <duration> stay-duration: 2s;
+    in property <bool> notify-on-init: true;
+    in property <bool> interruptible: false;
 
-export struct Notification {
-    id: string,
-    title: string,
-    body: string,
+    out property <bool> showing <=> i-timer.running;
+
+    callback __i-show();
+    callback __i-hide();
+
+    function update() {
+        if self.showing {
+            __i-show();
+        } else {
+            __i-hide();
+        }
+    }
+
+    changed showing => {
+        self.update();
+    }
+
+    public function restart() {
+        i-timer.start();
+        i-timer.restart();
+    }
+
+    public function interrupt() {
+        if interruptible {
+            i-timer.stop();
+        }
+    }
+
+    init => {
+        if self.notify-on-init {
+            self.restart();
+        }
+        self.update();
+    }
+
+    i-timer := Timer {
+        interval: root.stay-duration;
+        running: false;
+
+        triggered => {
+            self.stop();
+        }
+    }
+
+    @children
 }
 
-export global NotificationState {
-    in-out property <[Notification]> notifications;
-}
+export component Notification inherits NotificationCore {
+    i-container := Rectangle {
+        width: 100%;
+        height: 100%;
+        clip: true;
+        background: darkkhaki;
+        opacity: root.showing ? 1 : 0;
 
-export component NotificationObjectCore {
-    HorizontalLayout {
-        i-icon := Image {
-            width: 50px;
-            height: 50px;
+        changed opacity => {
+            if self.opacity == 0 {
+                self.visible = false;
+            } else {
+                self.visible = true;
+            }
         }
 
-        VerticalLayout {
-            i-title := Text { }
-
-            i-body := Text { }
+        animate opacity {
+            duration: 250ms;
+            easing: Easing.ease-in-out-quad;
         }
+
+        @children
     }
 }
 
-export component NotificationObjectAnimated inherits NotificationObjectCore { }
+export component NotificationPopup inherits NotificationCore {
+    __i-show => {
+        i-popup.show();
+    }
 
-export component NotificationObject {
-    if AccessibilitySettings.animations-enabled: NotificationObjectAnimated { }
-    if !AccessibilitySettings.animations-enabled: NotificationObjectCore { }
-}
+    i-popup := PopupWindow {
+        width <=> root.width;
+        height <=> root.height;
+        close-policy: no-auto-close;
 
-export component NotificationMain {
-    for notification[i] in NotificationState.notifications: NotificationObject { }
+        i-container := Rectangle {
+            width: 100%;
+            height: 100%;
+            clip: true;
+            background: darkkhaki;
+            opacity: root.showing ? 1 : 0;
+
+            changed opacity => {
+                if self.opacity == 0 {
+                    i-popup.close();
+                }
+            }
+
+            animate opacity {
+                duration: 250ms;
+                easing: Easing.ease-in-out-quad;
+            }
+
+            @children
+        }
+    }
 }
 
 export component TestComponentSuite inherits VerticalLayout {

@@ -1,0 +1,27 @@
+import { Notification } from "@lib/core.slint";
+import { SCarData } from "@data/car_data.slint";
+// import {
+//     SFDataParameter,
+//     SIDataParameter,
+//     SBDataParameter,
+//     SStrDataParameter,
+// } from "@data/data_parameter.slint";
+
+export component InteriorBrightnessIndicator {
+    private property <string> dimmer_value: SCarData.dimmer_dial_value.value;
+
+    changed dimmer_value => {
+        i-notification.restart()
+    }
+
+    i-notification := Notification {
+        width: 100%;
+        height: 100%;
+        notify-on-init: true;
+
+        Text {
+            color: white;
+            text: dimmer_value;
+        }
+    }
+}

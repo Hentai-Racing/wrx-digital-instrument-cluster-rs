@@ -142,27 +142,41 @@ pub fn bridge(ui: Weak<App>, car_data: Arc<CarData>, config_manager: Arc<ConfigM
 
         srs_warning_light_enabled: SBDataParameter,
 
-        /* dimmer_dial_value has its own handler due to having a notification update */
         hood_open: SBDataParameter,
+        dimmer_dial_value: SStrDataParameter,
     }
 }
 
 // Special type conversion implementations
 
-use crate::can::messages::wrx_2018::EngineMtGear;
+use crate::can::messages::wrx_2018::{DimmerAndHoodDimmerDialValue, EngineMtGear};
 
 impl Into<slint::SharedString> for EngineMtGear {
     fn into(self) -> slint::SharedString {
         match &self {
-            EngineMtGear::Floating => " ".into(),
-            EngineMtGear::Neutral => "N".into(),
-            EngineMtGear::X1 => "1".into(),
-            EngineMtGear::X2 => "2".into(),
-            EngineMtGear::X3 => "3".into(),
-            EngineMtGear::X4 => "4".into(),
-            EngineMtGear::X5 => "5".into(),
-            EngineMtGear::X6 => "6".into(),
+            Self::Floating => " ".into(),
+            Self::Neutral => "N".into(),
+            Self::X1 => "1".into(),
+            Self::X2 => "2".into(),
+            Self::X3 => "3".into(),
+            Self::X4 => "4".into(),
+            Self::X5 => "5".into(),
+            Self::X6 => "6".into(),
             _ => "?ERR_MT_GEAR".into(),
+        }
+    }
+}
+
+impl Into<slint::SharedString> for DimmerAndHoodDimmerDialValue {
+    fn into(self) -> slint::SharedString {
+        match &self {
+            Self::X0 => "0".into(),
+            Self::X1 => "1".into(),
+            Self::X2 => "2".into(),
+            Self::X3 => "3".into(),
+            Self::X4 => "4".into(),
+            Self::X5 => "5".into(),
+            Self::_Other(val) => format!("?ERR_DIMMER{{ {} }}", *val).into(),
         }
     }
 }
