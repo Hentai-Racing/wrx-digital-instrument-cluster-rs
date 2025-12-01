@@ -1,13 +1,9 @@
 import { Notification } from "@lib/core.slint";
 import { SCarData } from "@data/car_data.slint";
-// import {
-//     SFDataParameter,
-//     SIDataParameter,
-//     SBDataParameter,
-//     SStrDataParameter,
-// } from "@data/data_parameter.slint";
 
 export component InteriorBrightnessIndicator {
+    width: 275px;
+    height: 60px;
     private property <string> dimmer_value: SCarData.dimmer_dial_value.value;
 
     changed dimmer_value => {
@@ -19,9 +15,39 @@ export component InteriorBrightnessIndicator {
         height: 100%;
         notify-on-init: true;
 
-        Text {
-            color: white;
-            text: dimmer_value;
+        VerticalLayout {
+            alignment: center;
+            HorizontalLayout {
+                padding: 5px;
+
+                Image {
+                    height: 50px;
+                    width: 50px;
+                    source: @image-url("../../../../../resources/images-svg/interior-brightness-icon.svg");
+                    colorize: white;
+
+                    transform-rotation: dimmer_value.to-float() * (360deg / 5);
+                    animate transform-rotation { // TODO: animation
+                        duration: 100ms;
+                        easing: Easing.ease-in-out-quad;
+                    }
+                }
+
+                VerticalLayout {
+                    alignment: center;
+                    HorizontalLayout {
+                        alignment: start;
+                        spacing: 5px;
+                        padding: 5px;
+                        for rect[i] in 5: Rectangle {
+                            width: 35px;
+                            height: 7.5px;
+                            border-radius: self.height / 2;
+                            background: dimmer_value >= i ? white : white.darker(75%);
+                        }
+                    }
+                }
+            }
         }
     }
 }

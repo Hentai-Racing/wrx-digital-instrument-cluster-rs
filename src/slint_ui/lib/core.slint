@@ -1109,11 +1109,11 @@ export component Slider inherits Button {
     activated => activate-open();
 }
 
-component NotificationCore {
+component NotificationCore inherits Button {
     // TODO: add backend support to allow debug triggering of notification ids
     in property <duration> stay-duration: 2s;
     in property <bool> notify-on-init: true;
-    in property <bool> interruptible: false;
+    in property <bool> interruptible: true;
 
     out property <bool> showing <=> i-timer.running;
 
@@ -1159,6 +1159,8 @@ component NotificationCore {
         }
     }
 
+    activated => interrupt();
+
     @children
 }
 
@@ -1167,7 +1169,6 @@ export component Notification inherits NotificationCore {
         width: 100%;
         height: 100%;
         clip: true;
-        background: darkkhaki;
         opacity: root.showing ? 1 : 0;
 
         changed opacity => {
@@ -1178,7 +1179,7 @@ export component Notification inherits NotificationCore {
             }
         }
 
-        animate opacity {
+        animate opacity { // TODO: animation
             duration: 250ms;
             easing: Easing.ease-in-out-quad;
         }
