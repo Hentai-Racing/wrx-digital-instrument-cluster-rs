@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::can::can_mux_manager::{MuxContext, MuxParseError, MuxParseResult};
 use crate::can::messages::wrx_2018::{self, DimmerAndHoodDimmerDialValue, EngineMtGear, Messages};
 use crate::data::parameters::DataParameter;
@@ -135,6 +137,21 @@ macro_rules! CarData {
                     &self.$param
                 }
             )*)*
+
+            pub fn set_param_by_name(&self, param_name: &str, value: &str) {
+                match param_name {
+                    $($(stringify!($param) => {
+                        match value.parse::<$type>() {
+                            Ok(value) => self.$param.set_value(value),
+                            Err(e) => eprintln!("Failed to set {} to {value}: {e:?}", stringify!($param))
+                        }
+                    })*)*
+                    _ => {
+                        eprintln!("Failed to set {param_name} to {value}: {param_name} is not a valid parameter")
+                    }
+                }
+            }
+
         }
 
         impl Default for CarData {
@@ -364,6 +381,38 @@ impl PartialOrd for DimmerAndHoodDimmerDialValue {
             Some(std::cmp::Ordering::Equal)
         } else {
             std::option::Option::None
+        }
+    }
+}
+
+impl FromStr for EngineMtGear {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_lowercase().as_str() {
+            "1" => Ok(Self::X1),
+            "2" => Ok(Self::X2),
+            "3" => Ok(Self::X3),
+            "4" => Ok(Self::X4),
+            "5" => Ok(Self::X5),
+            "6" => Ok(Self::X6),
+            "f" | "floating" => Ok(Self::Floating),
+            "n" | "neutral" => Ok(Self::Neutral),
+            _ => Err(()),
+        }
+    }
+}
+
+impl FromStr for DimmerAndHoodDimmerDialValue {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_lowercase().as_str() {
+            "0" => Ok(Self::X0),
+            "1" => Ok(Self::X1),
+            "2" => Ok(Self::X2),
+            "3" => Ok(Self::X3),
+            "4" => Ok(Self::X4),
+            "5" => Ok(Self::X5),
+            _ => Err(()),
         }
     }
 }

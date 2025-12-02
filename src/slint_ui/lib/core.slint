@@ -71,9 +71,6 @@ export global FocusState {
     }
 }
 
-// TODO: add sub-domain with focus wrapper for components like sliders or settings boxes that contain their own focusscope, but exist in a larger scope
-// allows the main focusscope to be interacted with while indicating which sub-domain is active
-
 export global DomainState {
     out property <int> num-domains: 1;
     out property <int> current-domain-id: 0;
@@ -192,12 +189,8 @@ export component Arc inherits Path {
 
 export component FocusHoverRect inherits Rectangle {
     private property <brush> hover-color: white;
-    private property <float> hover-fade: 100%;
     private property <length> size-offset: FocusState.focus-highlight-size;
-    private property <length> new-height: FocusState.focus-box.height + size-offset * 2;
-    private property <length> corner-size: self.border-radius;
-
-    property <float> radial-percentage: (size-offset / corner-size);
+    private property <length> new-height: FocusState.focus-box.height + size-offset * 2; // seperare property to allow height and border radius to animate simultaneously
 
     x: FocusState.focus-box.x - size-offset;
     y: FocusState.focus-box.y - size-offset;
@@ -205,100 +198,8 @@ export component FocusHoverRect inherits Rectangle {
     height: new-height;
     border-radius: FocusState.focus-box.border-radius * (new-height / FocusState.focus-box.height);
     background: transparent;
-
-    top-rect := Rectangle {
-        y: 0;
-        x: root.width / 2 - self.width / 2;
-        height: root.size-offset;
-        width: root.width - root.corner-size * 2;
-
-        background: white;
-        // background: @linear-gradient(0deg, root.hover-color, root.hover-color.transparentize(hover-fade));
-    }
-
-    bottom-rect := Rectangle {
-        y: root.height - root.size-offset;
-        x: top-rect.x;
-        height: root.size-offset;
-        width: top-rect.width;
-
-        background: white;
-        // background: @linear-gradient(180deg, root.hover-color, root.hover-color.transparentize(hover-fade));
-    }
-
-    left-rect := Rectangle {
-        x: 0;
-        y: root.height / 2 - self.height / 2;
-        width: root.size-offset;
-        height: root.height - root.corner-size * 2;
-
-        background: white;
-        // background: @linear-gradient(270deg, root.hover-color, root.hover-color.transparentize(hover-fade));
-    }
-
-    right-rect := Rectangle {
-        x: root.width - self.width;
-        y: left-rect.y;
-        width: left-rect.width;
-        height: left-rect.height;
-
-        background: white;
-        // background: @linear-gradient(90deg, root.hover-color, root.hover-color.transparentize(hover-fade));
-    }
-
-    // TODO: figure out the gradient rate mismatch
-    top-left-corner-rect := Arc {
-        start: 90deg;
-        // fill: @radial-gradient(circle, root.hover-color radial-percentage, root.hover-color.transparentize(hover-fade) 100%);
-        end: 180deg;
-        x: 0;
-        y: 0;
-        width: root.corner-size * 2;
-        height: root.corner-size * 2;
-        inner-radius: root.corner-size - root.size-offset;
-        anti-alias: true;
-    }
-
-    // Rectangle {
-    //     background: red;
-    //     x: 0;
-    //     y: root.corner-size * radial-percentage;
-    //     width: root.corner-size * 2;
-    //     height: 1px;
-    // }
-
-    bottom-left-corner-rect := Arc {
-        start: 180deg;
-        end: 270deg;
-        x: 0;
-        y: root.height - self.height;
-        width: top-left-corner-rect.width;
-        height: top-left-corner-rect.height;
-        inner-radius: root.corner-size - root.size-offset;
-        anti-alias: true;
-    }
-
-    top-right-corner-rect := Arc {
-        start: 0deg;
-        end: 90deg;
-        x: root.width - self.width;
-        y: 0;
-        width: root.corner-size * 2;
-        height: root.corner-size * 2;
-        inner-radius: root.corner-size - root.size-offset;
-        anti-alias: true;
-    }
-
-    bottom-right-corner-rect := Arc {
-        start: 270deg;
-        end: 360deg;
-        x: root.width - self.width;
-        y: root.height - self.height;
-        width: root.corner-size * 2;
-        height: root.corner-size * 2;
-        inner-radius: root.corner-size - root.size-offset;
-        anti-alias: true;
-    }
+    border-width: size-offset;
+    border-color: hover-color;
 }
 
 export component AnimatedFocusHoverRect inherits FocusHoverRect {
@@ -326,7 +227,8 @@ export component ControlledFocusScope inherits Rectangle {
     forward-focus: i-focus;
 
     function update-coords() {
-        // TODO: tie to changes in geometry; https://github.com/slint-ui/slint/issues/7849
+        // TODO: tie to changes in geometry;
+        // TRACKING: https://github.com/slint-ui/slint/issues/7849
         FocusState.set-focus-box({
             x: root.absolute-position.x,
             y: root.absolute-position.y,
@@ -671,7 +573,8 @@ component ComboBoxSelectionBoxButton inherits Button {
     }
 }
 
-// TODO: add animated version that fades in; https://github.com/slint-ui/slint/issues/348
+// TODO: add animated version that fades in;
+// TRACKING: https://github.com/slint-ui/slint/issues/348
 // TODO: add background blur (may require image generation in Rust, possibly using Slint's window capture)
 export component ComboBoxSelectionBox inherits FocusDomain {
     in-out property <string> current-value: ComboBoxState.current-value;
@@ -1110,12 +1013,12 @@ export component Slider inherits Button {
 }
 
 component NotificationCore {
-    // TODO: add backend support to allow debug triggering of notification ids
     in property <duration> stay-duration: 2s;
     in property <bool> notify-on-init: true;
     in property <bool> interruptible: true;
+    in property <bool> persistent: false;
 
-    out property <bool> showing <=> i-timer.running;
+    out property <bool> showing: persistent || i-timer.running;
 
     callback __i-show();
     callback __i-hide();
@@ -1177,7 +1080,7 @@ export component Notification inherits NotificationCore {
             }
         }
 
-        animate opacity { // TODO: animation
+        animate opacity { // TRACKING: https://github.com/slint-ui/slint/issues/348
             duration: 250ms;
             easing: Easing.ease-in-out-quad;
         }

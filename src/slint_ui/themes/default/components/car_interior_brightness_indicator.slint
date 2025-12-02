@@ -1,10 +1,47 @@
-import { Notification } from "@lib/core.slint";
+import { Notification, Arc } from "@lib/core.slint";
 import { SCarData } from "@data/car_data.slint";
+import { RadialRect } from "instrument_gauge.slint";
+
+component Sun inherits Rectangle {
+    in property <int> light-rays: 10;
+    in property <float> light-value: 100%;
+
+    private property <float> clamp-light-value: light-value.clamp(0.1, 1);
+
+    height <=> self.width;
+
+    i-top-arc := Arc {
+        inner-radius: root.width / 5;
+        outer-radius: root.width / 4;
+        start: 180deg;
+        end: 0deg;
+    }
+
+    Arc {
+        inner-radius: i-top-arc.inner-radius;
+        outer-radius: i-top-arc.outer-radius;
+        start: 180deg;
+        end: 360deg;
+    }
+
+    for ray[i] in light-rays: RadialRect {
+        rotation: (360deg / light-rays * i) + (root.clamp-light-value * 360deg);
+        width: (self.inner-radius * 2) + (root.width - self.inner-radius * 2) * root.clamp-light-value;
+        height: self.width;
+        inner-radius: i-top-arc.inner-radius * 1.4;
+        thickness: 6deg;
+
+        animate height, width, rotation {
+            duration: 100ms;
+            easing: Easing.ease-in-out-quad;
+        }
+    }
+}
 
 export component InteriorBrightnessIndicator {
     width: 350px;
     height: 60px;
-    private property <string> dimmer_value: SCarData.dimmer_dial_value.value;
+    private property <float> dimmer_value: SCarData.dimmer_dial_value.value.to-float();
 
     private property <int> num-settings: 6;
 
@@ -23,17 +60,10 @@ export component InteriorBrightnessIndicator {
                 HorizontalLayout {
                     padding: 5px;
 
-                    Image {
+                    Sun {
                         height: 50px;
                         width: 50px;
-                        source: @image-url("@svg/interior-brightness-icon.svg");
-                        colorize: white;
-
-                        transform-rotation: dimmer_value.to-float() * (360deg / num-settings);
-                        animate transform-rotation { // TODO: animation
-                        duration: 100ms;
-                            easing: Easing.ease-in-out-quad;
-                        }
+                        light-value: dimmer_value / num-settings;
                     }
 
                     VerticalLayout {

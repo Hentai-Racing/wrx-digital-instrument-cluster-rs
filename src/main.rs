@@ -407,16 +407,20 @@ async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<Ha
                 }
                 "h" | "help" => {
                     println!();
-                    println!("h | help  => show this help menu");
-                    println!("\nq | quit  => close application");
-                    println!("\nnav up    => force ui navigation up");
-                    println!("    down  => force ui navigation down");
-                    println!("    enter => force ui navigation enter");
+                    println!("h | help     => show this help menu");
+                    println!("\nq | quit     => close application");
+                    println!("\nnav up       => force ui navigation up");
+                    println!("    down     => force ui navigation down");
+                    println!("    enter    => force ui navigation enter");
                     println!(
-                        "\nset_param => set the value of any `<Parameter>` in `CONFIG_MANAGER`"
+                        "\nset_param    => set the value of any `<Parameter>` in `CONFIG_MANAGER`"
                     );
-                    println!("    usage |  set_param <path> <value>");
-                    println!("  example |  set_param user.general.unit_system uscs");
+                    println!("    usage    |  set_param <path> <value>");
+                    println!("  example    |  set_param user.general.unit_system uscs");
+                    println!("\nset_car_data => set the value of any `<Parameter>` in `CAR_DATA`");
+                    println!("    usage    |  set_car_data <param> <value>");
+                    println!("  example    |  set_car_data engine_rpm 1234");
+                    println!("     note    |  does not update immediately due to unknown bug");
                     println!();
                 }
                 "nav" => {
@@ -464,6 +468,13 @@ async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<Ha
                     } else {
                         eprintln!("Failed to parse param path")
                     }
+                }
+                "set_car_data" => {
+                    // FIXME: if canbus and sim are both disabled, you must update multiple params before seeing results
+                    let param = *cmd_splt.get(1).unwrap_or(&"");
+                    let value = *cmd_splt.get(2).unwrap_or(&"");
+
+                    CAR_DATA.set_param_by_name(param, value);
                 }
                 x => eprintln!("Unknown command `{x}`"),
             }

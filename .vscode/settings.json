@@ -6,6 +6,12 @@
     "evenBetterToml.formatter.indentTables": true,
     "rust-analyzer.cargo.features": "all",
     "chat.disableAIFeatures": true,
+    "todo-tree.general.tags": [
+        "TODO",
+        "FIXME",
+        "TRACKING",
+        "XXX"
+    ],
     "slint.libraryPaths": {
         "images": "resources/images",
         "lib": "src/slint_ui/lib",
@@ -14,5 +20,5 @@
         "data": "src/slint_ui/data",
         "widgets": "src/slint_ui/widgets",
         "fonts": "resources/fonts"
-    }
+    },
 }
