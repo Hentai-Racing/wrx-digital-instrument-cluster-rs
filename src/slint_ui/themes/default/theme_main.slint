@@ -1,11 +1,11 @@
-import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Black.ttf";
-import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Bold.ttf";
-import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-ExtraLight.ttf";
-import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Light.ttf";
-import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Medium.ttf";
-import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Regular.ttf";
-import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-SemiBold.ttf";
-import "../../../../resources/fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-Black.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-Bold.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-ExtraLight.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-Light.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-Medium.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-Regular.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-SemiBold.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
 
 import { VerticalBox, ComboBox } from "std-widgets.slint";
 
@@ -205,7 +205,7 @@ export component DefaultTheme inherits Rectangle {
 
                     coolant-temp-light := SymbolLight {
                         scale: 60%;
-                        source: @image-url("../../../../resources/images/coolant-temp-low-high-indicator-light.png");
+                        source: @image-url("@images/coolant-temp-low-high-indicator-light.png");
                         y: coolant-temp-gauge.height - self.height - 60px;
                         colorize: coolant-temp-gauge.needle-sweep-color == SymbolProperties.symbol_color_white ? SymbolProperties.symbol_color_white.transparentize(75%) : coolant-temp-gauge.needle-sweep-color;
                     }
@@ -245,7 +245,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: 40deg;
 
-                    source: @image-url("../../../../resources/images-svg/turn-signal-arrow.svg");
+                    source: @image-url("@svg/turn-signal-arrow.svg");
                     colorize: SymbolProperties.symbol_color_green;
 
                     visible: SCarData.left_turn_signal_enabled.value;
@@ -253,7 +253,7 @@ export component DefaultTheme inherits Rectangle {
                 }
 
                 highbeam-indicator := GaugeAttachedSymbol {
-                    source: @image-url("../../../../resources/images/highbeam-indicator-light.png");
+                    source: @image-url("@images/highbeam-indicator-light.png");
                     colorize: SymbolProperties.symbol_color_blue;
 
                     angle: left-turn-signal.angle + SymbolProperties.symbol_angle_padding;
@@ -267,7 +267,7 @@ export component DefaultTheme inherits Rectangle {
 
                 foglight-indicator := GaugeAttachedSymbol {
                     scale: 0.8;
-                    source: @image-url("../../../../resources/images/front-fog-indicator-light.png");
+                    source: @image-url("@images/front-fog-indicator-light.png");
                     colorize: SymbolProperties.symbol_color_green;
 
                     angle: highbeam-indicator.angle + SymbolProperties.symbol_angle_padding;
@@ -286,7 +286,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: 360deg - 40deg;
 
-                    source: @image-url("../../../../resources/images/check-engine-warning-light-icon.png");
+                    source: @image-url("@images/check-engine-warning-light-icon.png");
                     colorize: SymbolProperties.symbol-color-yellow;
 
                     visible: SCarData.check_engine_light_enabled.value;
@@ -299,7 +299,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: check-engine-light.angle + SymbolProperties.symbol_angle_padding;
 
-                    source: @image-url("../../../../resources/images-svg/oil-pressure-warning-light.svg");
+                    source: @image-url("@svg/oil-pressure-warning-light.svg");
                     colorize: SymbolProperties.symbol-color-red;
 
                     visible: SCarData.oil_pressure_warning_light_enabled.value;
@@ -312,7 +312,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: left-turn-signal.angle - SymbolProperties.symbol_angle_padding;
 
-                    source: @image-url("../../../../resources/images/engine-hood-open-warning-light.png");
+                    source: @image-url("@images/engine-hood-open-warning-light.png");
                     colorize: SymbolProperties.symbol-color-red;
 
                     visible: SCarData.hood_open.value;
@@ -325,7 +325,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: oil-pressure-warning-light.angle + SymbolProperties.symbol_angle_padding;
 
-                    source: @image-url("../../../../resources/images/dooropen-warning-light.png");
+                    source: @image-url("@images/door-open-warning-light.png");
                     colorize: SymbolProperties.symbol-color-red;
 
                     visible: SCarData.any_door_open.value;
@@ -338,7 +338,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: 180deg + 40deg;
 
-                    source: @image-url("../../../../resources/images-svg/rcta-warning-light-off.svg");
+                    source: @image-url("@svg/rcta-warning-light-off.svg");
                     colorize: SymbolProperties.symbol-color-yellow;
 
                     visible: SCarData.rcta_disabled.value;
@@ -352,7 +352,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: rcta-disabled-warning-light.angle - SymbolProperties.symbol_angle_padding;
 
-                    source: @image-url("../../../../resources/images/srs-airbag-system-warning-light.png");
+                    source: @image-url("@images/srs-airbag-system-warning-light.png");
                     colorize: SymbolProperties.symbol-color-yellow;
 
                     visible: SCarData.srs_warning_light_enabled.value;
@@ -438,7 +438,7 @@ export component DefaultTheme inherits Rectangle {
 
                     cruise-control-image := SymbolLight {
                         colorize: SCarData.cruise_control_set_enabled.value ? SymbolProperties.symbol_color_green : SymbolProperties.symbol_color_white;
-                        source: @image-url("../../../../resources/images-svg/cruise-control-indicator-light.svg");
+                        source: @image-url("@svg/cruise-control-indicator-light.svg");
 
                         y: speedometer-label.y - self.height;
 
@@ -524,7 +524,7 @@ export component DefaultTheme inherits Rectangle {
 
                     fuel-level-light := SymbolLight {
                         scale: 60%;
-                        source: @image-url("../../../../resources/images/lowfuel-warning-light.png");
+                        source: @image-url("@images/lowfuel-warning-light.png");
                         y: fuel-level-gauge.height - self.height - 60px;
                         colorize: fuel-level-gauge.needle-sweep-color == SymbolProperties.symbol_color_white ? SymbolProperties.symbol_color_white.transparentize(75%) : fuel-level-gauge.needle-sweep-color;
 
@@ -559,7 +559,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: 180deg - highbeam-indicator.angle;
 
-                    source: @image-url("../../../../resources/images/headlight-indicator-light.png");
+                    source: @image-url("@images/headlight-indicator-light.png");
                     colorize: SymbolProperties.symbol-color-green;
 
                     visible: SCarData.lowbeams_enabled.value;
@@ -579,7 +579,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: 180deg - foglight-indicator.angle;
 
-                    source: @image-url("../../../../resources/images/seatbelt-warning-light.png");
+                    source: @image-url("@images/seatbelt-warning-light.png");
                     colorize: SymbolProperties.symbol-color-red;
 
                     visible: SCarData.driver_seatbelt_warning_enabled.value;
@@ -592,7 +592,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: 360deg - 40deg;
 
-                    source: @image-url("../../../../resources/images-svg/hillstartassist-warning-light.svg");
+                    source: @image-url("@svg/hillstartassist-warning-light.svg");
                     colorize: SymbolProperties.symbol-color-yellow;
 
                     visible: SCarData.hill_assist_enabled.value;
@@ -605,7 +605,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: 360deg - 40deg + SymbolProperties.symbol_angle_padding;
 
-                    source: @image-url("../../../../resources/images-svg/windshield-washer-fluid-warning.svg");
+                    source: @image-url("@svg/windshield-washer-fluid-warning.svg");
                     colorize: SymbolProperties.symbol-color-yellow;
 
                     // TODO: windshield-washer-fluid-indicator
@@ -619,7 +619,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: 180deg + 40deg;
 
-                    source: @image-url("../../../../resources/images/vehicle-dynamics-control-off-indicator-light.png");
+                    source: @image-url("@images/vehicle-dynamics-control-off-indicator-light.png");
                     colorize: SymbolProperties.symbol-color-yellow;
 
                     visible: SCarData.traction_control_disabled.value;
@@ -632,7 +632,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: vdc-off-warning-indicator.angle - SymbolProperties.symbol_angle_padding;
 
-                    source: @image-url("../../../../resources/images/traction-mode-indicator-light.png");
+                    source: @image-url("@images/traction-mode-indicator-light.png");
                     colorize: SymbolProperties.symbol-color-green;
 
                     visible: SCarData.active_tq_vectoring_enabled.value;
@@ -645,7 +645,7 @@ export component DefaultTheme inherits Rectangle {
 
                     angle: vdc-off-warning-indicator.angle - SymbolProperties.symbol_angle_padding * 2;
 
-                    source: @image-url("../../../../resources/images/tpms-warning-light.png");
+                    source: @image-url("@images/tpms-warning-light.png");
                     colorize: SymbolProperties.symbol-color-yellow;
 
                     visible: SCarData.tpms_warning_light_enabled.value;

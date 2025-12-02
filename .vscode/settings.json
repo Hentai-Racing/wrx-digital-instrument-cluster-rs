@@ -7,9 +7,12 @@
     "rust-analyzer.cargo.features": "all",
     "chat.disableAIFeatures": true,
     "slint.libraryPaths": {
-        "data": "src/slint_ui/data",
+        "images": "resources/images",
         "lib": "src/slint_ui/lib",
         "themes": "src/slint_ui/themes",
-        "widgets": "src/slint_ui/widgets"
+        "svg": "resources/svg",
+        "data": "src/slint_ui/data",
+        "widgets": "src/slint_ui/widgets",
+        "fonts": "resources/fonts"
     }
 }

@@ -12,6 +12,24 @@ const MANIFEST_DIR: LazyLock<PathBuf> =
     LazyLock::new(|| PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()));
 /// path to the directory that contains `main.slint`
 const SLINT_PATH: LazyLock<PathBuf> = LazyLock::new(|| MANIFEST_DIR.join("src/slint_ui"));
+const RESOURCES_PATH: LazyLock<PathBuf> = LazyLock::new(|| MANIFEST_DIR.join("resources"));
+
+const SLINT_LIBRARY_PATHS: LazyLock<HashMap<String, PathBuf>> = LazyLock::new(|| {
+    HashMap::from([
+        (
+            // TODO: make properly organized component library
+            "lib".to_string(),
+            SLINT_PATH.join("lib/"),
+        ),
+        ("data".to_string(), SLINT_PATH.join("data/")),
+        ("themes".to_string(), SLINT_PATH.join("themes/")),
+        ("widgets".to_string(), SLINT_PATH.join("widgets/")),
+        // resources
+        ("images".to_string(), RESOURCES_PATH.join("images/")),
+        ("svg".to_string(), RESOURCES_PATH.join("svg/")),
+        ("fonts".to_string(), RESOURCES_PATH.join("fonts/")),
+    ])
+});
 
 /// Generates Rust code from dbc files in resources/database/dbc/
 ///
@@ -430,6 +448,7 @@ fn capitalize_first_words(s: &str) -> String {
 }
 
 fn generate_slint_themes() -> Result<(), Box<dyn std::error::Error>> {
+    // TODO: generate libpaths so different themes can include each other without dependency loops
     let themes_dir = SLINT_PATH.join("themes");
     themes_dir
         .try_exists()
@@ -509,7 +528,9 @@ fn generate_slint_themes() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn update_vscode_slint_libpaths(paths: &HashMap<String, PathBuf>) {
+fn update_vscode_slint_libpaths() {
+    const SETTING_NAME: &str = "slint.libraryPaths";
+
     let vscode_settings = MANIFEST_DIR.join(".vscode/settings.json");
     println!(
         "cargo:rerun-if-changed={}",
@@ -518,8 +539,14 @@ fn update_vscode_slint_libpaths(paths: &HashMap<String, PathBuf>) {
 
     if let Ok(settings) = fs::read_to_string(&vscode_settings) {
         if let Ok(mut settings) = json::parse(settings.as_str()) {
-            for (short, path) in paths {
-                settings["slint.libraryPaths"][short] = path
+            for (key, _) in settings.clone()[SETTING_NAME].entries() {
+                if !SLINT_LIBRARY_PATHS.contains_key(key) {
+                    settings[SETTING_NAME].remove(key);
+                }
+            }
+
+            for (key, path) in SLINT_LIBRARY_PATHS.iter() {
+                settings[SETTING_NAME][key] = path
                     .strip_prefix(MANIFEST_DIR.as_path())
                     .unwrap()
                     .to_str()
@@ -532,23 +559,13 @@ fn update_vscode_slint_libpaths(paths: &HashMap<String, PathBuf>) {
 }
 
 fn main() {
-    let library_paths = HashMap::from([
-        (
-            // TODO: make properly organized component library
-            "lib".to_string(),
-            SLINT_PATH.join("lib/"),
-        ),
-        ("data".to_string(), SLINT_PATH.join("data/")),
-        ("themes".to_string(), SLINT_PATH.join("themes/")),
-        ("widgets".to_string(), SLINT_PATH.join("widgets/")),
-    ]);
-
     build_dbc().unwrap();
     generate_can_data_emulator().unwrap();
     generate_slint_car_data().unwrap();
     generate_slint_themes().unwrap();
-    update_vscode_slint_libpaths(&library_paths);
+    update_vscode_slint_libpaths();
 
-    let config = slint_build::CompilerConfiguration::new().with_library_paths(library_paths);
+    let config = slint_build::CompilerConfiguration::new()
+        .with_library_paths(LazyLock::force(&SLINT_LIBRARY_PATHS).clone());
     slint_build::compile_with_config(SLINT_PATH.join("main.slint"), config).unwrap();
 }
