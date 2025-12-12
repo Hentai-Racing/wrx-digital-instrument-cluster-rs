@@ -21,6 +21,7 @@ macro_rules! number_param_convertion_handle {
             sparam.value = converted_value as $type;
             sparam.min = converted_min as $type;
             sparam.max = converted_max as $type;
+            // TODO: change unit str to use translations instead
             sparam.unit_str = units.convert_system_to($unit_system).get_short_str().into();
             $ui_car_data.[<set_ $param>](sparam);
         }
