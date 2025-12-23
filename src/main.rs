@@ -458,10 +458,10 @@ async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<Ha
                         match *root {
                             "user" => CONFIG_MANAGER
                                 .user
-                                .set_by_name(path.join(".").as_str(), value),
+                                .set_by_path(path.join(".").as_str(), value),
                             "session" => CONFIG_MANAGER
                                 .session
-                                .set_by_name(path.join(".").as_str(), value),
+                                .set_by_path(path.join(".").as_str(), value),
                             "" => eprintln!("Missing param root"),
                             x => eprintln!("Param root `{x}` out-of-range"),
                         }

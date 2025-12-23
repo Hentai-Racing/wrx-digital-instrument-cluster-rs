@@ -193,51 +193,6 @@ macro_rules! __default_value {
     };
 }
 
-/// Defines a serdes capable structure with parameter fields and optional default values.
-#[macro_export]
-macro_rules! parameter_struct {
-    ($struct_visibillity:vis $struct_name:ident {$($param:ident: $param_type:ty $(= $param_default:expr)?),+ $(,)?}) => {
-        #[derive(Serialize, Deserialize)]
-        $struct_visibillity struct $struct_name {
-            $(
-                #[serde(default)]
-                pub $param: Parameter<$param_type>
-            ),+
-        }
-
-        #[allow(unused)]
-        impl $struct_name {
-            fn apply(&self, from: Self) {
-                $( self.$param.set_value(from.$param.value()) );*
-            }
-
-            pub fn set_by_name(&self, param_name: &str, value: &str) {
-                match param_name {
-                    $(stringify!($param) => {
-                        match value.parse::<$param_type>() {
-                            Ok(value) => self.$param.set_value(value),
-                            Err(e) => eprintln!("Failed to set {} to {value}: {e:?}", stringify!($param))
-                        }
-                    }),+
-                    _ => {
-                        eprintln!("Failed to set {param_name} to {value}: {param_name} is not a valid parameter")
-                    }
-                }
-            }
-        }
-
-        impl Default for $struct_name {
-            fn default() -> Self {
-                Self {
-                    $(
-                        $param: crate::__default_value!($param_type| $($param_default)?)
-                    ),+
-                }
-            }
-        }
-    };
-}
-
 /// Executes a match on the value of the specified parameter.
 /// Re-executes upon parameter updates.
 #[macro_export]
@@ -263,4 +218,104 @@ macro_rules! parameter_match {
             }
         });
     }}
+}
+
+/// Defines a serdes capable structure with parameter fields and optional default values.
+/// Capable of having multiple pages
+/// TODO: add example (src/application/user.rs:@ConfigManager)
+#[macro_export]
+macro_rules! parameter_struct {
+    ($page:ident { $($items:tt)* }) => {
+        crate::parameter_struct!(@munch_page
+            $page
+            { }
+            { }
+            { }
+            { }
+            $($items)*
+        );
+    };
+
+    (@munch_page $page:ident
+        { $($params:tt)* }
+        { $($inits:tt)* }
+        { $($defs:tt)* }
+        { $($entries:tt)* }
+    ) => {
+        $($defs)*
+
+        #[derive(serde::Serialize, serde::Deserialize)]
+        #[allow(non_camel_case_types)]
+        pub struct $page {
+            $($params)*
+        }
+
+        impl Default for $page {
+            fn default() -> Self {
+                Self {
+                    $($inits)*
+                }
+            }
+        }
+
+        #[allow(unused)]
+        impl $page {
+            pub fn apply(&self, from: Self) {
+                crate::parameter_struct!(@apply self, from; $($entries)*);
+            }
+
+            pub fn set_by_path(&self, param_path: &str, value: &str) {
+                let param_path: Vec<&str> = (*param_path).split(".").collect();
+                for i in param_path {
+                    println!("{i}");
+                }
+            }
+        }
+    };
+
+    (@munch_page
+        $page:ident
+        { $($params:tt)* }
+        { $($inits:tt)* }
+        { $($defs:tt)* }
+        { $($entries:tt)* }
+        $vis:vis $param:ident : $param_type:ty $(= $val:expr)? , $($rest:tt)*
+    ) => {
+        crate::parameter_struct!(@munch_page
+            $page
+            { $($params)* $vis $param: crate::data::parameters::Parameter<$param_type>, }
+            { $($inits)* $param: crate::__default_value!($param_type| $($val)?), }
+            { $($defs)* }
+            { $($entries)* (param $param) }
+            $($rest)*
+        );
+    };
+
+    (@munch_page
+        $page:ident
+        { $($params:tt)* }
+        { $($inits:tt)* }
+        { $($defs:tt)* }
+        { $($entries:tt)* }
+        $sub:ident { $($inner:tt)* } , $($rest:tt)*
+    ) => {
+        crate::parameter_struct!(@munch_page
+            $page
+            { $($params)* pub $sub: $sub, }
+            { $($inits)* $sub: Default::default(), }
+            { $($defs)* crate::parameter_struct!($sub { $($inner)* }); }
+            { $($entries)* (sub $sub) }
+            $($rest)*
+        );
+    };
+
+    (@apply $self:ident, $from:ident;) => {};
+    (@apply $self:ident, $from:ident; (param $param:ident) $($rest:tt)*) => {
+        $self.$param.set_value($from.$param.value());
+        crate::parameter_struct!(@apply $self, $from; $($rest)*)
+    };
+    (@apply $self:ident, $from:ident; (sub $sub:ident) $($rest:tt)*) => {
+        $self.$sub.apply($from.$sub);
+        crate::parameter_struct!(@apply $self, $from; $($rest)*)
+    };
 }

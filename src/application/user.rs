@@ -1,8 +1,6 @@
-use crate::data::parameters::Parameter;
 use crate::data::units::UnitSystem;
 use crate::parameter_struct;
 
-use serde::{Deserialize, Serialize};
 use tokio::sync::watch;
 use tokio::time::{Duration, timeout};
 use toml;
@@ -30,100 +28,53 @@ impl std::fmt::Display for SaveError {
     }
 }
 
-macro_rules! data_root {
-    ($visible:vis $root:ident {$($param:ident: $param_ty:ty),+ $(,)?}) => {
-        #[derive(Default, Serialize, Deserialize)]
-        $visible struct $root {
-            #[serde(default)]
-            $(pub $param: $param_ty),+
-        }
+parameter_struct! {ConfigManager {
+    loaded: bool,
 
-        #[allow(unused)]
-        impl $root {
-            fn apply(&self, from: Self) {
-                $(self.$param.apply(from.$param));*
-            }
+    user {
+        theme {
+            pub selected_theme: String = String::from("Default"),
+        },
+        general {
+            pub unit_system: UnitSystem,
+            pub disable_hill_assist: bool = false,
+        },
+        accessibility {
+            pub animations_enabled: bool = true,
+            pub accessible_switches: bool = false,
+        },
+    },
 
-            pub fn set_by_name(&self, param_path: &str, value: &str) {
-                let param_path_split: Vec<&str> = param_path.split(".").collect();
-                match *param_path_split.get(0).unwrap_or(&"") {
-                    $(stringify!($param) => {
-                        self.$param.set_by_name(*param_path_split.get(1).unwrap_or(&""), value);
-                    }),+
-                    _ => {eprintln!("{param_path} does not exist in {}", stringify!($root))}
-                }
-            }
-        }
-    };
-}
+    session {
+        debug_session {
+            pub debug_mode: bool = cfg!(debug_assertions),
+            pub debug_highlights: bool = false,
+            pub debug_overlay_enabled: bool = true,
+        },
 
-parameter_struct! {pub ThemeConfig {
-    selected_theme: String = String::from("Default"),
+        debug_hardware_backend_data {
+            pub adc_val: i32,
+        },
+
+        simulation {
+            pub simulation_running: bool = true,
+        },
+
+        can {
+            pub running_can: bool = true,
+        },
+
+        system_info {
+            pub total_memory_mb: i32,
+            pub used_memory_mb: i32,
+            pub process_memory_mb: i32,
+            pub process_memory_max_mb: i32,
+            pub num_cpus: i32,
+            pub cpu_usage: f32,
+            pub fps: i32,
+        },
+    },
 }}
-
-parameter_struct! {pub GeneralConfig {
-    unit_system: UnitSystem,
-    disable_hill_assist: bool = false,
-}}
-
-parameter_struct! {pub AccessibilityConfig {
-    animations_enabled: bool = true,
-    accessible_switches: bool = false,
-}}
-
-parameter_struct! {pub DebugHardwareBackendData {
-    adc_val: i32
-}}
-
-parameter_struct! {pub DebugSessionConfig {
-    debug_mode: bool = cfg!(debug_assertions),
-    debug_highlights: bool = false,
-    debug_overlay_enabled: bool = true
-}}
-
-parameter_struct! {pub CanConfig {
-    running_can: bool = true,
-}}
-
-parameter_struct! {pub SimulationConfig {
-    simulation_running: bool = true,
-}}
-
-parameter_struct! {pub StaticCarData {
-    vin: String,
-    odometer: u32,
-}}
-
-parameter_struct! {pub SystemInfo {
-    total_memory_mb: i32,
-    used_memory_mb: i32,
-    process_memory_mb: i32,
-    process_memory_max_mb: i32,
-    num_cpus: i32,
-    cpu_usage: f32,
-    fps: i32
-}}
-
-data_root! {pub SessionData {
-    debug_session: DebugSessionConfig,
-    debug_hardware_backend_data: DebugHardwareBackendData,
-    simulation: SimulationConfig,
-    can: CanConfig,
-    system_info: SystemInfo,
-}}
-
-data_root! {pub UserConfig {
-    theme: ThemeConfig,
-    general: GeneralConfig,
-    accessibility: AccessibilityConfig,
-}}
-
-#[derive(Default)]
-pub struct ConfigManager {
-    loaded: Parameter<bool>,
-    pub user: UserConfig,
-    pub session: SessionData,
-}
 
 impl ConfigManager {
     pub fn get_config_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
