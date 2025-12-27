@@ -5,8 +5,8 @@ import { SUnitSystem } from "@lib/units.slint";
 export global ApplicationState {
     in property <bool> virtual-cluster: true;
 
-    in-out property <bool> simulation-running;
-    callback update-simulation-running(bool);
+    in-out property <bool> running-simulation;
+    callback update-running-simulation(bool);
 
     in-out property <SUnitSystem> user-unit;
     callback update-user-unit(SUnitSystem);
@@ -115,7 +115,7 @@ export component BackendDebugModule inherits VerticalLayout {
 
     if ApplicationState.virtual-cluster: Text {
         color: white;
-        text: "Simulation: " + (ApplicationState.simulation-running ? "running" : "stopped");
+        text: "Simulation: " + (ApplicationState.running-simulation ? "running" : "stopped");
     }
 
     Text {

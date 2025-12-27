@@ -245,6 +245,7 @@ macro_rules! parameter_struct {
         $($defs)*
 
         #[derive(serde::Serialize, serde::Deserialize)]
+        #[derive(introspection::Introspection)]
         #[allow(non_camel_case_types)]
         pub struct $page {
             $($params)*
@@ -266,9 +267,11 @@ macro_rules! parameter_struct {
 
             pub fn set_by_path(&self, param_path: &str, value: &str) {
                 let param_path: Vec<&str> = (*param_path).split(".").collect();
-                for i in param_path {
-                    println!("{i}");
-                }
+                todo!();
+            }
+
+            pub fn get_page_layout(&self) {
+                todo!()
             }
         }
     };

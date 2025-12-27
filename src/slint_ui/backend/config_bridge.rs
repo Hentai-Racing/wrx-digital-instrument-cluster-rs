@@ -49,8 +49,10 @@ pub fn bridge(handle_weak: Weak<App>, config_manager: Arc<ConfigManager>) {
         }
 
         // TODO: auto-generate entire settings menu and bindings
+        // The plan is to add a sort of reflection system to `parameter_struct` and
+        // read it in slint to dynamically generate the menues
         bind!(ApplicationState.user_unit <=> config_manager.user.general.unit_system);
-        bind!(ApplicationState.simulation_running <=> config_manager.session.simulation.simulation_running);
+        bind!(ApplicationState.running_simulation <=> config_manager.session.simulation.running_simulation);
         bind!(ApplicationState.running_can <=> config_manager.session.can.running_can);
         bind!(GeneralSettings.disable_hill_assist <=> config_manager.user.general.disable_hill_assist);
         bind!(GlobalThemeData.current_theme <=> config_manager.user.theme.selected_theme);

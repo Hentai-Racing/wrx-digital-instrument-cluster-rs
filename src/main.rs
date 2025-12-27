@@ -243,7 +243,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             tokio::spawn(async move {
                 let mut interval = time::interval(Duration::from_millis(10));
 
-                let running_vcan = &CONFIG_MANAGER.session.simulation.simulation_running;
+                let running_vcan = &CONFIG_MANAGER.session.simulation.running_simulation;
 
                 loop {
                     let gen_frames = wrx_2018_emulator::generate_frames();

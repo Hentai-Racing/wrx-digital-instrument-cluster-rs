@@ -57,7 +57,7 @@ parameter_struct! {ConfigManager {
         },
 
         simulation {
-            pub simulation_running: bool = true,
+            pub running_simulation: bool = true,
         },
 
         can {
