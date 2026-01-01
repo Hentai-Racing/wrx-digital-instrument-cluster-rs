@@ -245,7 +245,6 @@ macro_rules! parameter_struct {
         $($defs)*
 
         #[derive(serde::Serialize, serde::Deserialize)]
-        #[derive(introspection::Introspection)]
         #[allow(non_camel_case_types)]
         pub struct $page {
             $($params)*

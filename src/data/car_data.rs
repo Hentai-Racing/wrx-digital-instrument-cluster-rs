@@ -113,9 +113,8 @@ macro_rules! HandleSignalProcess {
 /// Note: ```bool``` data types default to `true` unless otherwise stated
 ///
 macro_rules! CarData {
-    { {$( $visible:vis $struct_param:ident: $struct_param_ty:tt $(= $struct_param_init:expr)?),*}; $($msg:ident => { $($(<$unit:path$(:$unit_system:path)?>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; } => {
+    { $($msg:ident => { $($(<$unit:path$(:$unit_system:path)?>)? $([$process_override:ident])? $param:ident: $type:tt $(= $init:expr)?),+ $(,)? } );+; } => {
         pub struct CarData {
-            $($visible $struct_param: $struct_param_ty),*
             $($($param: DataParameter<$type>,)*)*
         }
 
@@ -157,7 +156,6 @@ macro_rules! CarData {
         impl Default for CarData {
             fn default() -> Self {
                 Self {
-                    $($struct_param: default_value!($struct_param_ty| $($struct_param_init)?)),*
                     $($($param: param!(wrx_2018::$msg => $param: $type $([$unit| $($unit_system)?])? $(= $init)?),)*)*
                 }
             }
@@ -166,10 +164,6 @@ macro_rules! CarData {
 }
 
 CarData! {
-    {
-        // pub obd_mux_context: MuxContext
-    };
-
     Engine => {
         engine_rpm: u16,
         mt_gear: EngineMtGear,
@@ -262,12 +256,14 @@ CarData! {
     };
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub enum ParseResult {
     Mux(MuxParseResult),
     Ok,
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub enum ParseError {
     MuxError(MuxParseError),
@@ -293,16 +289,9 @@ impl CarData {
                 return Ok(ParseResult::Ok);
             }
             Err(e) => match e {
-                // if it's an unknown message, we will handle it with a different parser
-                // wrx_2018::CanError::UnknownMessageId(_) => {}
                 _ => return Err(ParseError::CanError(e)),
             },
         };
-
-        // match self.obd_mux_context.parse_frame(frame) {
-        //     Ok(mux_result) => return Ok(ParseResult::Mux(mux_result)),
-        //     Err(e) => return Err(ParseError::MuxError(e)),
-        // }
     }
 
     pub fn dimmer_dial_override(

@@ -6,7 +6,9 @@ mod slint_ui;
 
 use crate::application::user::ConfigManager;
 use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
-use crate::can::can_mux_manager::{ISOTPAckFrame, MuxParseResult, OBD2Service};
+use crate::can::can_mux_manager::{
+    self, ISOTPAckFrame, MuxContext, MuxParseResult, OBD2Service, S1CurrentData,
+};
 use crate::can::messages::emulators::wrx_2018_emulator;
 use crate::can::messages::wrx_2018::CanError;
 use crate::data::car_data::{CarData, ParseError, ParseResult};
@@ -118,16 +120,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (shutdown_send, mut shutdown_recv) = mpsc::unbounded_channel::<bool>();
     let (shutdown_finished, mut shutdown_finished_recv) = mpsc::unbounded_channel::<bool>();
 
-    // #[cfg(debug_assertions)]
-    // if env::var("SLINT_DEBUG_PERFORMANCE")
-    //     .unwrap_or_default()
-    //     .is_empty()
-    // {
-    //     unsafe {
-    //         env::set_var("SLINT_DEBUG_PERFORMANCE", "refresh_full_speed,overlay");
-    //     }
-    // }
-
     let ui = App::new()?;
     ui.show()?;
 
@@ -160,28 +152,47 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
+    use can_mux_manager::S9VehicleInformation;
+
     if let Some(mut can_backend) = can_backend {
         let mut frame_display = CanFrameDisplay::new(ui.as_weak());
-        let car_data = CAR_DATA.clone();
 
         tokio::spawn(async move {
-            // let obd_id =
-            //     unsafe { embedded_can::Id::from(embedded_can::StandardId::new_unchecked(0x7E0)) };
+            let obd_id =
+                unsafe { embedded_can::Id::from(embedded_can::StandardId::new_unchecked(0x7E0)) };
 
             // TESTING
-            // let mut queue = VecDeque::from(vec![
-            //     CanFrame::new(obd_id, 8, &[0x02, OBD2Service::CurrentData.into(), 0x0c]),
-            //     CanFrame::new(
-            //         obd_id,
-            //         8,
-            //         &[0x02, OBD2Service::VehicleInformation.into(), 0x00],
-            //     ),
-            //     CanFrame::new(
-            //         obd_id,
-            //         8,
-            //         &[0x02, OBD2Service::VehicleInformation.into(), 0x02],
-            //     ),
-            // ]);
+            let mut context = MuxContext::default();
+            let mut queue = VecDeque::from(vec![
+                // CanFrame::new(
+                //     obd_id,
+                //     8,
+                //     &[
+                //         0x02,
+                //         OBD2Service::CurrentData.into(),
+                //         S1CurrentData::PIDs.into(),
+                //     ],
+                // ),
+                // CanFrame::new(
+                //     obd_id,
+                //     8,
+                //     &[
+                //         0x02,
+                //         OBD2Service::VehicleInformation.into(),
+                //         S9VehicleInformation::PIDs.into(),
+                //     ],
+                // ),
+                // CanFrame::new(
+                //     obd_id,
+                //     8,
+                //     &[
+                //         0x02,
+                //         OBD2Service::VehicleInformation.into(),
+                //         S9VehicleInformation::VIN.into(),
+                //     ],
+                // ),
+                // CanFrame::new(obd_id, 8, &[0x02, OBD2Service::StoredDTCs.into()]),
+            ]);
 
             let running_can = &CONFIG_MANAGER.session.can.running_can;
 
@@ -189,12 +200,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if running_can.value() {
                     if let Some(frame) = can_backend.read_frame() {
                         frame_display.update(&frame, false);
-                        match car_data.parse_frame(&frame) {
+
+                        match CAR_DATA.parse_frame(&frame) {
                             Ok(result) => match result {
                                 ParseResult::Mux(result) => match result {
                                     MuxParseResult::AwaitingBroadcastAck => {
-                                        // let ack = ISOTPAckFrame::new(obd_id);
-                                        // queue.push_front(CanFrame::from_frame(ack));
+                                        let ack = ISOTPAckFrame::new(obd_id);
+                                        queue.push_front(CanFrame::from_frame(ack));
+                                    }
+                                    MuxParseResult::ConsecutiveFrameContinue => {
+                                        context.waiting_for_responce = true;
                                     }
                                     _ => {}
                                 },
@@ -203,7 +218,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             Err(e) => match e {
                                 ParseError::CanError(e) => match e {
                                     CanError::UnknownMessageId(_id) => {
-                                        // ignore
+                                        match context.parse_frame(&frame) {
+                                            Ok(result) => {
+                                                match result {
+                                                    MuxParseResult::AwaitingBroadcastAck  => {
+                                                        let ack = ISOTPAckFrame::new(obd_id);
+                                                        queue.push_front(CanFrame::from_frame(ack));
+                                                    }
+                                                    MuxParseResult::ConsecutiveFrameContinue => {
+                                                        context.waiting_for_responce = true;
+                                                    }
+                                                    _ => {}
+                                                }
+                                                println!("Context parse result Ok({result:?})")
+                                            }
+                                            Err(e) => match e {
+                                                can_mux_manager::MuxParseError::UnknownMessageId => {},
+                                                _ => println!(
+                                                    "Context failed to parse frame {frame:?}: {e:?}"
+                                                ),
+                                            }
+                                        }
                                     }
                                     _ => println!("Failed to parse frame {frame:?}: {e:?}"),
                                 },
@@ -212,18 +247,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     };
 
-                    // if !car_data.obd_mux_context.waiting_for_responce {
-                    //     if let Some(frame) = queue.pop_front() {
-                    //         match can_backend.write_frame(frame) {
-                    //             Ok(_written_bytes) => {
-                    //                 car_data.obd_mux_context.waiting_for_responce = true;
-                    //             }
-                    //             Err(e) => {
-                    //                 eprintln!("Failed to write to can_socket: {e:?}");
-                    //             }
-                    //         }
-                    //     }
-                    // }
+                    if !context.waiting_for_responce {
+                        if let Some(frame) = queue.pop_front() {
+                            match can_backend.write_frame(frame) {
+                                Ok(_) => {
+                                    context.waiting_for_responce = true;
+                                    println!("Wrote frame: {frame:?}")
+                                }
+                                Err(e) => {
+                                    eprintln!("Failed to write to can_socket: {e:?}");
+                                }
+                            }
+                        }
+                    }
                 } else {
                     let _ = running_can.watch().wait_for(|v| *v).await;
                 }

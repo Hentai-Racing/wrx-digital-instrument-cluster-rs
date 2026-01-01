@@ -25,9 +25,9 @@ component Sun inherits Rectangle {
     }
 
     for ray[i] in light-rays: RadialRect {
-        rotation: (360deg / light-rays * i) + (root.clamp-light-value * 360deg);
+        rotation: (360deg / light-rays * i) + (root.clamp-light-value * 90deg);
         width: (self.inner-radius * 2) + (root.width - self.inner-radius * 2) * root.clamp-light-value;
-        height: self.width;
+        height: (self.inner-radius * 2) + (root.height - self.inner-radius * 2) * root.clamp-light-value;
         inner-radius: i-top-arc.inner-radius * 1.4;
         thickness: 6deg;
 
@@ -76,7 +76,7 @@ export component InteriorBrightnessIndicator {
                             for rect[i] in num-settings: Rectangle {
                                 width: 41px;
                                 height: 7px;
-                                border-radius: self.height / 2;
+                                border-radius: 2px;
                                 background: dimmer_value >= i ? white : white.darker(75%);
                             }
                         }
