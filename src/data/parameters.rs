@@ -4,7 +4,7 @@ use crossbeam::atomic::AtomicCell;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use tokio::sync::watch;
 
-use std::fmt::Debug;
+use std::fmt::{self, Debug};
 
 pub struct Parameter<T> {
     value: AtomicCell<T>,
@@ -220,14 +220,52 @@ macro_rules! parameter_match {
     }}
 }
 
+#[allow(unused)]
+#[derive(Debug)]
+pub enum Node {
+    ReadOnlyParameter(&'static str),
+    Parameter(&'static str),
+    Page {
+        name: &'static str,
+        items: Box<[Node]>,
+    },
+}
+
+impl Node {
+    fn fmt_with_indent(&self, f: &mut fmt::Formatter<'_>, indent: usize) -> fmt::Result {
+        let pad = "  ".repeat(indent);
+
+        match self {
+            Node::ReadOnlyParameter(name) => {
+                writeln!(f, "{pad}[RO] {name}")
+            }
+            Node::Parameter(name) => {
+                writeln!(f, "{pad}[RW] {name}")
+            }
+            Node::Page { name, items } => {
+                writeln!(f, "{pad}{name} {{")?;
+                for item in items.iter() {
+                    item.fmt_with_indent(f, indent + 1)?;
+                }
+                writeln!(f, "{pad}}}")
+            }
+        }
+    }
+}
+
+impl fmt::Display for Node {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.fmt_with_indent(f, 0)
+    }
+}
+
 /// Defines a serdes capable structure with parameter fields and optional default values.
 /// Capable of having multiple pages
-/// TODO: add example (src/application/user.rs:@ConfigManager)
+/// TODO: add example (src/application/user.rs:@UserConfig)
 #[macro_export]
 macro_rules! parameter_struct {
     ($page:ident { $($items:tt)* }) => {
-        crate::parameter_struct!(@munch_page
-            $page
+        $crate::parameter_struct!(@page $page
             { }
             { }
             { }
@@ -236,88 +274,129 @@ macro_rules! parameter_struct {
         );
     };
 
-    (@munch_page $page:ident
+    (@page $page:ident
         { $($params:tt)* }
         { $($inits:tt)* }
         { $($defs:tt)* }
         { $($entries:tt)* }
-    ) => {
+    ) => {pastey::paste!{
         $($defs)*
 
         #[derive(serde::Serialize, serde::Deserialize)]
         #[allow(non_camel_case_types)]
-        pub struct $page {
+        pub struct [<$page:camel_edge>] {
             $($params)*
         }
 
-        impl Default for $page {
+        #[allow(unused)]
+        impl [<$page:camel_edge>] {
+            pub fn apply(&self, from: Self) {
+                $crate::parameter_struct!(@apply self, from| $($entries)*);
+            }
+
+            pub fn set_by_path(&self, param_path: &str, value: &str) {
+                let (target, path) = match param_path.split_once('.') {
+                    Some((root, path)) => {(root, path)}
+                    _ => {(param_path, "")}
+                };
+
+                $crate::parameter_struct!(@path self target; path; value| $($entries)*)
+            }
+
+            pub fn get_page_layout(&self) -> $crate::data::parameters::Node {
+                return $crate::parameter_struct!(@node $page self| $($entries)*);
+            }
+        }
+
+        impl Default for [<$page:camel_edge>] {
             fn default() -> Self {
                 Self {
                     $($inits)*
                 }
             }
         }
+    }};
 
-        #[allow(unused)]
-        impl $page {
-            pub fn apply(&self, from: Self) {
-                crate::parameter_struct!(@apply self, from; $($entries)*);
-            }
+    (@page $page:ident
+        { $($params:tt)* }
+        { $($inits:tt)* }
+        { $($defs:tt)* }
+        { $($entries:tt)* }
+        $vis:vis $([$permissions:tt])? $param:ident: $ty:ty $(= $val:expr)?, $($rest:tt)*
+    ) => {
+        $crate::parameter_struct!(@page $page
+            { $($params)* $vis $param: $crate::data::parameters::Parameter<$ty>, }
+            { $($inits)* $param: $crate::__default_value!($ty| $($val)?), }
+            { $($defs)* }
+            { $($entries)* (param $([$permissions])? $param: $ty) }
+            $($rest)*
+        );
+    };
 
-            pub fn set_by_path(&self, param_path: &str, value: &str) {
-                let param_path: Vec<&str> = (*param_path).split(".").collect();
-                todo!();
-            }
+    (@page $page:ident
+        { $($params:tt)* }
+        { $($inits:tt)* }
+        { $($defs:tt)* }
+        { $($entries:tt)* }
+        $sub:ident { $($inner:tt)* }, $($rest:tt)*
+    ) => {pastey::paste!{
+        $crate::parameter_struct!(@page $page
+            { $($params)* pub $sub: [<$sub:camel_edge>], }
+            { $($inits)* $sub: Default::default(), }
+            { $($defs)* $crate::parameter_struct!($sub { $($inner)* }); }
+            { $($entries)* (page $sub) }
+            $($rest)*
+        );
+    }};
 
-            pub fn get_page_layout(&self) {
-                todo!()
-            }
+    (@apply $self:ident, $from:ident|) => {};
+    (@apply $self:ident, $from:ident| (param $([$permissions:tt])? $param:ident: $ty:ty) $($rest:tt)*) => {
+        $self.$param.set_value($from.$param.value());
+        $crate::parameter_struct!(@apply $self, $from| $($rest)*)
+    };
+    (@apply $self:ident, $from:ident| (page $sub:ident) $($rest:tt)*) => {
+        $self.$sub.apply($from.$sub);
+        $crate::parameter_struct!(@apply $self, $from| $($rest)*)
+    };
+
+    (@node-internal $self:ident| param [ro] $param:ident: $ty:ty) => {
+        $crate::data::parameters::Node::ReadOnlyParameter(stringify!($param))
+    };
+    (@node-internal $self:ident| param $param:ident: $ty:ty) => {
+        $crate::data::parameters::Node::Parameter(stringify!($param))
+    };
+    (@node-internal $self:ident| page $sub:ident) => {
+        $self.$sub.get_page_layout()
+    };
+    (@node $page:ident $self:ident| $(($node:tt $([$permissions:tt])? $thing:ident $(: $ty:ty)?))*) => {
+        $crate::data::parameters::Node::Page{
+            name: stringify!($page),
+            items: Box::new([$(
+                $crate::parameter_struct!(@node-internal $self| $node $([$permissions])? $thing $(: $ty)?)
+            ),*])
         }
     };
 
-    (@munch_page
-        $page:ident
-        { $($params:tt)* }
-        { $($inits:tt)* }
-        { $($defs:tt)* }
-        { $($entries:tt)* }
-        $vis:vis $param:ident : $param_type:ty $(= $val:expr)? , $($rest:tt)*
-    ) => {
-        crate::parameter_struct!(@munch_page
-            $page
-            { $($params)* $vis $param: crate::data::parameters::Parameter<$param_type>, }
-            { $($inits)* $param: crate::__default_value!($param_type| $($val)?), }
-            { $($defs)* }
-            { $($entries)* (param $param) }
-            $($rest)*
-        );
+    (@path-internal $self:ident $path:expr; $value:ident| param [ro] $param:ident: $ty:ty) => {
+        eprintln!("Failed to set {} to {:?}: Parameter is read-only", stringify!($param), $value)
     };
-
-    (@munch_page
-        $page:ident
-        { $($params:tt)* }
-        { $($inits:tt)* }
-        { $($defs:tt)* }
-        { $($entries:tt)* }
-        $sub:ident { $($inner:tt)* } , $($rest:tt)*
-    ) => {
-        crate::parameter_struct!(@munch_page
-            $page
-            { $($params)* pub $sub: $sub, }
-            { $($inits)* $sub: Default::default(), }
-            { $($defs)* crate::parameter_struct!($sub { $($inner)* }); }
-            { $($entries)* (sub $sub) }
-            $($rest)*
-        );
+    (@path-internal $self:ident $path:expr; $value:ident| param $param:ident: $ty:ty) => {
+        match $value.parse::<$ty>() {
+            Ok(value) => $self.$param.set_value(value),
+            Err(e) => eprintln!("Failed to set {} to {:?}: {e:?}", stringify!($param), $value)
+        }
     };
-
-    (@apply $self:ident, $from:ident;) => {};
-    (@apply $self:ident, $from:ident; (param $param:ident) $($rest:tt)*) => {
-        $self.$param.set_value($from.$param.value());
-        crate::parameter_struct!(@apply $self, $from; $($rest)*)
+    (@path-internal $self:ident $path:expr; $value:ident| page $sub:ident) => {
+        $self.$sub.set_by_path($path, $value);
     };
-    (@apply $self:ident, $from:ident; (sub $sub:ident) $($rest:tt)*) => {
-        $self.$sub.apply($from.$sub);
-        crate::parameter_struct!(@apply $self, $from; $($rest)*)
+    (@path $self:ident $target:expr; $path:expr; $val:ident| $(($node:tt $([$permissions:tt])? $thing: ident $(: $ty:ty)?))*) => {
+        match $target {
+            $(stringify!($thing) => {
+                $crate::parameter_struct!(@path-internal $self $path; $val| $node $([$permissions])? $thing $(: $ty)?);
+            }),*
+            _ => {
+                println!("Path [{}] does not exist!", $path);
+            }
+        }
     };
 }

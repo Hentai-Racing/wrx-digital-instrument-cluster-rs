@@ -1,4 +1,4 @@
-use crate::application::user::ConfigManager;
+use crate::application::user::UserConfig;
 use crate::data::{car_data::CarData, units::UnitSystem};
 use crate::slint_generatedApp::*;
 
@@ -44,7 +44,7 @@ macro_rules! param_convertion_handle {
 }
 
 #[allow(unused)]
-pub fn bridge(ui: Weak<App>, car_data: Arc<CarData>, config_manager: Arc<ConfigManager>) {
+pub fn bridge(ui: Weak<App>, car_data: Arc<CarData>, config_manager: Arc<UserConfig>) {
     macro_rules! bridge {($($param:ident: $type:tt),+ $(,)? ) => {$({
         let ui = ui.clone();
         let car_data = car_data.clone();

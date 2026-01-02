@@ -1,4 +1,4 @@
-use crate::application::user::ConfigManager;
+use crate::application::user::UserConfig;
 use crate::slint_generatedApp::{
     AccessibilitySettings, App, ApplicationState, DebugSettings, GeneralSettings, GlobalThemeData,
     HardwareBackendData, SystemInfo,
@@ -10,7 +10,7 @@ use tokio::select;
 
 use std::sync::Arc;
 
-pub fn bridge(handle_weak: Weak<App>, config_manager: Arc<ConfigManager>) {
+pub fn bridge(handle_weak: Weak<App>, config_manager: Arc<UserConfig>) {
     match slint::spawn_local(async_compat::Compat::new(async move {
         macro_rules! bind {
             {$slint_global:ident.$param:tt <=> $root:ident.$($tail:tt)+} => {{paste!{
@@ -58,9 +58,9 @@ pub fn bridge(handle_weak: Weak<App>, config_manager: Arc<ConfigManager>) {
         bind!(GlobalThemeData.current_theme <=> config_manager.user.theme.selected_theme);
         bind!(AccessibilitySettings.animations_enabled <=> config_manager.user.accessibility.animations_enabled);
         bind!(AccessibilitySettings.accessible_switches <=> config_manager.user.accessibility.accessible_switches);
-        bind!(DebugSettings.debug_mode <=> config_manager.session.debug_session.debug_mode);
-        bind!(DebugSettings.debug_highlights <=> config_manager.session.debug_session.debug_highlights);
-        bind!(DebugSettings.debug_overlay_enabled <=> config_manager.session.debug_session.debug_overlay_enabled);
+        bind!(DebugSettings.debug_mode <=> config_manager.session.debug.debug_mode);
+        bind!(DebugSettings.debug_highlights <=> config_manager.session.debug.debug_highlights);
+        bind!(DebugSettings.debug_overlay_enabled <=> config_manager.session.debug.debug_overlay_enabled);
 
         bind!(SystemInfo.total_memory <=| config_manager.session.system_info.total_memory_mb);
         bind!(SystemInfo.used_memory <=| config_manager.session.system_info.used_memory_mb);

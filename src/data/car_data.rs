@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::can::can_mux_manager::{MuxContext, MuxParseError, MuxParseResult};
+use crate::can::can_mux_manager::{MuxParseError, MuxParseResult};
 use crate::can::messages::wrx_2018::{self, DimmerAndHoodDimmerDialValue, EngineMtGear, Messages};
 use crate::data::parameters::DataParameter;
 #[allow(unused_imports)]

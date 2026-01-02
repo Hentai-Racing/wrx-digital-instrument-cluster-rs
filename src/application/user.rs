@@ -28,8 +28,8 @@ impl std::fmt::Display for SaveError {
     }
 }
 
-parameter_struct! {ConfigManager {
-    loaded: bool,
+parameter_struct! {UserConfig {
+    [ro] loaded: bool,
 
     user {
         theme {
@@ -46,14 +46,14 @@ parameter_struct! {ConfigManager {
     },
 
     session {
-        debug_session {
+        debug {
             pub debug_mode: bool = cfg!(debug_assertions),
             pub debug_highlights: bool = false,
             pub debug_overlay_enabled: bool = true,
         },
 
-        debug_hardware_backend_data {
-            pub adc_val: i32,
+        hardware {
+            pub [ro] adc_val: i32,
         },
 
         simulation {
@@ -65,18 +65,18 @@ parameter_struct! {ConfigManager {
         },
 
         system_info {
-            pub total_memory_mb: i32,
-            pub used_memory_mb: i32,
-            pub process_memory_mb: i32,
-            pub process_memory_max_mb: i32,
-            pub num_cpus: i32,
-            pub cpu_usage: f32,
-            pub fps: i32,
+            pub [ro] total_memory_mb: i32,
+            pub [ro] used_memory_mb: i32,
+            pub [ro] process_memory_mb: i32,
+            pub [ro] process_memory_max_mb: i32,
+            pub [ro] num_cpus: i32,
+            pub [ro] cpu_usage: f32,
+            pub [ro] fps: i32,
         },
     },
 }}
 
-impl ConfigManager {
+impl UserConfig {
     pub fn get_config_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
         let exe_dir = Some(env::current_exe()?.to_path_buf()).unwrap();
 
