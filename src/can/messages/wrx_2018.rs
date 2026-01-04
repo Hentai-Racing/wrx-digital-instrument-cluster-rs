@@ -8,7 +8,7 @@
 
 //! Message definitions from file `"WRX_2018.dbc"`
 //!
-//! - Version: `Version("0.7.1")`
+//! - Version: `Version("0.7.2")`
 
 use core::ops::BitOr;
 use bitvec::prelude::*;
@@ -3502,11 +3502,9 @@ pub struct Ignition {
 impl Ignition {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x284)});
     
-    pub const ACCESS_KEY_DETECTED_MIN: i8 = 0_i8;
-    pub const ACCESS_KEY_DETECTED_MAX: i8 = 1_i8;
     
     /// Construct new ignition from values
-    pub fn new(access_key_detected: i8, ignition_acc: bool, ignition_on: bool) -> Result<Self, CanError> {
+    pub fn new(access_key_detected: bool, ignition_acc: bool, ignition_on: bool) -> Result<Self, CanError> {
         let mut res = Self { raw: [0u8; 8] };
         res.set_access_key_detected(access_key_detected)?;
         res.set_ignition_acc(ignition_acc)?;
@@ -3526,36 +3524,30 @@ impl Ignition {
     /// - Unit: ""
     /// - Receivers: Vector__XXX
     #[inline(always)]
-    pub fn access_key_detected(&self) -> i8 {
+    pub fn access_key_detected(&self) -> bool {
         self.access_key_detected_raw()
     }
     
     /// Get raw value of access_key_detected
     ///
-    /// - Start bit: 46
-    /// - Signal size: 3 bits
+    /// - Start bit: 45
+    /// - Signal size: 1 bits
     /// - Factor: -1
     /// - Offset: 1
     /// - Byte order: BigEndian
     /// - Value type: Unsigned
     #[inline(always)]
-    pub fn access_key_detected_raw(&self) -> i8 {
-        let signal = self.raw.view_bits::<Msb0>()[41..44].load_be::<u8>();
+    pub fn access_key_detected_raw(&self) -> bool {
+        let signal = self.raw.view_bits::<Msb0>()[42..43].load_be::<u8>();
         
-        let factor = -1;
-        let signal = signal as i8;
-        i8::from(signal).saturating_mul(factor).saturating_add(1)
+        signal == 0
     }
     
     /// Set value of access_key_detected
     #[inline(always)]
-    pub fn set_access_key_detected(&mut self, value: i8) -> Result<(), CanError> {
-        let factor = -1;
-        let value = value.checked_sub(1)
-            .ok_or(CanError::ParameterOutOfRange { message_id: Ignition::MESSAGE_ID })?;
-        let value = (value / factor) as u8;
-        
-        self.raw.view_bits_mut::<Msb0>()[41..44].store_be(value);
+    pub fn set_access_key_detected(&mut self, value: bool) -> Result<(), CanError> {
+        let value = value as u8;
+        self.raw.view_bits_mut::<Msb0>()[42..43].store_be(value);
         Ok(())
     }
     

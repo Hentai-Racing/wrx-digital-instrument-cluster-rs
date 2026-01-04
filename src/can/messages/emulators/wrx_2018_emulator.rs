@@ -99,7 +99,7 @@ pub fn generate_frames() -> Vec<CanFrame> {
 	let cluster_frame = wrx_2018::Cluster::new(driver_seatbelt_warning_enabled, fuel_level, left_turn_signal_enabled, passenger_seatbelt_warning_enabled, right_turn_signal_enabled).expect("Failed to create frame");
 	ret_frames.push(CanFrame::from_frame(cluster_frame));
 
-	let access_key_detected = rand::rng().random_range(wrx_2018::Ignition::ACCESS_KEY_DETECTED_MIN..=wrx_2018::Ignition::ACCESS_KEY_DETECTED_MAX);
+	let access_key_detected = rand::rng().random_bool(0.5);
 	let ignition_acc = rand::rng().random_bool(0.5);
 	let ignition_on = rand::rng().random_bool(0.5);
 	let ignition_frame = wrx_2018::Ignition::new(access_key_detected, ignition_acc, ignition_on).expect("Failed to create frame");

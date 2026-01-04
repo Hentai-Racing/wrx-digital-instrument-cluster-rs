@@ -6,8 +6,8 @@ mod slint_ui;
 
 use crate::application::user::UserConfig;
 use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
-use crate::can::can_mux_manager::{
-    self, ISOTPAckFrame, MuxContext, MuxParseResult, OBD2Service, S1CurrentData,
+use crate::can::can_mux_parser::{
+    self, ISOTPAckFrame, MuxContext, MuxParseResult, OBDService, S1CurrentData,
 };
 use crate::can::messages::emulators::wrx_2018_emulator;
 use crate::can::messages::wrx_2018::CanError;
@@ -153,7 +153,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    use can_mux_manager::S9VehicleInformation;
+    use can_mux_parser::S9VehicleInformation;
 
     if let Some(mut can_backend) = can_backend {
         let mut frame_display = CanFrameDisplay::new(ui.as_weak());
@@ -165,34 +165,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // TESTING
             let mut context = MuxContext::default();
             let mut queue = VecDeque::from(vec![
-                // CanFrame::new(
-                //     obd_id,
-                //     8,
-                //     &[
-                //         0x02,
-                //         OBD2Service::CurrentData.into(),
-                //         S1CurrentData::PIDs.into(),
-                //     ],
-                // ),
-                // CanFrame::new(
-                //     obd_id,
-                //     8,
-                //     &[
-                //         0x02,
-                //         OBD2Service::VehicleInformation.into(),
-                //         S9VehicleInformation::PIDs.into(),
-                //     ],
-                // ),
-                // CanFrame::new(
-                //     obd_id,
-                //     8,
-                //     &[
-                //         0x02,
-                //         OBD2Service::VehicleInformation.into(),
-                //         S9VehicleInformation::VIN.into(),
-                //     ],
-                // ),
-                // CanFrame::new(obd_id, 8, &[0x02, OBD2Service::StoredDTCs.into()]),
+                CanFrame::new(
+                    obd_id,
+                    8,
+                    &[
+                        0x02,
+                        OBDService::CurrentData.into(),
+                        S1CurrentData::PIDs1.into(),
+                    ],
+                ),
+                CanFrame::new(
+                    obd_id,
+                    8,
+                    &[
+                        0x02,
+                        OBDService::VehicleInformation.into(),
+                        S9VehicleInformation::PIDs.into(),
+                    ],
+                ),
+                CanFrame::new(
+                    obd_id,
+                    8,
+                    &[
+                        0x02,
+                        OBDService::VehicleInformation.into(),
+                        S9VehicleInformation::VIN.into(),
+                    ],
+                ),
+                CanFrame::new(obd_id, 8, &[0x01, OBDService::StoredDTCs.into()]),
             ]);
 
             let running_can = &CONFIG_MANAGER.session.can.running_can;
@@ -222,7 +222,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         match context.parse_frame(&frame) {
                                             Ok(result) => {
                                                 match result {
-                                                    MuxParseResult::AwaitingBroadcastAck  => {
+                                                    MuxParseResult::AwaitingBroadcastAck => {
                                                         let ack = ISOTPAckFrame::new(obd_id);
                                                         queue.push_front(CanFrame::from_frame(ack));
                                                     }
@@ -234,11 +234,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                                 println!("Context parse result Ok({result:?})")
                                             }
                                             Err(e) => match e {
-                                                can_mux_manager::MuxParseError::UnknownMessageId => {},
+                                                can_mux_parser::MuxParseError::UnknownMessageId => {
+                                                }
                                                 _ => println!(
                                                     "Context failed to parse frame {frame:?}: {e:?}"
                                                 ),
-                                            }
+                                            },
                                         }
                                     }
                                     _ => println!("Failed to parse frame {frame:?}: {e:?}"),
