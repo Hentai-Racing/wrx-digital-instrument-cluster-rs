@@ -86,6 +86,8 @@ impl std::fmt::Display for DTC {
     }
 }
 
+const SERVICE_OFFSET: u8 = 0x40;
+
 #[repr(u8)]
 #[derive(Debug, Clone, TryFromPrimitive, IntoPrimitive, PartialEq, Eq)]
 pub enum OBDService {
@@ -137,8 +139,7 @@ pub enum UDSService {
 
     SecuredDataTransmission = 0x84,
 
-    /// 0x7F - 0x40
-    NegativeResponce = 0x3F,
+    NegativeResponce = 0x7F,
 }
 
 #[repr(u8)]
@@ -251,10 +252,13 @@ impl MuxContext {
                     Ok(MuxParseResult::ParseComplete)
                 }
                 ISOTPFrameType::FirstFrame => {
+                    let data = &payload[2..];
+                    let demux_len = ((payload[0] & 0xF) as usize) << 8 | (payload[1] as usize);
+
                     let mux_payload = ISOTPMux {
                         can_id: id,
-                        demux_len: ((payload[0] & 0xF) as usize) << 8 | (payload[1] as usize),
-                        data: vec![(&payload[2..]).to_vec()],
+                        demux_len: demux_len - data.len(),
+                        data: vec![data.to_vec()],
                         mux_complete: false,
                         next_sequence: 1,
                     };
@@ -269,7 +273,7 @@ impl MuxContext {
 
                         if mux_payload.can_id == frame.id() {
                             if mux_payload.next_sequence == frame_index {
-                                mux_payload.next_sequence = (frame_index + 1) % 0x10;
+                                mux_payload.next_sequence += 1;
                             } else {
                                 continue;
                             }
@@ -302,119 +306,108 @@ impl MuxContext {
     fn demux_isotp(&mut self) {
         self.iso_tp_frames.retain(|isotp_payload| {
             if isotp_payload.mux_complete {
-                let service = (isotp_payload.data[0][0] - 0x40) % 0x10;
-                let pid = isotp_payload.data[0][1];
-                let mut demuxed_data = (&isotp_payload.data[0][2..]).to_vec();
+                if let Some((first, rest)) = isotp_payload.data.split_first() {
+                    let can_id = isotp_payload.can_id;
+                    let service = first[0] - SERVICE_OFFSET;
+                    let mut demuxed_data: Vec<u8> = (&first[1..]).to_vec();
+                    demuxed_data.extend(rest.iter().flatten());
 
-                if isotp_payload.data.len() > 0 {
-                    for frame in &isotp_payload.data[1..] {
-                        if service != (frame[0] - 0x40) {
-                            break;
-                        }
-                        if pid != frame[0] {
-                            // TODO: support multi-pid reponces. This is currently not done to keep the enum simple and not include each length
-                            // the lengths are not sent in the message
-                            // probably would implement this in the parse demux
-                            break;
-                        }
-                        demuxed_data.extend(&frame[2..]);
-                    }
+                    Self::parse_demux(can_id, service, demuxed_data);
                 }
-
-                Self::parse_demux(isotp_payload.can_id, service, pid, &demuxed_data);
             }
-            !isotp_payload.mux_complete
-            // if mux_payload.data_complete {
 
-            // }
+            !isotp_payload.mux_complete
         });
     }
 
-    fn parse_demux(can_id: Id, service: u8, pid: u8, data: &[u8]) {
-        // TODO: attach this data to DataParameter or something
-        if let Ok(service) = OBDService::try_from(service) {
-            match service {
+    fn parse_demux(can_id: Id, service: u8, data: Vec<u8>) {
+        if let Ok(obd_service) = OBDService::try_from(service) {
+            match obd_service {
                 OBDService::VehicleInformation => {
-                    if let Ok(vehicle_information) = S9VehicleInformation::try_from(pid) {
-                        match vehicle_information {
-                            // TODO: remove this and make it parameterized
-                            S9VehicleInformation::PIDs => {
-                                println!("S9 PIDS Supported:");
+                    if let Some((pid, data)) = data.split_first() {
+                        if let Ok(vehicle_information) = S9VehicleInformation::try_from(*pid) {
+                            match vehicle_information {
+                                // TODO: remove this and make it parameterized
+                                S9VehicleInformation::PIDs => {
+                                    println!("S9 PIDS Supported:");
 
-                                let bits = BitVec::<u8, Msb0>::from_vec(data.to_owned());
+                                    let bits = BitVec::<u8, Msb0>::from_vec(data.to_vec());
 
-                                // let mut pids: BTreeMap<u32, bool> = BTreeMap::new();
-                                for (i, bit) in bits.iter().enumerate() {
-                                    let pid = i as u32 + 1;
-                                    let value = *bit;
-                                    // pids.insert(pid, value);
+                                    // let mut pids: BTreeMap<u32, bool> = BTreeMap::new();
+                                    for (i, bit) in bits.iter().enumerate() {
+                                        let pid = i as u32 + 1;
+                                        let value = *bit;
+                                        // pids.insert(pid, value);
 
-                                    if value {
-                                        print!("[{pid:02X}] ")
+                                        if value {
+                                            print!("[{pid:02X}] ")
+                                        }
                                     }
-                                }
 
-                                println!();
-                            }
-                            S9VehicleInformation::VIN => {
-                                let vin = String::from_utf8_lossy(data).into_owned();
-                                println!("VIN: {:?}", vin);
-                            }
-                            S9VehicleInformation::ECU => {
-                                let ecu = String::from_utf8_lossy(data).into_owned();
-                                println!("ECU: {:?}", ecu);
+                                    println!();
+                                }
+                                S9VehicleInformation::VIN => {
+                                    let vin = String::from_utf8_lossy(data);
+                                    println!("VIN: {vin}");
+                                }
+                                S9VehicleInformation::ECU => {
+                                    let ecu = String::from_utf8_lossy(data);
+                                    println!("VIN: {ecu}");
+                                }
                             }
                         }
                     }
                 }
                 OBDService::CurrentData => {
-                    if let Ok(current_data) = S1CurrentData::try_from(pid) {
-                        match current_data {
-                            S1CurrentData::PIDs1
-                            | S1CurrentData::PIDs2
-                            | S1CurrentData::PIDs3
-                            | S1CurrentData::PIDs4
-                            | S1CurrentData::PIDs5
-                            | S1CurrentData::PIDs6
-                            | S1CurrentData::PIDs7 => {
-                                const LEN: usize = 4;
+                    if let Some((pid, data)) = data.split_first() {
+                        if let Ok(current_data) = S1CurrentData::try_from(*pid) {
+                            match current_data {
+                                S1CurrentData::PIDs1
+                                | S1CurrentData::PIDs2
+                                | S1CurrentData::PIDs3
+                                | S1CurrentData::PIDs4
+                                | S1CurrentData::PIDs5
+                                | S1CurrentData::PIDs6
+                                | S1CurrentData::PIDs7 => {
+                                    const LEN: usize = 4;
 
-                                println!("S1 PIDS Supported:");
+                                    println!("S1 PIDS Supported:");
 
-                                let bits = BitVec::<u8, Msb0>::from_vec(data.to_owned());
+                                    let bits = BitVec::<u8, Msb0>::from_vec(data.to_vec());
 
-                                // let mut pids: BTreeMap<u32, bool> = BTreeMap::new();
-                                for (i, bit) in bits.iter().enumerate() {
-                                    let pid = i as u32 + 1;
-                                    let value = *bit;
-                                    // pids.insert(pid, value);
+                                    // let mut pids: BTreeMap<u32, bool> = BTreeMap::new();
+                                    for (i, bit) in bits.iter().enumerate() {
+                                        let pid = i as u32 + 1;
+                                        let value = *bit;
+                                        // pids.insert(pid, value);
 
-                                    if value {
-                                        print!("[{pid:02X}] ")
+                                        if value {
+                                            print!("[{pid:02X}] ")
+                                        }
                                     }
+
+                                    println!();
                                 }
+                                S1CurrentData::EngineLoad => {
+                                    const LEN: usize = 1;
+                                    let value = data[0] as f32 * (100f32 / 255f32);
+                                    println!("Calculated engine load: {value}");
+                                }
+                                S1CurrentData::ControlModuleVoltage => {
+                                    const LEN: usize = 2;
 
-                                println!();
-                            }
-                            S1CurrentData::EngineLoad => {
-                                const LEN: usize = 1;
-                                let value = data[0] as f32 * (100f32 / 255f32);
-                                println!("Calculated engine load: {value}");
-                            }
-                            S1CurrentData::ControlModuleVoltage => {
-                                const LEN: usize = 2;
+                                    let value = ((data[0] as u16) << 8) | (data[1] as u16);
+                                    let _voltage = value as f32 * 0.001;
+                                }
+                                S1CurrentData::EngineFuelRate => {
+                                    const LEN: usize = 2;
 
-                                let value = ((data[0] as u16) << 8) | (data[1] as u16);
-                                let _voltage = value as f32 * 0.001;
+                                    let value = ((data[0] as u16) << 8) | (data[1] as u16);
+                                    // L/h
+                                    let _rate = value as f32 / 20f32;
+                                }
+                                _ => {}
                             }
-                            S1CurrentData::EngineFuelRate => {
-                                const LEN: usize = 2;
-
-                                let value = ((data[0] as u16) << 8) | (data[1] as u16);
-                                // L/h
-                                let _rate = value as f32 / 20f32;
-                            }
-                            _ => {}
                         }
                     }
                 }
@@ -436,24 +429,25 @@ impl MuxContext {
                 // OBDService::NegativeResponce => println!("Recieved negative responce from ECU. Did you send the correct query?"),
                 _ => {
                     println!(
-                        "Demuxed complete OBD2 data | Id: {:?}, Mode: {:02X}, Pid: {pid:02X}: {data:02X?}",
+                        "Demuxed complete OBD2 data | Id: {:?}, Service: {:02X}, demux: {data:?}",
                         raw_id(can_id),
-                        service as u8
+                        obd_service as u8
                     );
                 }
             }
-        } else if let Ok(service) = UDSService::try_from(service) {
+        } else if let Ok(uds_service) = UDSService::try_from(service) {
             println!("Demuxed complete data in UDS format. Currently unimplemented.");
             println!(
-                "{:02X} | Service: {:02X}, PID: {pid:02X}: {data:02X?}",
+                "{:02X} | Service: {:02X}, PID: {:02X}: {:02X?}",
                 raw_id(can_id),
-                service as u8
+                uds_service as u8,
+                data[0],
+                &data[1..]
             )
         } else {
             println!(
-                "Demuxed complete data in unknown format | {:02X} | Service: {:02X}, PID: {pid:02X}: {data:02X?}",
-                raw_id(can_id),
-                service as u8
+                "Demuxed complete ISOTP data in unknown format | Id: {:?}, Service: {service:02X}, Data: {data:?}",
+                raw_id(can_id)
             );
         }
     }
