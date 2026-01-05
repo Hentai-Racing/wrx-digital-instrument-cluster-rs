@@ -8,7 +8,7 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 #[derive(Debug, TryFromPrimitive, IntoPrimitive)]
 pub enum S9VehicleInformation {
     PIDs = 0x0,
-    VIN = 0x2,
+    VIN = 0x02,
     ECU = 0x0A,
 }
 
@@ -89,16 +89,16 @@ impl std::fmt::Display for DTC {
 #[repr(u8)]
 #[derive(Debug, Clone, TryFromPrimitive, IntoPrimitive, PartialEq, Eq)]
 pub enum OBDService {
-    CurrentData = 0x1,
-    FreezeFrame = 0x2,
-    StoredDTCs = 0x3,
-    ClearDTCs = 0x4,
-    TestResultsNonCan = 0x5,
-    TestResultsCan = 0x6,
-    PendingDTCs = 0x7,
-    Control = 0x8,
-    VehicleInformation = 0x9,
-    PermanentDTCs = 0xA,
+    CurrentData = 0x01,
+    FreezeFrame = 0x02,
+    StoredDTCs = 0x03,
+    ClearDTCs = 0x04,
+    TestResultsNonCan = 0x05,
+    TestResultsCan = 0x06,
+    PendingDTCs = 0x07,
+    Control = 0x08,
+    VehicleInformation = 0x09,
+    PermanentDTCs = 0x0A,
 }
 
 #[repr(u8)]
@@ -230,7 +230,7 @@ impl MuxContext {
         }
 
         let payload = frame.data();
-        let protocol_control: u8 = (payload[0] >> 6).into();
+        let protocol_control: u8 = (payload[0] >> 4).into();
 
         if let Ok(isotp_frame) = ISOTPFrameType::try_from(protocol_control) {
             self.waiting_for_responce = false; // need some sort of timeout also
