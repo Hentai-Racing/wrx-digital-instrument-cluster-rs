@@ -192,7 +192,7 @@ pub struct ISOTPMux {
     /// received all frames in transaction, data is fully muxed
     mux_complete: bool,
     /// data to be demuxed
-    data: Vec<Vec<u8>>,
+    data: Vec<u8>,
 }
 
 pub fn raw_id(id: Id) -> u32 {
@@ -241,7 +241,7 @@ impl MuxContext {
                     let mux_payload = ISOTPMux {
                         can_id: id,
                         demux_len: (payload[0] & 0xF) as usize,
-                        data: vec![(&payload[1..]).to_vec()],
+                        data: (&payload[1..]).to_vec(),
                         mux_complete: true,
                         next_sequence: 0,
                     };
@@ -258,7 +258,7 @@ impl MuxContext {
                     let mux_payload = ISOTPMux {
                         can_id: id,
                         demux_len: demux_len - data.len(),
-                        data: vec![data.to_vec()],
+                        data: data.to_vec(),
                         mux_complete: false,
                         next_sequence: 1,
                     };
@@ -281,7 +281,7 @@ impl MuxContext {
                             let data = &payload[1..];
 
                             mux_payload.demux_len -= mux_payload.demux_len.min(data.len());
-                            mux_payload.data.push(data.to_vec());
+                            mux_payload.data.extend_from_slice(data);
 
                             if mux_payload.demux_len == 0 {
                                 mux_payload.mux_complete = true;
@@ -306,21 +306,17 @@ impl MuxContext {
     fn demux_isotp(&mut self) {
         self.iso_tp_frames.retain(|isotp_payload| {
             if isotp_payload.mux_complete {
-                if let Some((first, rest)) = isotp_payload.data.split_first() {
-                    let can_id = isotp_payload.can_id;
-                    let service = first[0] - SERVICE_OFFSET;
-                    let mut demuxed_data: Vec<u8> = (&first[1..]).to_vec();
-                    demuxed_data.extend(rest.iter().flatten());
-
-                    Self::parse_demux(can_id, service, demuxed_data);
-                }
+                let can_id = isotp_payload.can_id;
+                let service = isotp_payload.data[0] - SERVICE_OFFSET;
+                let demuxed_data = &(isotp_payload.data[1..]);
+                Self::parse_demux(can_id, service, demuxed_data);
             }
 
             !isotp_payload.mux_complete
         });
     }
 
-    fn parse_demux(can_id: Id, service: u8, data: Vec<u8>) {
+    fn parse_demux(can_id: Id, service: u8, data: &[u8]) {
         if let Ok(obd_service) = OBDService::try_from(service) {
             match obd_service {
                 OBDService::VehicleInformation => {
@@ -352,7 +348,7 @@ impl MuxContext {
                                 }
                                 S9VehicleInformation::ECU => {
                                     let ecu = String::from_utf8_lossy(data);
-                                    println!("VIN: {ecu}");
+                                    println!("ECU Name: {ecu}");
                                 }
                             }
                         }
@@ -416,7 +412,9 @@ impl MuxContext {
 
                     for &chunk in chunks {
                         let dtc = DTC::from(chunk);
-                        println!("{dtc}")
+                        if dtc.number > 0 {
+                            println!("{dtc}")
+                        }
                     }
 
                     let remaining_bytes = _remainder.len();

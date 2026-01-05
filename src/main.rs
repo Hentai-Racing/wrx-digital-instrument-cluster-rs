@@ -192,6 +192,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         S9VehicleInformation::VIN.into(),
                     ],
                 ),
+                CanFrame::new(
+                    obd_id,
+                    8,
+                    &[
+                        0x02,
+                        OBDService::VehicleInformation.into(),
+                        S9VehicleInformation::ECU.into(),
+                    ],
+                ),
                 CanFrame::new(obd_id, 8, &[0x01, OBDService::StoredDTCs.into()]),
             ]);
 
@@ -220,19 +229,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 ParseError::CanError(e) => match e {
                                     CanError::UnknownMessageId(_id) => {
                                         match context.parse_frame(&frame) {
-                                            Ok(result) => {
-                                                match result {
-                                                    MuxParseResult::AwaitingBroadcastAck => {
-                                                        let ack = ISOTPAckFrame::new(obd_id);
-                                                        queue.push_front(CanFrame::from_frame(ack));
-                                                    }
-                                                    MuxParseResult::ConsecutiveFrameContinue => {
-                                                        context.waiting_for_responce = true;
-                                                    }
-                                                    _ => {}
+                                            Ok(result) => match result {
+                                                MuxParseResult::AwaitingBroadcastAck => {
+                                                    let ack = ISOTPAckFrame::new(obd_id);
+                                                    queue.push_front(CanFrame::from_frame(ack));
                                                 }
-                                                println!("Context parse result Ok({result:?})")
-                                            }
+                                                MuxParseResult::ConsecutiveFrameContinue => {
+                                                    context.waiting_for_responce = true;
+                                                }
+                                                _ => {}
+                                            },
                                             Err(e) => match e {
                                                 can_mux_parser::MuxParseError::UnknownMessageId => {
                                                 }
