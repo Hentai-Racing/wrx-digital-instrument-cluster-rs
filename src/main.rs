@@ -81,7 +81,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(debug_assertions)]
     let is_cli_mode = clap_args.get_flag("cli");
     #[cfg(target_os = "linux")]
-    let virtual_cluster = cli_args.get_flag("virtual") || fake_dev;
+    let virtual_cluster = clap_args.get_flag("virtual") || fake_dev;
     #[cfg(not(target_os = "linux"))]
     let virtual_cluster = fake_dev;
 
