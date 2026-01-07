@@ -169,43 +169,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // TESTING
             let mut context = MuxContext::default();
             let mut queue = VecDeque::from(vec![
-                CanFrame::new(
-                    obd_id,
-                    8,
-                    &[
-                        0x02,
-                        OBDService::CurrentData.into(),
-                        S1CurrentData::PIDs1.into(),
-                    ],
-                ),
-                CanFrame::new(
-                    obd_id,
-                    8,
-                    &[
-                        0x02,
-                        OBDService::VehicleInformation.into(),
-                        S9VehicleInformation::PIDs.into(),
-                    ],
-                ),
-                CanFrame::new(
-                    obd_id,
-                    8,
-                    &[
-                        0x02,
-                        OBDService::VehicleInformation.into(),
-                        S9VehicleInformation::VIN.into(),
-                    ],
-                ),
-                CanFrame::new(
-                    obd_id,
-                    8,
-                    &[
-                        0x02,
-                        OBDService::VehicleInformation.into(),
-                        S9VehicleInformation::ECU.into(),
-                    ],
-                ),
-                CanFrame::new(obd_id, 8, &[0x01, OBDService::StoredDTCs.into()]),
+                // CanFrame::new(
+                //     obd_id,
+                //     8,
+                //     &[
+                //         0x02,
+                //         OBDService::CurrentData.into(),
+                //         S1CurrentData::PIDs1.into(),
+                //     ],
+                // ),
+                // CanFrame::new(
+                //     obd_id,
+                //     8,
+                //     &[
+                //         0x02,
+                //         OBDService::VehicleInformation.into(),
+                //         S9VehicleInformation::PIDs.into(),
+                //     ],
+                // ),
+                // CanFrame::new(
+                //     obd_id,
+                //     8,
+                //     &[
+                //         0x02,
+                //         OBDService::VehicleInformation.into(),
+                //         S9VehicleInformation::VIN.into(),
+                //     ],
+                // ),
+                // CanFrame::new(obd_id, 8, &[0x01, OBDService::StoredDTCs.into()]),
             ]);
 
             let running_can = &CONFIG_MANAGER.session.can.running_can;

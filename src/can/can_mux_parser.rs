@@ -1,16 +1,7 @@
-// #![allow(unused)]
 use bitvec::order::Msb0;
 use bitvec::vec::BitVec;
 use embedded_can::{Frame, Id};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
-
-#[repr(u8)]
-#[derive(Debug, TryFromPrimitive, IntoPrimitive)]
-pub enum S9VehicleInformation {
-    PIDs = 0x0,
-    VIN = 0x02,
-    ECU = 0x0A,
-}
 
 #[repr(u8)]
 #[derive(Debug, TryFromPrimitive, IntoPrimitive)]
@@ -28,6 +19,134 @@ pub enum S1CurrentData {
     PIDs5 = 0x80,
     PIDs6 = 0xA0,
     PIDs7 = 0xC0,
+}
+
+#[repr(u8)]
+#[derive(Debug, TryFromPrimitive, IntoPrimitive)]
+pub enum S9VehicleInformation {
+    PIDs = 0x0,
+    VIN = 0x02,
+    ECU = 0x0A,
+}
+
+const SERVICE_OFFSET: u8 = 0x40;
+
+#[repr(u8)]
+#[derive(Debug, Clone, TryFromPrimitive, IntoPrimitive, PartialEq, Eq)]
+pub enum OBDService {
+    CurrentData = 0x01,
+    FreezeFrame = 0x02,
+    StoredDTCs = 0x03,
+    ClearDTCs = 0x04,
+    TestResultsNonCan = 0x05,
+    TestResultsCan = 0x06,
+    PendingDTCs = 0x07,
+    Control = 0x08,
+    VehicleInformation = 0x09,
+    PermanentDTCs = 0x0A,
+}
+
+#[repr(u8)]
+#[derive(Debug, Clone, TryFromPrimitive, IntoPrimitive, PartialEq, Eq)]
+pub enum UDSService {
+    DiagnosticSessionControl = 0x10,
+    ECUReset = 0x11,
+    SecurityAccess = 0x27,
+    CommunicationControl = 0x28,
+    Authentication = 0x29,
+    TesterPresent = 0x3E,
+    ControlDTCSettings = 0x85,
+    ResponseOnEvent = 0x86,
+    LinkControl = 0x87,
+
+    ReadDataByIdentifier = 0x22,
+    ReadMemoryByAddress = 0x23,
+    ReadScalingDataByIdentifier = 0x24,
+    ReadDataByPeriodicIdentifier = 0x2A,
+    DynamicallyDefineDataIdentifier = 0x2C,
+    WriteDataByIdentifier = 0x2E,
+    WriteMemoryByAddress = 0x3D,
+
+    ClearDiagnosticInformation = 0x14,
+    ReadDTCInformation = 0x19,
+
+    InputOutputControlByIdentifier = 0x2F,
+
+    RoutineControl = 0x31,
+
+    RequestDownload = 0x34,
+    RequestUpload = 0x35,
+    TransferData = 0x36,
+    RequestTransferExit = 0x37,
+    RequestFileTransfer = 0x38,
+
+    SecuredDataTransmission = 0x84,
+
+    NegativeResponce = 0x7F - SERVICE_OFFSET,
+}
+
+#[repr(u8)]
+#[derive(Debug, Clone, TryFromPrimitive, IntoPrimitive, PartialEq, Eq)]
+pub enum UDSNegativeResponce {
+    GeneralReject = 0x10,
+    ServiceNotSupported = 0x11,
+    SubFunctionNotSupported = 0x12,
+    IncorrectMessageLengthOrInvalidFormat = 0x13,
+    ResponseTooLong = 0x14,
+    BusyRepeatRequest = 0x21,
+    ConditionsNotCorrect = 0x22,
+    RequestSequenceError = 0x24,
+    NoResponseFromSubnetComponent = 0x25,
+    FailurePreventsExecutionOfRequestedAction = 0x26,
+    RequestOutOfRange = 0x31,
+    SecurityAccessDenied = 0x33,
+    AuthenticationRequired = 0x34,
+    InvalidKey = 0x35,
+    ExceedNumberOfAttempts = 0x36,
+    RequiredTimeDelayNotExpired = 0x37,
+    SecureDataTransmissionRequired = 0x38,
+    SecureDataTransmissionNotAllowed = 0x39,
+    SecureDataVerificationFailed = 0x3A,
+    CertificateVerificationFailedInvalidTimePeriod = 0x50,
+    CertificateVerificationFailedInvalidSignature = 0x51,
+    CertificateVerificationFailedInvalidChainOfTrust = 0x52,
+    CertificateVerificationFailedInvalidType = 0x53,
+    CertificateVerificationFailedInvalidFormat = 0x54,
+    CertificateVerificationFailedInvalidContent = 0x55,
+    CertificateVerificationFailedInvalidScope = 0x56,
+    CertificateVerificationFailedInvalidCertificateRevoked = 0x57,
+    OwnershipVerificationFailed = 0x58,
+    ChallengeCalculationFailed = 0x59,
+    SettingAccessRightsFailed = 0x5A,
+    SessionKeyCreationDerivationFailed = 0x5B,
+    ConfigurationDataUsageFailed = 0x5C,
+    DeAuthenticationFailed = 0x5D,
+    UploadDownloadNotAccepted = 0x70,
+    TransferDataSuspended = 0x71,
+    GeneralProgrammingFailure = 0x72,
+    WrongBlockSequenceCounter = 0x73,
+    RequestCorrectlyReceivedResponsePending = 0x78,
+    SubFunctionNotSupportedInActiveSession = 0x7E,
+    ServiceNotSupportedInActiveSession = 0x7F,
+    RpmTooHigh = 0x81,
+    RpmTooLow = 0x82,
+    EngineIsRunning = 0x83,
+    EngineIsNotRunning = 0x84,
+    EngineRunTimeTooLow = 0x85,
+    TemperatureTooHigh = 0x86,
+    TemperatureTooLow = 0x87,
+    VehicleSpeedTooHigh = 0x88,
+    VehicleSpeedTooLow = 0x89,
+    ThrottlePedalTooHigh = 0x8A,
+    ThrottlePedalTooLow = 0x8B,
+    TransmissionRangeNotInNeutral = 0x8C,
+    TransmissionRangeNotInGear = 0x8D,
+    BrakeSwitchNotClosed = 0x8F,
+    ShifterLeverNotInPark = 0x90,
+    TorqueConverterClutchLocked = 0x91,
+    VoltageTooHigh = 0x92,
+    VoltageTooLow = 0x93,
+    ResourceTemporarilyNotAvailable = 0x94,
 }
 
 #[repr(u8)]
@@ -84,62 +203,6 @@ impl std::fmt::Display for DTC {
             self.number
         )
     }
-}
-
-const SERVICE_OFFSET: u8 = 0x40;
-
-#[repr(u8)]
-#[derive(Debug, Clone, TryFromPrimitive, IntoPrimitive, PartialEq, Eq)]
-pub enum OBDService {
-    CurrentData = 0x01,
-    FreezeFrame = 0x02,
-    StoredDTCs = 0x03,
-    ClearDTCs = 0x04,
-    TestResultsNonCan = 0x05,
-    TestResultsCan = 0x06,
-    PendingDTCs = 0x07,
-    Control = 0x08,
-    VehicleInformation = 0x09,
-    PermanentDTCs = 0x0A,
-}
-
-#[repr(u8)]
-#[derive(Debug, Clone, TryFromPrimitive, IntoPrimitive, PartialEq, Eq)]
-pub enum UDSService {
-    DiagnosticSessionControl = 0x10,
-    ECUReset = 0x11,
-    SecurityAccess = 0x27,
-    CommunicationControl = 0x28,
-    Authentication = 0x29,
-    TesterPresent = 0x3E,
-    ControlDTCSettings = 0x85,
-    ResponseOnEvent = 0x86,
-    LinkControl = 0x87,
-
-    ReadDataByIdentifier = 0x22,
-    ReadMemoryByAddress = 0x23,
-    ReadScalingDataByIdentifier = 0x24,
-    ReadDataByPeriodicIdentifier = 0x2A,
-    DynamicallyDefineDataIdentifier = 0x2C,
-    WriteDataByIdentifier = 0x2E,
-    WriteMemoryByAddress = 0x3D,
-
-    ClearDiagnosticInformation = 0x14,
-    ReadDTCInformation = 0x19,
-
-    InputOutputControlByIdentifier = 0x2F,
-
-    RoutineControl = 0x31,
-
-    RequestDownload = 0x34,
-    RequestUpload = 0x35,
-    TransferData = 0x36,
-    RequestTransferExit = 0x37,
-    RequestFileTransfer = 0x38,
-
-    SecuredDataTransmission = 0x84,
-
-    NegativeResponce = 0x7F,
 }
 
 #[repr(u8)]
@@ -216,7 +279,12 @@ impl MuxContext {
     }
 
     pub fn parse_frame(&mut self, frame: &impl Frame) -> Result<MuxParseResult, MuxParseError> {
-        if matches!(raw_id(frame.id()), 0x7DF | (0x7E0..=0x7EF)) {
+        if matches!(raw_id(frame.id()), (0x7DF..0x7E0) | (0x7E0..=0x7EF)) {
+            // println!(
+            //     "id: {:03X}, data: {:02X?}",
+            //     raw_id(frame.id()),
+            //     frame.data()
+            // );
             self.parse_isotp_frame(frame)
         } else {
             Err(MuxParseError::UnknownMessageId)
@@ -307,7 +375,7 @@ impl MuxContext {
         self.iso_tp_frames.retain(|isotp_payload| {
             if isotp_payload.mux_complete {
                 let can_id = isotp_payload.can_id;
-                let service = isotp_payload.data[0] - SERVICE_OFFSET;
+                let service = isotp_payload.data[0];
                 let demuxed_data = &(isotp_payload.data[1..]);
                 Self::parse_demux(can_id, service, demuxed_data);
             }
@@ -317,7 +385,13 @@ impl MuxContext {
     }
 
     fn parse_demux(can_id: Id, service: u8, data: &[u8]) {
-        if let Ok(obd_service) = OBDService::try_from(service) {
+        let service_offset = if service >= SERVICE_OFFSET {
+            service - SERVICE_OFFSET
+        } else {
+            service
+        };
+
+        if let Ok(obd_service) = OBDService::try_from(service_offset) {
             match obd_service {
                 OBDService::VehicleInformation => {
                     if let Some((pid, data)) = data.split_first() {
@@ -365,38 +439,37 @@ impl MuxContext {
                                 | S1CurrentData::PIDs5
                                 | S1CurrentData::PIDs6
                                 | S1CurrentData::PIDs7 => {
-                                    const LEN: usize = 4;
+                                    const _LEN: usize = 4;
 
-                                    println!("S1 PIDS Supported:");
+                                    // println!("S1 PIDS Supported:");
 
-                                    let bits = BitVec::<u8, Msb0>::from_vec(data.to_vec());
+                                    // let bits = BitVec::<u8, Msb0>::from_vec(data.to_vec());
 
-                                    // let mut pids: BTreeMap<u32, bool> = BTreeMap::new();
-                                    for (i, bit) in bits.iter().enumerate() {
-                                        let pid = i as u32 + 1;
-                                        let value = *bit;
-                                        // pids.insert(pid, value);
+                                    // // let mut pids: BTreeMap<u32, bool> = BTreeMap::new();
+                                    // for (i, bit) in bits.iter().enumerate() {
+                                    //     let pid = i as u32 + 1;
+                                    //     let value = *bit;
+                                    //     // pids.insert(pid, value);
 
-                                        if value {
-                                            print!("[{pid:02X}] ")
-                                        }
-                                    }
+                                    //     if value {
+                                    //         print!("[{pid:02X}] ")
+                                    //     }
+                                    // }
 
-                                    println!();
+                                    // println!();
                                 }
                                 S1CurrentData::EngineLoad => {
-                                    const LEN: usize = 1;
-                                    let value = data[0] as f32 * (100f32 / 255f32);
-                                    println!("Calculated engine load: {value}");
+                                    const _LEN: usize = 1;
+                                    let _value = data[0] as f32 * (100f32 / 255f32);
                                 }
                                 S1CurrentData::ControlModuleVoltage => {
-                                    const LEN: usize = 2;
+                                    const _LEN: usize = 2;
 
                                     let value = ((data[0] as u16) << 8) | (data[1] as u16);
                                     let _voltage = value as f32 * 0.001;
                                 }
                                 S1CurrentData::EngineFuelRate => {
-                                    const LEN: usize = 2;
+                                    const _LEN: usize = 2;
 
                                     let value = ((data[0] as u16) << 8) | (data[1] as u16);
                                     // L/h
@@ -424,27 +497,41 @@ impl MuxContext {
                         )
                     }
                 }
-                // OBDService::NegativeResponce => println!("Recieved negative responce from ECU. Did you send the correct query?"),
                 _ => {
                     println!(
-                        "Demuxed complete OBD2 data | Id: {:?}, Service: {:02X}, demux: {data:?}",
+                        "Demuxed complete data in OBD2 format | Id: 0x{:02X}, Service: 0x{:02X}, demux: 0x{data:02X?}",
                         raw_id(can_id),
                         obd_service as u8
                     );
                 }
             }
-        } else if let Ok(uds_service) = UDSService::try_from(service) {
-            println!("Demuxed complete data in UDS format. Currently unimplemented.");
-            println!(
-                "{:02X} | Service: {:02X}, PID: {:02X}: {:02X?}",
-                raw_id(can_id),
-                uds_service as u8,
-                data[0],
-                &data[1..]
-            )
+        } else if let Ok(uds_service) = UDSService::try_from(service_offset) {
+            match uds_service {
+                UDSService::NegativeResponce => {
+                    if let Ok(negative_responce) = UDSNegativeResponce::try_from(data[0]) {
+                        println!(
+                            "Received negative UDS responce: {negative_responce:?}; data: 0x{data:02X?}"
+                        )
+                    } else {
+                        println!(
+                            "Received negative UDS responce: Unknown Service: 0x{service:02X}; data: 0x{data:02X?}"
+                        )
+                    }
+                }
+                _ => {
+                    println!(
+                        "Demuxed complete data in UDS format | Id: 0x{:02X}, Service: 0x{:02X}({:?}), PID: 0x{:02X}, data: 0x{:02X?}",
+                        raw_id(can_id),
+                        service_offset,
+                        uds_service,
+                        data[0],
+                        &data[1..]
+                    )
+                }
+            }
         } else {
             println!(
-                "Demuxed complete ISOTP data in unknown format | Id: {:?}, Service: {service:02X}, Data: {data:?}",
+                "Demuxed complete ISOTP data in unknown format | Id: 0x{:02X}, Service: 0x{service:02X}, Data: 0x{data:02X?}",
                 raw_id(can_id)
             );
         }
