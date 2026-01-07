@@ -434,7 +434,7 @@ fn generate_slint_car_data() -> Result<(), Box<dyn std::error::Error>> {
 fn capitalize_first_words(s: &str) -> String {
     let mut words_capitilized: Vec<String> = vec![];
 
-    for word in s.split('-').collect::<Vec<_>>() {
+    for word in s.split('_').collect::<Vec<_>>() {
         let mut chars = word.chars();
         match chars.next() {
             None => {}
@@ -444,7 +444,7 @@ fn capitalize_first_words(s: &str) -> String {
         }
     }
 
-    words_capitilized.join("-")
+    words_capitilized.join("")
 }
 
 fn generate_slint_themes() -> Result<(), Box<dyn std::error::Error>> {

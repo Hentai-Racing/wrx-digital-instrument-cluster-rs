@@ -1,4 +1,5 @@
 use crate::application::user::UserConfig;
+use crate::data::parameters::Node;
 use crate::slint_generatedApp::{
     AccessibilitySettings, App, ApplicationState, DebugSettings, GeneralSettings, GlobalThemeData,
     HardwareBackendData, SystemInfo,
@@ -72,5 +73,20 @@ pub fn bridge(handle_weak: Weak<App>, config_manager: Arc<UserConfig>) {
     })) {
         Err(e) => eprintln!("Failure in settings loader: {e}"),
         _ => {}
+    }
+}
+
+pub fn settings_menu_builder(handle_weak: Weak<App>, config_manager: Arc<UserConfig>) {
+    // TODO: give slint a format we can use to build a menu system
+    if let Some(handle) = handle_weak.upgrade() {
+        let layout = config_manager.get_page_layout();
+
+        fn layout_unwrap(node: Node) {
+            match node {
+                Node::Page { name, items } => {}
+                Node::Parameter(name) => {}
+                Node::ReadOnlyParameter(name) => {}
+            }
+        }
     }
 }
