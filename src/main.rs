@@ -40,7 +40,11 @@ const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 static CONFIG_MANAGER: LazyLock<Arc<UserConfig>> = LazyLock::new(|| {
     let ret = Default::default();
 
-    tokio::spawn(async move { CONFIG_MANAGER.load_from_fs() });
+    tokio::spawn(async move {
+        if let Err(e) = CONFIG_MANAGER.load_from_fs().await {
+            println!("Failed to load user config from fs: {e:?}");
+        }
+    });
 
     ret
 });
