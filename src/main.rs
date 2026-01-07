@@ -335,6 +335,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // ui backend bridges
     config_bridge::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
+    config_bridge::settings_menu_builder(ui.as_weak(), CONFIG_MANAGER.clone());
     car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), CONFIG_MANAGER.clone());
     hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
 

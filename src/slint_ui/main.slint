@@ -32,6 +32,11 @@ import { GlobalThemeData } from "@themes/themes.slint";
 import { ThemeLoader } from "@themes/theme_loader_gen.slint";
 import { CanDisplay, SCanFrameDisplay } from "@widgets/can_display.slint";
 import { WidgetContainerState } from "@widgets/widget_container.slint";
+import {
+    SettingsLayout,
+    SettingsMenuItemType,
+    SettingsMenuItem,
+} from "@widgets/settings.slint";
 
 // themes
 import { DefaultTheme } from "@themes/default/theme_main.slint";
@@ -49,9 +54,9 @@ import "@fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
 import "@fonts/JetBrainsMono/fonts/ttf/JetBrainsMono-Regular.ttf";
 
 // Export types
-export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, SUnitSystem, SCanFrameDisplay }
+export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, SUnitSystem, SCanFrameDisplay, SettingsMenuItemType, SettingsMenuItem }
 // Export globals
-export { SCarData, DebugMenuState, GlobalThemeData, CanDisplay, WidgetContainerState }
+export { SCarData, DebugMenuState, GlobalThemeData, CanDisplay, WidgetContainerState, SettingsLayout }
 export * from "@lib/state.slint";
 
 export component App inherits Window {

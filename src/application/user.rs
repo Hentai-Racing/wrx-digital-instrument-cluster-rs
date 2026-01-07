@@ -29,15 +29,15 @@ impl std::fmt::Display for SaveError {
 }
 
 parameter_struct! {UserConfig {
-    [ro] loaded: bool,
+    [hidden] loaded: bool,
 
     user {
+        general {
+            pub disable_hill_assist: bool = false,
+            pub unit_system: UnitSystem,
+        },
         theme {
             pub selected_theme: String = String::from("Default"),
-        },
-        general {
-            pub unit_system: UnitSystem,
-            pub disable_hill_assist: bool = false,
         },
         accessibility {
             pub animations_enabled: bool = true,
@@ -46,14 +46,16 @@ parameter_struct! {UserConfig {
     },
 
     session {
+        // TODO: add conditional hiding for pages and params
         debug {
-            pub debug_mode: bool = cfg!(debug_assertions),
+            pub [hidden] debug_mode: bool = cfg!(debug_assertions),
             pub debug_highlights: bool = false,
             pub debug_overlay_enabled: bool = true,
+            pub extra_debug_info: bool = false,
         },
 
         hardware {
-            pub [ro] adc_val: i32,
+            pub [hidden] adc_val: i32,
         },
 
         simulation {
@@ -65,13 +67,13 @@ parameter_struct! {UserConfig {
         },
 
         system_info {
-            pub [ro] total_memory_mb: i32,
-            pub [ro] used_memory_mb: i32,
-            pub [ro] process_memory_mb: i32,
-            pub [ro] process_memory_max_mb: i32,
-            pub [ro] num_cpus: i32,
-            pub [ro] cpu_usage: f32,
-            pub [ro] fps: i32,
+            pub [hidden] total_memory_mb: i32,
+            pub [hidden] used_memory_mb: i32,
+            pub [hidden] process_memory_mb: i32,
+            pub [hidden] process_memory_max_mb: i32,
+            pub [hidden] num_cpus: i32,
+            pub [hidden] cpu_usage: f32,
+            pub [hidden] fps: i32,
         },
     },
 }}
@@ -125,6 +127,7 @@ impl UserConfig {
     }
 
     pub fn save_to_fs(&self) -> Result<(), SaveError> {
+        // TODO: add timestamp and config version to file
         let toml_str =
             toml::to_string_pretty(&self.user).map_err(|e| SaveError::Error(e.into()))?;
 
@@ -133,6 +136,7 @@ impl UserConfig {
             .map_err(|e| SaveError::Error(e.into()))?;
         let dir = user_config_path.parent().ok_or(SaveError::DirError)?;
         let temp_dir = dir.join(format!("{CONFIG_NAME}.tmp"));
+        let old_dir = dir.join(format!("{CONFIG_NAME}.old"));
 
         let mut temp_file = OpenOptions::new()
             .write(true)
@@ -149,6 +153,7 @@ impl UserConfig {
             .sync_all()
             .map_err(|e| SaveError::Error(e.into()))?;
 
+        fs::copy(&user_config_path, &old_dir).map_err(|e| SaveError::Error(e.into()))?;
         fs::rename(&temp_dir, &user_config_path).map_err(|e| SaveError::Error(e.into()))?;
 
         OpenOptions::new()

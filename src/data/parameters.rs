@@ -220,11 +220,20 @@ macro_rules! parameter_match {
     }}
 }
 
+/// The visibility and permissions of nodes is only relevant for user-facing frontend
 #[allow(unused)]
 #[derive(Debug)]
 pub enum Node {
-    ReadOnlyParameter(&'static str),
-    Parameter(&'static str),
+    /// inherently read-only
+    HiddenParameter(),
+    ReadOnlyParameter {
+        name: &'static str,
+        ty: &'static str,
+    },
+    Parameter {
+        name: &'static str,
+        ty: &'static str,
+    },
     Page {
         name: &'static str,
         items: Box<[Node]>,
@@ -236,11 +245,14 @@ impl Node {
         let pad = "  ".repeat(indent);
 
         match self {
-            Node::ReadOnlyParameter(name) => {
-                writeln!(f, "{pad}[RO] {name}")
+            Node::HiddenParameter() => {
+                writeln!(f, "{pad} <hidden item>")
             }
-            Node::Parameter(name) => {
-                writeln!(f, "{pad}[RW] {name}")
+            Node::ReadOnlyParameter { name, ty } => {
+                writeln!(f, "{pad}[RO] {name}: {ty}")
+            }
+            Node::Parameter { name, ty } => {
+                writeln!(f, "{pad}[RW] {name}: {ty}")
             }
             Node::Page { name, items } => {
                 writeln!(f, "{pad}{name} {{")?;
@@ -303,9 +315,20 @@ macro_rules! parameter_struct {
                 $crate::parameter_struct!(@path self target; path; value| $($entries)*)
             }
 
+            pub fn get_by_path(&self, param_path: &str) -> String {
+                let (target, path) = match param_path.split_once('.') {
+                    Some((root, path)) => {(root, path)}
+                    _ => {(param_path, "")}
+                };
+
+                $crate::parameter_struct!(@path-get self target; path;| $($entries)*)
+            }
+
             pub fn get_page_layout(&self) -> $crate::data::parameters::Node {
                 return $crate::parameter_struct!(@node $page self| $($entries)*);
             }
+
+            // TODO: add get layout by path for ui
         }
 
         impl Default for [<$page:camel_edge>] {
@@ -359,11 +382,20 @@ macro_rules! parameter_struct {
         $crate::parameter_struct!(@apply $self, $from| $($rest)*)
     };
 
+    (@node-internal $self:ident| param [hidden] $param:ident: $ty:ty) => {
+        $crate::data::parameters::Node::HiddenParameter()
+    };
     (@node-internal $self:ident| param [ro] $param:ident: $ty:ty) => {
-        $crate::data::parameters::Node::ReadOnlyParameter(stringify!($param))
+        $crate::data::parameters::Node::ReadOnlyParameter{
+            name: stringify!($param),
+            ty: stringify!($ty)
+        }
     };
     (@node-internal $self:ident| param $param:ident: $ty:ty) => {
-        $crate::data::parameters::Node::Parameter(stringify!($param))
+        $crate::data::parameters::Node::Parameter{
+            name: stringify!($param),
+            ty: stringify!($ty)
+        }
     };
     (@node-internal $self:ident| page $sub:ident) => {
         $self.$sub.get_page_layout()
@@ -377,6 +409,9 @@ macro_rules! parameter_struct {
         }
     };
 
+    (@path-internal $self:ident $path:expr; $value:ident| param [hidden] $param:ident: $ty:ty) => {
+        eprintln!("Failed to set {} to {:?}: Parameter is hidden; inherently read-only", stringify!($param), $value)
+    };
     (@path-internal $self:ident $path:expr; $value:ident| param [ro] $param:ident: $ty:ty) => {
         eprintln!("Failed to set {} to {:?}: Parameter is read-only", stringify!($param), $value)
     };
@@ -396,6 +431,24 @@ macro_rules! parameter_struct {
             }),*
             _ => {
                 println!("Path [{}] does not exist!", $path);
+            }
+        }
+    };
+
+    (@path-get-internal $self:ident $path:expr;| param $([$permissions:tt])? $param:ident: $ty:ty) => {
+        format!("{:?}", $self.$param.value())
+    };
+    (@path-get-internal $self:ident $path:expr;| page $sub:ident) => {
+        $self.$sub.get_by_path($path)
+    };
+    (@path-get $self:ident $target:expr; $path:expr;| $(($node:tt $([$permissions:tt])? $thing: ident $(: $ty:ty)?))*) => {
+        match $target {
+            $(stringify!($thing) => {
+                $crate::parameter_struct!(@path-get-internal $self $path;| $node $([$permissions])? $thing $(: $ty)?)
+            }),*
+            _ => {
+                println!("Path [{}] does not exist!", $path);
+                "error".into()
             }
         }
     };

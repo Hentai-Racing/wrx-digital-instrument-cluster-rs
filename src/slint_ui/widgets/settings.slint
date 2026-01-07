@@ -4,6 +4,7 @@ import {
     ComboBox,
     ToggleBox,
     DebugHighlight,
+    FocusState,
 } from "@lib/core.slint";
 import {
     ApplicationState,
@@ -14,9 +15,33 @@ import {
 import { SUnitSystem } from "@lib/units.slint";
 import { GlobalThemeData } from "@themes/themes.slint";
 
+export enum SettingsMenuItemType {
+    Parameter,
+    ReadOnlyParameter,
+    Page,
+    PageEnd,
+}
+
+export struct SettingsMenuItem {
+    name: string,
+    param-path: string,
+    param-type: string,
+    item-type: SettingsMenuItemType,
+}
+
+export global SettingsLayout {
+    // TODO: can be changed to not be a flat array by just returning page contents from the callback
+    in property <[SettingsMenuItem]> layout;
+
+    callback get-page-layout();
+    callback set-by-path(path: string, val: string);
+    callback get-by-path(path: string) -> string;
+}
+
 component DecorationBar inherits Rectangle {
     height: 2px;
     background: white;
+    width: 100%;
 }
 
 component SettingBarLabelTextBase inherits Text {
@@ -58,7 +83,7 @@ component SettingsBarLabelBase {
 
     i-label := SettingBarLabelText {
         x: 0;
-        i-x: root.has-focus ? 10px : 0;
+        i-x: root.has-focus ? 15px : 0;
     }
 }
 
@@ -84,20 +109,49 @@ component SettingBarLabel inherits Rectangle {
     DebugHighlight { }
 }
 
+component SettingBarBackgroundBase inherits Rectangle {
+    in property <bool> has-focus;
+
+    border-radius: 6px;
+    background: has-focus ? white.transparentize(90%) : transparent;
+}
+
+component SettingBarBackgroundBaseAnimated inherits SettingBarBackgroundBase {
+    animate background { duration: 50ms; }
+}
+
+component SettingBarBackground inherits Rectangle {
+    in property <bool> has-focus;
+
+    if !AccessibilitySettings.animations-enabled: SettingBarBackgroundBase {
+        has-focus: root.has-focus;
+    }
+    if AccessibilitySettings.animations-enabled: SettingBarBackgroundBaseAnimated {
+        has-focus: root.has-focus;
+    }
+}
+
 component SettingBar inherits Rectangle {
     in property <string> label <=> i-label.text;
-    in property <bool> has-focus <=> i-label.has-focus;
+    in property <bool> has-focus: FocusState.current-focus-id == self.focus-id;
+    in property <int> focus-id;
 
-    property <length> i-padding: 5px;
+    property <length> i-padding: 15px;
 
-    width: 500px;
+    width: 550px;
+
+    SettingBarBackground {
+        has-focus: root.has-focus;
+    }
 
     VerticalLayout {
         alignment: center;
         padding: i-padding;
 
         HorizontalLayout {
-            i-label := SettingBarLabel { }
+            i-label := SettingBarLabel {
+                has-focus: root.has-focus;
+            }
 
             i-container := Rectangle {
                 DebugHighlight {
@@ -119,15 +173,101 @@ component SettingBar inherits Rectangle {
     }
 }
 
+component TypedSettingBar inherits SettingBar {
+    in property <string> param-type;
+    in property <string> param-path;
+
+    if DebugSettings.debug-mode && DebugSettings.extra-debug-info: VerticalLayout {
+        Text {
+            text: param-type;
+            horizontal-alignment: TextHorizontalAlignment.right;
+        }
+
+        Text {
+            text: param-path;
+            horizontal-alignment: TextHorizontalAlignment.right;
+        }
+    }
+
+    if param-type == "bool": ToggleBox {
+        var: false;
+
+        init => {
+            // TODO: make lib function to get string value of Rust types instead of hard-coding
+            root.focus-id = self.focus-id;
+            self.var = SettingsLayout.get-by-path(param-path) == "true" ? true : false;
+        }
+
+        toggled => {
+            self.var = !self.var;
+            SettingsLayout.set-by-path(param-path, self.var ? "true" : "false");
+        }
+    }
+
+    if param-type == "UnitSystem": ComboBox {
+        title: root.label;
+        // TODO: make lib function to get all enum options from Rust
+        model: ["USCS", "SI"];
+
+        init => {
+            root.focus-id = self.focus-id;
+            self.current-value = SettingsLayout.get-by-path(param-path);
+        }
+
+        changed current-value => {
+            SettingsLayout.set-by-path(param-path, self.current-value);
+        }
+    }
+}
+
+component SettingsMenuLayoutComponent inherits VerticalLayout {
+    alignment: center;
+    spacing: 2px;
+
+    out property <int> first-focus-id: -1;
+    out property <int> last-focus-id;
+
+    init => {
+        SettingsLayout.get-page-layout();
+    }
+
+    for item[i] in SettingsLayout.layout: HorizontalLayout {
+        alignment: center;
+
+        function update-focus-ids(id: int) {
+            if i == 0 {
+                root.first-focus-id = id;
+            } else if i == (SettingsLayout.layout.length - 1) {
+                root.last-focus-id = id;
+            }
+        }
+
+        if (item.item-type == SettingsMenuItemType.Parameter) || (item.item-type == SettingsMenuItemType.ReadOnlyParameter): TypedSettingBar {
+            label: item.name;
+            param-path: item.param-path;
+            param-type: item.param-type;
+
+            init => update-focus-ids(self.focus-id);
+        }
+        // TODO: add pages
+        // if item.item-type == SettingsMenuItemType.Page: SettingBar {
+        //     label: item.name;
+
+        //     init => update-focus-ids(self.focus-id);
+        // }
+        if item.item-type == SettingsMenuItemType.Page: DecorationBar { }
+        // if item.item-type == SettingsMenuItemType.PageEnd: DecorationBar { }
+    }
+}
+
 export component SettingsMenu inherits FocusDomain {
     force-exit-strategy: false;
-
-    nav-front-forward => theme-selection-box.focus();
-    nav-end-backward => exit-button.focus();
-    init => theme-selection-box.focus();
-
     width: 2400px;
     height: 900px;
+
+    nav-front-forward => FocusState.force-focus(layout.first-focus-id);
+    nav-end-backward => exit-button.focus();
+
     HorizontalLayout {
         alignment: center;
 
@@ -135,176 +275,7 @@ export component SettingsMenu inherits FocusDomain {
             alignment: center;
             spacing: 10px;
 
-            DecorationBar { }
-
-            HorizontalLayout {
-                alignment: center;
-
-                VerticalLayout {
-                    spacing: parent.spacing;
-                    alignment: parent.alignment;
-
-                    SettingBar {
-                        label: "Theme";
-
-                        has-focus: theme-selection-box.has-focus;
-                        theme-selection-box := ComboBox {
-                            title: "Theme";
-                            model: GlobalThemeData.themes;
-
-                            current-value <=> GlobalThemeData.current-theme;
-
-                            changed current-value => {
-                                GlobalThemeData.update_current_theme(self.current-value);
-                            }
-                        }
-                    }
-                }
-            }
-
-            DecorationBar { }
-
-            VerticalLayout {
-                spacing: parent.spacing;
-                alignment: parent.alignment;
-
-                HorizontalLayout {
-                    alignment: parent.alignment;
-
-                    SettingBar {
-                        label: "Units";
-
-                        has-focus: units-i-element.has-focus;
-                        units-i-element := ComboBox {
-                            title: "Units";
-                            model: ["USCS", "SI"];
-
-                            current-value: ApplicationState.user-unit == SUnitSystem.USCS ? "USCS" : "SI";
-
-                            changed current-value => {
-                                ApplicationState.update-user-unit(self.current-value == "USCS" ? SUnitSystem.USCS : SUnitSystem.SI);
-                            }
-                        }
-                    }
-                }
-
-                HorizontalLayout {
-                    alignment: parent.alignment;
-
-                    SettingBar {
-                        label: "Disable Hill Assist Warning";
-
-                        has-focus: disable-hill-assist-i-element.has-focus;
-                        disable-hill-assist-i-element := ToggleBox {
-                            var: GeneralSettings.disable-hill-assist;
-                            toggled(val) => GeneralSettings.update-disable-hill-assist(val);
-                        }
-                    }
-                }
-            }
-
-            DecorationBar { }
-
-            VerticalLayout {
-                spacing: parent.spacing;
-                alignment: parent.alignment;
-                HorizontalLayout {
-                    alignment: parent.alignment;
-
-                    SettingBar {
-                        label: "Animations";
-                        has-focus: animations-i-element.has-focus;
-                        animations-i-element := ToggleBox {
-                            var: AccessibilitySettings.animations-enabled;
-                            toggled(val) => AccessibilitySettings.update-animations-enabled(val);
-                        }
-                    }
-                }
-
-                HorizontalLayout {
-                    alignment: parent.alignment;
-
-                    SettingBar {
-                        label: "Alternate Switches";
-                        has-focus: accessible-switches-i-element.has-focus;
-                        accessible-switches-i-element := ToggleBox {
-                            force-accessible-enaled: true;
-                            var: AccessibilitySettings.accessible-switches;
-                            toggled(val) => AccessibilitySettings.update-accessible-switches(val);
-                        }
-                    }
-                }
-            }
-
-            DecorationBar { }
-
-            HorizontalLayout {
-                alignment: parent.alignment;
-                SettingBar {
-                    label: "CAN Bus Running";
-                    has-focus: running-can-i-element.has-focus;
-
-                    running-can-i-element := ToggleBox {
-                        var: ApplicationState.running-can;
-                        toggled(val) => ApplicationState.update-running-can(val);
-                    }
-                }
-            }
-
-            if ApplicationState.virtual_cluster: VerticalLayout {
-                spacing: parent.spacing;
-                alignment: parent.alignment;
-
-                DecorationBar { }
-
-                HorizontalLayout {
-                    alignment: parent.alignment;
-                    SettingBar {
-                        label: "Simulation Running";
-                        has-focus: simulation-toggle-i-element.has-focus;
-
-                        simulation-toggle-i-element := ToggleBox {
-                            var: ApplicationState.running-simulation;
-                            toggled(val) => ApplicationState.update-running-simulation(val);
-                        }
-                    }
-                }
-            }
-
-            if DebugSettings.debug-mode: VerticalLayout {
-                spacing: parent.spacing;
-                alignment: parent.alignment;
-
-                DecorationBar { }
-
-                HorizontalLayout {
-                    alignment: parent.alignment;
-
-                    SettingBar {
-                        label: "Debug Highlights";
-                        has-focus: debug-highlights-i-element.has-focus;
-                        debug-highlights-i-element := ToggleBox {
-                            var: DebugSettings.debug-highlights;
-                            toggled(val) => DebugSettings.update-debug-highlights(val);
-                        }
-                    }
-                }
-
-                HorizontalLayout {
-                    alignment: parent.alignment;
-
-                    SettingBar {
-                        label: "Debug Overlay";
-                        has-focus: debug-overlay-i-element.has-focus;
-                        debug-overlay-i-element := ToggleBox {
-                            var: DebugSettings.debug-overlay-enabled;
-                            toggled(val) => DebugSettings.update-debug-overlay-enabled(val);
-                        }
-                    }
-                }
-            }
-
-            DecorationBar { }
+            layout := SettingsMenuLayoutComponent { }
 
             HorizontalLayout {
                 alignment: parent.alignment;
