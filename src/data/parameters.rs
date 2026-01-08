@@ -273,7 +273,7 @@ impl fmt::Display for Node {
 
 /// Defines a serdes capable structure with parameter fields and optional default values.
 /// Capable of having multiple pages
-/// TODO: add example (src/application/user.rs:@UserConfig)
+/// TODO: add example (src/application/user.rs:@Config)
 #[macro_export]
 macro_rules! parameter_struct {
     ($page:ident { $($items:tt)* }) => {

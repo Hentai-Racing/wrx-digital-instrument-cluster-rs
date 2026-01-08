@@ -4,7 +4,7 @@ mod data;
 mod hardware;
 mod slint_ui;
 
-use crate::application::user::UserConfig;
+use crate::application::config::Config;
 use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
 use crate::can::can_mux_parser::{
     self, ISOTPAckFrame, MuxContext, MuxParseResult, OBDService, S1CurrentData,
@@ -37,7 +37,7 @@ const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
 #[cfg(target_vendor = "apple")]
 const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 
-static CONFIG_MANAGER: LazyLock<Arc<UserConfig>> = LazyLock::new(|| {
+static CONFIG_MANAGER: LazyLock<Arc<Config>> = LazyLock::new(|| {
     let ret = Default::default();
 
     tokio::spawn(async move {
@@ -326,7 +326,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // ui backend bridges
     config_bridge::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
-    config_bridge::settings_menu_builder(ui.as_weak(), CONFIG_MANAGER.clone());
+    config_bridge::bind_config_layout(ui.as_weak(), CONFIG_MANAGER.clone());
     car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), CONFIG_MANAGER.clone());
     hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
 

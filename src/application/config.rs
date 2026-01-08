@@ -10,7 +10,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::PathBuf;
 
-const CONFIG_NAME: &str = "user_config.toml";
+const CONFIG_NAME: &str = "config.toml";
 const LOAD_TIMEOUT_SECS: u64 = 10;
 
 #[derive(Debug)]
@@ -28,7 +28,7 @@ impl std::fmt::Display for SaveError {
     }
 }
 
-parameter_struct! {UserConfig {
+parameter_struct! {Config {
     [hidden] loaded: bool,
 
     user {
@@ -78,7 +78,7 @@ parameter_struct! {UserConfig {
     },
 }}
 
-impl UserConfig {
+impl Config {
     pub fn get_config_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
         let exe_dir = Some(env::current_exe()?.to_path_buf()).unwrap();
 
@@ -95,11 +95,11 @@ impl UserConfig {
         Ok(config_dir)
     }
 
-    pub fn get_user_config_path(&self) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    pub fn get_config_path(&self) -> Result<PathBuf, Box<dyn std::error::Error>> {
         let config_dir = Self::get_config_dir()?;
 
-        let user_config_dir = config_dir.join(CONFIG_NAME);
-        match File::create_new(&user_config_dir) {
+        let config_dir = config_dir.join(CONFIG_NAME);
+        match File::create_new(&config_dir) {
             Ok(mut file) => {
                 let toml_string = toml::to_string_pretty(&self.user)?;
                 file.write(toml_string.as_bytes())?;
@@ -107,16 +107,16 @@ impl UserConfig {
             _ => {}
         };
 
-        Ok(user_config_dir)
+        Ok(config_dir)
     }
 
     pub async fn load_from_fs(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let user_config_dir = self.get_user_config_path()?;
-        let user_config_file = fs::read_to_string(&user_config_dir)?;
+        let config_dir = self.get_config_path()?;
+        let config_file = fs::read_to_string(&config_dir)?;
 
         if let Err(_) = timeout(Duration::from_secs(LOAD_TIMEOUT_SECS), async move {
-            if let Ok(loaded_user_config) = toml::from_str(user_config_file.as_str()) {
-                self.user.apply(loaded_user_config);
+            if let Ok(loaded_config) = toml::from_str(config_file.as_str()) {
+                self.user.apply(loaded_config);
                 self.loaded.set_value(true);
             }
         })
@@ -131,10 +131,10 @@ impl UserConfig {
         let toml_str =
             toml::to_string_pretty(&self.user).map_err(|e| SaveError::Error(e.into()))?;
 
-        let user_config_path = self
-            .get_user_config_path()
+        let config_path = self
+            .get_config_path()
             .map_err(|e| SaveError::Error(e.into()))?;
-        let dir = user_config_path.parent().ok_or(SaveError::DirError)?;
+        let dir = config_path.parent().ok_or(SaveError::DirError)?;
         let temp_dir = dir.join(format!("{CONFIG_NAME}.tmp"));
         let old_dir = dir.join(format!("{CONFIG_NAME}.old"));
 
@@ -153,8 +153,8 @@ impl UserConfig {
             .sync_all()
             .map_err(|e| SaveError::Error(e.into()))?;
 
-        fs::copy(&user_config_path, &old_dir).map_err(|e| SaveError::Error(e.into()))?;
-        fs::rename(&temp_dir, &user_config_path).map_err(|e| SaveError::Error(e.into()))?;
+        fs::copy(&config_path, &old_dir).map_err(|e| SaveError::Error(e.into()))?;
+        fs::rename(&temp_dir, &config_path).map_err(|e| SaveError::Error(e.into()))?;
 
         OpenOptions::new()
             .read(true)

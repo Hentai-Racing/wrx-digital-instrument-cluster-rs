@@ -19,7 +19,6 @@ export enum SettingsMenuItemType {
     Parameter,
     ReadOnlyParameter,
     Page,
-    PageEnd,
 }
 
 export struct SettingsMenuItem {
@@ -33,7 +32,8 @@ export global SettingsLayout {
     // TODO: can be changed to not be a flat array by just returning page contents from the callback
     in property <[SettingsMenuItem]> layout;
 
-    callback get-page-layout();
+    callback get-page-layout(path: string) -> [SettingsMenuItem];
+    callback get-page-parent(path: string) -> string;
     callback set-by-path(path: string, val: string);
     callback get-by-path(path: string) -> string;
 }
@@ -138,7 +138,7 @@ component SettingBar inherits Rectangle {
 
     property <length> i-padding: 15px;
 
-    width: 550px;
+    width: 600px;
 
     SettingBarBackground {
         has-focus: root.has-focus;
@@ -177,6 +177,8 @@ component TypedSettingBar inherits SettingBar {
     in property <string> param-type;
     in property <string> param-path;
 
+    callback activated();
+
     if DebugSettings.debug-mode && DebugSettings.extra-debug-info: VerticalLayout {
         Text {
             text: param-type;
@@ -201,6 +203,7 @@ component TypedSettingBar inherits SettingBar {
         toggled => {
             self.var = !self.var;
             SettingsLayout.set-by-path(param-path, self.var ? "true" : "false");
+            root.activated();
         }
     }
 
@@ -216,7 +219,19 @@ component TypedSettingBar inherits SettingBar {
 
         changed current-value => {
             SettingsLayout.set-by-path(param-path, self.current-value);
+            root.activated();
         }
+    }
+
+    if (param-type == "page") || (param-type == "page_back"): Button {
+        width: self.height;
+        text: (param-type == "page") ? ">" : "<";
+
+        init => {
+            root.focus-id = self.focus-id;
+        }
+
+        activated => root.activated();
     }
 }
 
@@ -227,11 +242,30 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
     out property <int> first-focus-id: -1;
     out property <int> last-focus-id;
 
-    init => {
-        SettingsLayout.get-page-layout();
+    property <[SettingsMenuItem]> items;
+    property <string> path: "Config";
+    property <string> parent-path: "Config";
+
+    function update-layout() {
+        self.items = SettingsLayout.get-page-layout(self.path);
+        self.parent-path = SettingsLayout.get-page-parent(self.path);
     }
 
-    for item[i] in SettingsLayout.layout: HorizontalLayout {
+    init => update-layout();
+
+    HorizontalLayout {
+        VerticalLayout {
+            page-title := TypedSettingBar {
+                label: path;
+                param-path: root.path;
+                param-type: "page_title";
+            }
+
+            DecorationBar { }
+        }
+    }
+
+    for item[i] in root.items: HorizontalLayout {
         alignment: center;
 
         function update-focus-ids(id: int) {
@@ -249,14 +283,38 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
 
             init => update-focus-ids(self.focus-id);
         }
-        // TODO: add pages
-        // if item.item-type == SettingsMenuItemType.Page: SettingBar {
-        //     label: item.name;
+        if item.item-type == SettingsMenuItemType.Page: TypedSettingBar {
+            label: item.name;
+            param-path: item.param-path;
+            param-type: "page";
 
-        //     init => update-focus-ids(self.focus-id);
-        // }
-        if item.item-type == SettingsMenuItemType.Page: DecorationBar { }
-        // if item.item-type == SettingsMenuItemType.PageEnd: DecorationBar { }
+            init => update-focus-ids(self.focus-id);
+
+            activated => {
+                root.path = item.param-path;
+                root.update-layout();
+            }
+        }
+    }
+
+    page-back := TypedSettingBar {
+        label: "Back";
+        param-path: root.path;
+        param-type: "page_back";
+
+        init => {
+            root.last-focus-id = self.focus-id;
+        }
+
+        activated => {
+            if (path == "") || (path == "Config") {
+                ApplicationState.settings-menu-visible = false;
+            } else {
+                root.path = root.parent-path;
+            }
+
+            root.update-layout();
+        }
     }
 }
 
@@ -266,28 +324,11 @@ export component SettingsMenu inherits FocusDomain {
     height: 900px;
 
     nav-front-forward => FocusState.force-focus(layout.first-focus-id);
-    nav-end-backward => exit-button.focus();
+    nav-end-backward => FocusState.force-focus(layout.last-focus-id);
 
     HorizontalLayout {
         alignment: center;
 
-        VerticalLayout {
-            alignment: center;
-            spacing: 10px;
-
-            layout := SettingsMenuLayoutComponent { }
-
-            HorizontalLayout {
-                alignment: parent.alignment;
-
-                exit-button := Button {
-                    text: "Exit";
-
-                    activated => {
-                        ApplicationState.settings-menu-visible = false;
-                    }
-                }
-            }
-        }
+        layout := SettingsMenuLayoutComponent { }
     }
 }
