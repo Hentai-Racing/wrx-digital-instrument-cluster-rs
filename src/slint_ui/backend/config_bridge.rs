@@ -90,24 +90,18 @@ fn unroll_layout(
 
     match node {
         Node::HiddenParameter() => {}
-        Node::ReadOnlyParameter { name, ty } => {
-            let path = format!("{current_path}{name}");
-            ret.push(SettingsMenuItem {
-                name: (*name).into(),
-                param_type: (*ty).into(),
-                param_path: path.into(),
-                item_type: SettingsMenuItemType::ReadOnlyParameter,
-            })
-        }
-        Node::Parameter { name, ty } => {
-            let path = format!("{current_path}{name}");
-            ret.push(SettingsMenuItem {
-                name: (*name).into(),
-                param_type: (*ty).into(),
-                param_path: path.into(),
-                item_type: SettingsMenuItemType::Parameter,
-            })
-        }
+        Node::ReadOnlyParameter { name, ty } => ret.push(SettingsMenuItem {
+            name: (*name).into(),
+            param_type: (*ty).into(),
+            param_path: format!("{current_path}{name}").into(),
+            item_type: SettingsMenuItemType::ReadOnlyParameter,
+        }),
+        Node::Parameter { name, ty } => ret.push(SettingsMenuItem {
+            name: (*name).into(),
+            param_type: (*ty).into(),
+            param_path: format!("{current_path}{name}").into(),
+            item_type: SettingsMenuItemType::Parameter,
+        }),
         Node::Page { name, items } => {
             let path: String = format!("{current_path}{name}");
 

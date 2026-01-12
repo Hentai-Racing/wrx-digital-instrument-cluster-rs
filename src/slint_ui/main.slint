@@ -8,6 +8,7 @@ import {
     SliderSelectionBox,
     SliderState,
 } from "@lib/core.slint";
+import { RSTypeResolver } from "@lib/rs.slint";
 import {
     DebugMenuWidget,
     DebugMenuState,
@@ -56,7 +57,7 @@ import "@fonts/JetBrainsMono/fonts/ttf/JetBrainsMono-Regular.ttf";
 // Export types
 export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, SUnitSystem, SCanFrameDisplay, SettingsMenuItemType, SettingsMenuItem }
 // Export globals
-export { SCarData, DebugMenuState, GlobalThemeData, CanDisplay, WidgetContainerState, SettingsLayout }
+export { SCarData, DebugMenuState, GlobalThemeData, CanDisplay, WidgetContainerState, SettingsLayout, RSTypeResolver }
 export * from "@lib/state.slint";
 
 export component App inherits Window {

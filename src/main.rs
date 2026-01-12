@@ -14,7 +14,7 @@ use crate::can::messages::wrx_2018::CanError;
 use crate::data::car_data::{CarData, ParseError, ParseResult};
 use crate::hardware::hardware_backend::{self, HardwareBackend};
 use crate::slint_ui::backend::{
-    can_display::CanFrameDisplay, car_data_bridge, config_bridge, hardware_bridge,
+    can_display::CanFrameDisplay, car_data_bridge, config_bridge, hardware_bridge, rs_type_resolver,
 };
 
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, Pid, ProcessRefreshKind, RefreshKind, System};
@@ -325,6 +325,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // ui backend bridges
+    rs_type_resolver::bridge(ui.as_weak());
     config_bridge::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
     config_bridge::bind_config_layout(ui.as_weak(), CONFIG_MANAGER.clone());
     car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), CONFIG_MANAGER.clone());

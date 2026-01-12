@@ -1,0 +1,11 @@
+export global RSTypeResolver {
+    out property <string> bool: "bool";
+
+    pure callback rs-string-bool(string) -> bool;
+    pure callback sl-bool-string(bool) -> string;
+
+    out property <string> enum: "enum";
+
+    pure callback is-enum-type(ty: string) -> bool;
+    pure callback get-enum-values(string) -> [string];
+}
