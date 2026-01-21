@@ -10,7 +10,7 @@ export component CarDisplayWidget inherits Rectangle {
             Rectangle {
                 hood := Rectangle {
                     width: body.width;
-                    height: 75px;
+                    height: 93px;
                     y: body.y - self.height - part-padding;
                     x: body.x;
                     background: SCarData.hood_open.value ? red : body.background;
@@ -18,7 +18,7 @@ export component CarDisplayWidget inherits Rectangle {
 
                 trunk := Rectangle {
                     width: hood.width;
-                    height: 50px;
+                    height: 55px;
                     y: body.y + body.height + part-padding;
                     x: body.x;
                     background: SCarData.trunk_open.value ? red : body.background;
@@ -31,7 +31,7 @@ export component CarDisplayWidget inherits Rectangle {
                 }
 
                 left-front-door := Rectangle {
-                    width: 25px;
+                    width: 20px;
                     height: (body.height - part-padding) / 2;
                     y: body.y;
                     x: body.x - self.width - part-padding;
@@ -47,7 +47,7 @@ export component CarDisplayWidget inherits Rectangle {
                 }
 
                 right-front-door := Rectangle {
-                    width: 25px;
+                    width: left-front-door.width;
                     height: (body.height - part-padding) / 2;
                     y: body.y;
                     x: body.x + body.width + part-padding;

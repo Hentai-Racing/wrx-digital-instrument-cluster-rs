@@ -7,5 +7,5 @@ export global RSTypeResolver {
     out property <string> enum: "enum";
 
     pure callback is-enum-type(ty: string) -> bool;
-    pure callback get-enum-values(string) -> [string];
+    pure callback get-enum-variants(string) -> [string];
 }

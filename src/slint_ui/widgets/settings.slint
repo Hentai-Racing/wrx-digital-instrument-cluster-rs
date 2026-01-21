@@ -210,7 +210,7 @@ component TypedSettingBar inherits SettingBar {
 
     if RSTypeResolver.is-enum-type(item.param-type): ComboBox {
         title: root.label;
-        model: RSTypeResolver.get-enum-values(item.param-type);
+        model: RSTypeResolver.get-enum-variants(item.param-type);
 
         init => {
             root.focus-id = self.focus-id;

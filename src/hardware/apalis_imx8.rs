@@ -3,19 +3,19 @@ use crate::data::parameters::Parameter;
 
 use gpio_cdev::{Chip, EventRequestFlags, EventType, LineRequestFlags};
 use industrial_io;
+use strum::EnumCount;
 use tokio::io::unix::AsyncFd;
 
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::os::unix::io::AsRawFd;
-use std::process;
 use std::sync::Arc;
-use std::{thread, time::Duration};
+use std::{process, thread, time::Duration};
 
 const TARGET_ADC_SAMPLE_HZ: u64 = 60;
 
 #[repr(u8)]
-#[derive(Clone)]
+#[derive(Clone, EnumCount)]
 pub enum ApalisIMX8GPIO {
     GPIO1,     // LSIO.GPIO0.IO08
     GPIO2,     // LSIO.GPIO0.IO09
@@ -24,8 +24,6 @@ pub enum ApalisIMX8GPIO {
     GPIO7,     // LSIO.GPIO3.IO26
     GPIO8,     // LSIO.GPIO3.IO09
     Wake1Mico, // LSIO.GPIO2.IO20
-    //
-    __COUNT,
 }
 
 impl ApalisIMX8GPIO {
@@ -34,8 +32,6 @@ impl ApalisIMX8GPIO {
             Self::GPIO1 | Self::GPIO2 | Self::GPIO3 | Self::GPIO4 => 0,
             Self::Wake1Mico => 2,
             Self::GPIO7 | Self::GPIO8 => 3,
-            //
-            Self::__COUNT => unreachable!(),
         }
     }
 
@@ -48,28 +44,22 @@ impl ApalisIMX8GPIO {
             Self::GPIO7 => 26,
             Self::GPIO8 => 9,
             Self::Wake1Mico => 20,
-            //
-            Self::__COUNT => unreachable!(),
         }
     }
 }
 
 #[repr(u8)]
-#[derive(Clone)]
+#[derive(Clone, EnumCount)]
 pub enum ApalisIMX8ADC {
     ADC0, // LSIO.GPIO3.IO18 // /sys/bus/iio/devices/iio:device0/voltage0
     ADC1, // LSIO.GPIO3.IO18 //
     ADC2, // LSIO.GPIO3.IO18 //
-    //
-    __COUNT,
 }
 
 impl ApalisIMX8ADC {
     pub const fn chip(&self) -> u32 {
         match self {
             Self::ADC0 | Self::ADC1 | Self::ADC2 => 3,
-            //
-            Self::__COUNT => unreachable!(),
         }
     }
 
@@ -78,16 +68,12 @@ impl ApalisIMX8ADC {
             Self::ADC0 => 18,
             Self::ADC1 => 19,
             Self::ADC2 => 20,
-            //
-            Self::__COUNT => unreachable!(),
         }
     }
 
     pub const fn device_id(&self) -> &str {
         match self {
             Self::ADC0 | Self::ADC1 | Self::ADC2 => "iio:device0",
-            //
-            Self::__COUNT => unreachable!(),
         }
     }
 
@@ -97,8 +83,6 @@ impl ApalisIMX8ADC {
             // TODO: not needed and not obviously connected to their respective gpio pins
             Self::ADC1 => unimplemented!(), // likely voltage 4
             Self::ADC2 => unimplemented!(), // likely voltage 5
-            //
-            Self::__COUNT => unreachable!(),
         }
     }
 }
@@ -125,8 +109,8 @@ const WAKE_ALARM: &str = "/sys/class/rtc/rtc1/wakealarm";
 
 #[derive(Default)]
 pub struct ApalisIMX8 {
-    gpios: [Arc<Parameter<bool>>; ApalisIMX8GPIO::__COUNT as usize],
-    adcs: [Arc<Parameter<u32>>; ApalisIMX8ADC::__COUNT as usize],
+    gpios: [Arc<Parameter<bool>>; ApalisIMX8GPIO::COUNT],
+    adcs: [Arc<Parameter<u32>>; ApalisIMX8ADC::COUNT],
 }
 
 impl ApalisIMX8 {

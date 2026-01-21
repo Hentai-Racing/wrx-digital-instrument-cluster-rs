@@ -1,10 +1,10 @@
 use bitvec::order::Msb0;
 use bitvec::vec::BitVec;
 use embedded_can::{Frame, Id};
-use num_enum::{IntoPrimitive, TryFromPrimitive};
+use strum::FromRepr;
 
 #[repr(u8)]
-#[derive(Debug, TryFromPrimitive, IntoPrimitive)]
+#[derive(Debug, FromRepr)]
 pub enum S1CurrentData {
     EngineLoad = 0x04,
     EngineSpeed = 0x0C,
@@ -22,7 +22,7 @@ pub enum S1CurrentData {
 }
 
 #[repr(u8)]
-#[derive(Debug, TryFromPrimitive, IntoPrimitive)]
+#[derive(Debug, FromRepr)]
 pub enum S9VehicleInformation {
     PIDs = 0x0,
     VIN = 0x02,
@@ -32,7 +32,7 @@ pub enum S9VehicleInformation {
 const SERVICE_OFFSET: u8 = 0x40;
 
 #[repr(u8)]
-#[derive(Debug, Clone, TryFromPrimitive, IntoPrimitive, PartialEq, Eq)]
+#[derive(Debug, Clone, FromRepr, PartialEq, Eq)]
 pub enum OBDService {
     CurrentData = 0x01,
     FreezeFrame = 0x02,
@@ -47,7 +47,7 @@ pub enum OBDService {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, TryFromPrimitive, IntoPrimitive, PartialEq, Eq)]
+#[derive(Debug, Clone, FromRepr, PartialEq, Eq)]
 pub enum UDSService {
     DiagnosticSessionControl = 0x10,
     ECUReset = 0x11,
@@ -86,7 +86,7 @@ pub enum UDSService {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, TryFromPrimitive, IntoPrimitive, PartialEq, Eq)]
+#[derive(Debug, Clone, FromRepr, PartialEq, Eq)]
 pub enum UDSNegativeResponce {
     GeneralReject = 0x10,
     ServiceNotSupported = 0x11,
@@ -150,7 +150,7 @@ pub enum UDSNegativeResponce {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, TryFromPrimitive, IntoPrimitive)]
+#[derive(Copy, Clone, Debug, FromRepr)]
 pub enum DTCCategory {
     Powertrain = 0b00,
     Chassis = 0b01,
@@ -188,7 +188,7 @@ impl From<[u8; DTC_SIZE]> for DTC {
         }
 
         Self {
-            category: category.try_into().expect("infallible"),
+            category: DTCCategory::from_repr(category).expect("infallible"),
             number: number,
         }
     }
@@ -206,7 +206,7 @@ impl std::fmt::Display for DTC {
 }
 
 #[repr(u8)]
-#[derive(Debug, IntoPrimitive)]
+#[derive(Debug)]
 pub enum ISOTPFrameType {
     SingleFrame = 0x0,
     FirstFrame = 0x1,
@@ -391,11 +391,11 @@ impl MuxContext {
             service
         };
 
-        if let Ok(obd_service) = OBDService::try_from(service_offset) {
+        if let Some(obd_service) = OBDService::from_repr(service_offset) {
             match obd_service {
                 OBDService::VehicleInformation => {
                     if let Some((pid, data)) = data.split_first() {
-                        if let Ok(vehicle_information) = S9VehicleInformation::try_from(*pid) {
+                        if let Some(vehicle_information) = S9VehicleInformation::from_repr(*pid) {
                             match vehicle_information {
                                 // TODO: remove this and make it parameterized
                                 S9VehicleInformation::PIDs => {
@@ -430,7 +430,7 @@ impl MuxContext {
                 }
                 OBDService::CurrentData => {
                     if let Some((pid, data)) = data.split_first() {
-                        if let Ok(current_data) = S1CurrentData::try_from(*pid) {
+                        if let Some(current_data) = S1CurrentData::from_repr(*pid) {
                             match current_data {
                                 S1CurrentData::PIDs1
                                 | S1CurrentData::PIDs2
@@ -505,10 +505,10 @@ impl MuxContext {
                     );
                 }
             }
-        } else if let Ok(uds_service) = UDSService::try_from(service_offset) {
+        } else if let Some(uds_service) = UDSService::from_repr(service_offset) {
             match uds_service {
                 UDSService::NegativeResponce => {
-                    if let Ok(negative_responce) = UDSNegativeResponce::try_from(data[0]) {
+                    if let Some(negative_responce) = UDSNegativeResponce::from_repr(data[0]) {
                         println!(
                             "Received negative UDS responce: {negative_responce:?}; data: 0x{data:02X?}"
                         )

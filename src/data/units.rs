@@ -1,15 +1,28 @@
 #![allow(dead_code, unused)]
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, VariantArray};
+
 use std::{default, str::FromStr};
 
-#[derive(Copy, Clone, Default, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(
+    Copy,
+    Clone,
+    Default,
+    Debug,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    PartialOrd,
+    VariantArray,
+    AsRefStr,
+)]
 pub enum UnitSystem {
     #[default]
     SI, // International System of Units
     USCS, // US Customary System
 }
 
-#[derive(Clone, Copy, Default, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Default, Debug, Serialize, Deserialize, AsRefStr)]
 pub enum PressureUnit {
     #[default]
     BAR,
@@ -21,7 +34,7 @@ pub enum PressureUnit {
 pub enum Unit {
     #[default]
     None,
-    Distance(UnitSystem), // default
+    Distance(UnitSystem),
     Pressure(UnitSystem),
     Speed(UnitSystem),
     Temperature(UnitSystem),
@@ -136,25 +149,6 @@ impl Unit {
                 USCS => "GAL",
                 SI => "L",
             },
-        }
-    }
-}
-
-impl ToString for UnitSystem {
-    fn to_string(&self) -> String {
-        match self {
-            UnitSystem::SI => String::from("SI"),
-            UnitSystem::USCS => String::from("USCS"),
-        }
-    }
-}
-
-impl ToString for PressureUnit {
-    fn to_string(&self) -> String {
-        match self {
-            Self::PSI => String::from("PSI"),
-            Self::KPA => String::from("KPA"),
-            Self::BAR => String::from("BAR"),
         }
     }
 }
