@@ -68,7 +68,7 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
 
             let out_file_path = rs_messages_out_dir.join(format!("{stem}.rs"));
             let out_file = File::create(out_file_path.clone()).unwrap();
-            let dbc_file = fs::read(entry_path).unwrap();
+            let dbc_file = fs::read_to_string(entry_path).unwrap();
 
             let config = Config::builder()
                 .dbc_name(dbc_name)

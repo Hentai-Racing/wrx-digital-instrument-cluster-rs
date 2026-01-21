@@ -1,21 +1,27 @@
 // Generated code!
-#![allow(unused_comparisons, unreachable_patterns, unused_imports)]
-#![allow(dead_code)]
-#![allow(clippy::let_and_return, clippy::eq_op)]
-#![allow(clippy::useless_conversion, clippy::unnecessary_cast)]
-#![allow(clippy::excessive_precision, clippy::manual_range_contains, clippy::absurd_extreme_comparisons, clippy::too_many_arguments)]
-#![deny(clippy::arithmetic_side_effects)]
+//
+// Message definitions from file `WRX_2018.dbc`
+// Version: 0.7.2
 
-//! Message definitions from file `"WRX_2018.dbc"`
-//!
-//! - Version: `Version("0.7.2")`
-
+#[allow(unused_imports)]
 use core::ops::BitOr;
+#[allow(unused_imports)]
 use bitvec::prelude::*;
+#[allow(unused_imports)]
 use embedded_can::{Id, StandardId, ExtendedId};
 use serde::{Serialize, Deserialize};
 
 /// All messages
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Serialize)]
@@ -69,6 +75,16 @@ pub enum Messages {
     Tpms(Tpms),
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl Messages {
     /// Read message from CAN frame
     #[inline(never)]
@@ -116,6 +132,16 @@ pub struct GSensor {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl GSensor {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0xd0)});
     
@@ -339,6 +365,16 @@ pub struct BrakePedal {
     raw: [u8; 4],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl BrakePedal {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0xd1)});
     
@@ -514,6 +550,16 @@ pub struct DriverRoadAssists {
     raw: [u8; 7],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl DriverRoadAssists {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0xd3)});
     
@@ -747,6 +793,16 @@ pub struct WheelSpeeds {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl WheelSpeeds {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0xd4)});
     
@@ -1008,6 +1064,16 @@ pub struct Steering {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl Steering {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x11a)});
     
@@ -1141,6 +1207,16 @@ pub struct MotorControl {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl MotorControl {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x140)});
     
@@ -1476,6 +1552,16 @@ pub struct Engine {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl Engine {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x141)});
     
@@ -1723,6 +1809,16 @@ impl core::fmt::Debug for Engine {
 }
 
 /// Defined values for mt_gear
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq)]
 #[derive(Debug)]
 #[derive(Serialize)]
@@ -1768,6 +1864,16 @@ pub struct Transmission {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl Transmission {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x148)});
     
@@ -1944,6 +2050,16 @@ pub struct StatusSwitches {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl StatusSwitches {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x152)});
     
@@ -2393,6 +2509,16 @@ pub struct XxxMsg340 {
     raw: [u8; 7],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl XxxMsg340 {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x154)});
     
@@ -2518,6 +2644,16 @@ pub struct BsdRcta {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl BsdRcta {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x25c)});
     
@@ -2859,6 +2995,16 @@ pub struct ClimateControl {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl ClimateControl {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x281)});
     
@@ -3182,6 +3328,16 @@ impl core::fmt::Debug for ClimateControl {
 }
 
 /// Defined values for airflow_distribution_mode
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq)]
 #[derive(Debug)]
 #[derive(Serialize)]
@@ -3221,6 +3377,16 @@ pub struct Cluster {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl Cluster {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x282)});
     
@@ -3499,6 +3665,16 @@ pub struct Ignition {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl Ignition {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x284)});
     
@@ -3696,6 +3872,16 @@ pub struct EngineStatus2 {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl EngineStatus2 {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x360)});
     
@@ -4077,6 +4263,16 @@ pub struct EngineWarningLights {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl EngineWarningLights {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x361)});
     
@@ -4240,6 +4436,16 @@ pub struct SrsStatus {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl SrsStatus {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x372)});
     
@@ -4365,6 +4571,16 @@ pub struct Cluster2 {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl Cluster2 {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x374)});
     
@@ -4564,6 +4780,16 @@ pub struct Cabin {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl Cabin {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x375)});
     
@@ -4977,6 +5203,16 @@ pub struct DimmerAndHood {
     raw: [u8; 2],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl DimmerAndHood {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x376)});
     
@@ -5143,6 +5379,16 @@ impl core::fmt::Debug for DimmerAndHood {
 }
 
 /// Defined values for dimmer_dial_value
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq)]
 #[derive(Debug)]
 #[derive(Serialize)]
@@ -5184,6 +5430,16 @@ pub struct DashStateVerify {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl DashStateVerify {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x3d1)});
     
@@ -5305,6 +5561,16 @@ impl core::fmt::Debug for DashStateVerify {
 }
 
 /// Defined values for UNITS
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq)]
 #[derive(Debug)]
 #[derive(Serialize)]
@@ -5338,6 +5604,16 @@ pub struct Odometer {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl Odometer {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x6d1)});
     
@@ -5474,6 +5750,16 @@ pub struct Tpms {
     raw: [u8; 8],
 }
 
+#[allow(
+    clippy::absurd_extreme_comparisons,
+    clippy::excessive_precision,
+    clippy::manual_range_contains,
+    clippy::unnecessary_cast,
+    clippy::useless_conversion,
+    unused_comparisons,
+    unused_variables,
+)]
+#[allow(dead_code)]
 impl Tpms {
     pub const MESSAGE_ID: embedded_can::Id = Id::Standard(unsafe { StandardId::new_unchecked(0x75b)});
     
@@ -5736,6 +6022,7 @@ impl core::fmt::Debug for Tpms {
 #[allow(dead_code)]
 fn main() {}
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CanError {
     UnknownMessageId(embedded_can::Id),
@@ -5757,8 +6044,8 @@ pub enum CanError {
 
 impl core::fmt::Display for CanError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
-impl std::error::Error for CanError {}
+impl core::error::Error for CanError {}
 
