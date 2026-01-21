@@ -1,8 +1,8 @@
 use crate::application::config::Config;
 use crate::data::parameters::Node;
 use crate::slint_generatedApp::{
-    AccessibilitySettings, App, ApplicationState, DebugSettings, GeneralSettings, GlobalThemeData,
-    SettingsLayout, SettingsMenuItem, SettingsMenuItemType, SystemInfo,
+    AccessibilitySettings, App, ApplicationState, DebugSettings, DerivedParamType, GeneralSettings,
+    GlobalThemeData, SettingsLayout, SettingsMenuItem, SettingsMenuItemType, SystemInfo,
 };
 
 use pastey::paste;
@@ -76,6 +76,16 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
     }
 }
 
+fn derive_param_type(ty: &str) -> DerivedParamType {
+    match ty {
+        stringify!(i32) | stringify!(f32) => DerivedParamType::Number,
+        stringify!(String) => DerivedParamType::String,
+        stringify!(bool) => DerivedParamType::Bool,
+        "page" => DerivedParamType::Page,
+        _ => DerivedParamType::Enum, //* More complex types need to be dealt with by param_type
+    }
+}
+
 fn unroll_layout(
     node: &Node,
     current_path: &String,
@@ -94,26 +104,29 @@ fn unroll_layout(
             name: (*name).into(),
             param_type: (*ty).into(),
             param_path: format!("{current_path}{name}").into(),
+            param_type_derived: derive_param_type(*ty),
             item_type: SettingsMenuItemType::ReadOnlyParameter,
         }),
         Node::Parameter { name, ty } => ret.push(SettingsMenuItem {
             name: (*name).into(),
             param_type: (*ty).into(),
             param_path: format!("{current_path}{name}").into(),
+            param_type_derived: derive_param_type(*ty),
             item_type: SettingsMenuItemType::Parameter,
         }),
         Node::Page { name, items } => {
             let path: String = format!("{current_path}{name}");
 
-            current_depth += 1;
             ret.push(SettingsMenuItem {
                 name: (*name).into(),
                 param_type: "".into(),
                 param_path: (&path).into(),
+                param_type_derived: derive_param_type("page"),
                 item_type: SettingsMenuItemType::Page,
             });
 
             let child_path = format!("{path}.");
+            current_depth += 1;
 
             for item in items {
                 ret.extend_from_slice(

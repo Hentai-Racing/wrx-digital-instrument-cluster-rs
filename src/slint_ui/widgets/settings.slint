@@ -19,15 +19,25 @@ import { GlobalThemeData } from "@themes/themes.slint";
 export enum SettingsMenuItemType {
     Parameter,
     ReadOnlyParameter,
-    PageTitle,
     Page,
     PageBack,
+    PageTitle,
+}
+
+export enum DerivedParamType {
+    Enum,
+    BoundNumber,
+    Number,
+    String,
+    Bool,
+    Page,
 }
 
 export struct SettingsMenuItem {
     name: string,
     param-path: string,
     param-type: string,
+    param-type-derived: DerivedParamType,
     item-type: SettingsMenuItemType,
 }
 
@@ -39,6 +49,24 @@ export global SettingsLayout {
     callback get-page-parent(path: string) -> string;
     callback set-by-path(path: string, val: string);
     callback get-by-path(path: string) -> string;
+
+    public pure function stringify-derived-param-type(ty: DerivedParamType) -> string {
+        if ty == DerivedParamType.Enum {
+            "enum"
+        } else if ty == DerivedParamType.BoundNumber {
+            "boundNumber"
+        } else if ty == DerivedParamType.Number {
+            "number"
+        } else if ty == DerivedParamType.String {
+            "string"
+        } else if ty == DerivedParamType.Bool {
+            "bool"
+        } else if ty == DerivedParamType.Page {
+            "page"
+        } else {
+            "unknown"
+        }
+    }
 }
 
 component DecorationBar inherits Rectangle {
@@ -183,6 +211,11 @@ component TypedSettingBar inherits SettingBar {
 
     if DebugSettings.debug-mode && DebugSettings.extra-debug-info: VerticalLayout {
         Text {
+            text: SettingsLayout.stringify-derived-param-type(item.param-type-derived);
+            horizontal-alignment: TextHorizontalAlignment.right;
+        }
+
+        Text {
             text: item.param-type;
             horizontal-alignment: TextHorizontalAlignment.right;
         }
@@ -193,7 +226,7 @@ component TypedSettingBar inherits SettingBar {
         }
     }
 
-    if item.param-type == RSTypeResolver.bool: ToggleBox {
+    if item.param-type-derived == DerivedParamType.Bool: ToggleBox {
         var: false;
 
         init => {
@@ -208,7 +241,7 @@ component TypedSettingBar inherits SettingBar {
         }
     }
 
-    if RSTypeResolver.is-enum-type(item.param-type): ComboBox {
+    if item.param-type-derived == DerivedParamType.Enum: ComboBox {
         title: root.label;
         model: RSTypeResolver.get-enum-variants(item.param-type);
 

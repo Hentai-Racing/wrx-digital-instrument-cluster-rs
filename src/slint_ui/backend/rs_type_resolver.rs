@@ -15,13 +15,12 @@ pub fn bridge(handle_weak: Weak<App>) {
         // TODO: find a better way
         global_resolver.on_is_enum_type(|ty| matches!(ty.as_str(), stringify!(UnitSystem)));
         global_resolver.on_get_enum_variants(|ty| match ty.as_str() {
-            stringify!(UnitSystem) => {
-                let list: Vec<SharedString> = UnitSystem::VARIANTS
-                    .iter()
-                    .map(|var| SharedString::from(var.as_ref()))
-                    .collect();
-                list.as_slice().into()
-            }
+            stringify!(UnitSystem) => UnitSystem::VARIANTS
+                .iter()
+                .map(|var| SharedString::from(var.as_ref()))
+                .collect::<Vec<SharedString>>()
+                .as_slice()
+                .into(),
             _ => ["ERROR".into()].into(),
         });
     }
