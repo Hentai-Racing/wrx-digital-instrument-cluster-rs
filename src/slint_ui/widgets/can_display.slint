@@ -162,7 +162,7 @@ export component CanDisplayWidget inherits Rectangle {
                         init-focus: false;
 
                         activated => byte-clicked();
-                        init => {
+                        init-ready => {
                             if (i == 0) && (j == 0) {
                                 root.first-focus-id = self.focus-id;
                             } else if i == (CanDisplay.highest-dlc - 1) && (j == (CanDisplay.CanFrames.length - 1)) {

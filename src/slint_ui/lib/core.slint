@@ -297,6 +297,9 @@ export component ControlledFocusScope inherits Rectangle {
 }
 
 export component Button inherits Rectangle {
+    in-out property <bool> locked: false;
+
+    in property <bool> enabled: true;
     in property <string> text <=> i-text.text;
     in property <TextHorizontalAlignment> text-alignment <=> i-text.horizontal-alignment;
 
@@ -304,6 +307,7 @@ export component Button inherits Rectangle {
     out property <int> focus-id <=> i-focus.focus-id;
 
     private property <length> i-padding: 10px;
+    private property <bool> i-last-locked: locked;
 
     callback focus-gained(FocusReason);
     callback focus-lost(FocusReason);
@@ -311,10 +315,19 @@ export component Button inherits Rectangle {
     callback activated();
 
     border-radius: 3px;
-    background: gray.darker(95%);
+    background: locked ? gray.darker(95%).mix(black, 40%) : gray.darker(95%);
     forward-focus: i-focus;
     height: GlobalSizing.button-height;
     width: self.height * 2.5;
+
+    changed enabled => {
+        if !self.enabled {
+            self.i-last-locked = self.locked;
+            self.locked = false;
+        } else {
+            self.locked = self.i-last-locked;
+        }
+    }
 
     HorizontalLayout {
         padding: i-padding;
@@ -327,12 +340,17 @@ export component Button inherits Rectangle {
     }
 
     i-focus := ControlledFocusScope {
+        enabled: root.enabled;
         border-radius: root.border-radius;
         init-focus: false;
 
         focus-gained(FocusReason) => root.focus-gained(FocusReason);
         focus-lost(FocusReason) => root.focus-lost(FocusReason);
-        activated => root.activated();
+        activated => {
+            if !root.locked {
+                root.activated()
+            }
+        };
         init-ready => root.init-ready();
     }
 
@@ -590,16 +608,16 @@ export component ComboBoxSelectionBox inherits FocusDomain {
     function open() {
         if i-has-domain {
             root.focus();
+            FocusState.force-focus(root.i-init-selection-box-focus); // TODO: this only works if the combobox has a selection already, else it will not focus anything
         }
     }
-
-    changed i-has-domain => open();
 
     nav-front-forward => FocusState.force-focus(ComboBoxState.first-model-focus-id);
     nav-end-backward => FocusState.force-focus(ComboBoxState.last-model-focus-id);
     init => open();
 
-    forward-focus: init-focus-hack;
+    changed i-has-domain => open();
+    changed i-init-selection-box-focus => open();
 
     HorizontalLayout {
         padding: 5px;
@@ -643,15 +661,6 @@ export component ComboBoxSelectionBox inherits FocusDomain {
                     }
                 }
             }
-
-            init-focus-hack := FocusScope {
-                //! appears to be the only reliable way to focus conditional elements on init
-                width: 0;
-                focus-gained(reason) => {
-                    self.enabled = false;
-                    FocusState.force-focus(root.i-init-selection-box-focus);
-                }
-            }
         }
     }
 }
@@ -666,6 +675,8 @@ export component ComboBox inherits Button {
 
     private property <bool> selection-state-made: ComboBoxState.selection-made;
     private property <int> domain-state-real-last;
+
+    callback selection-made();
 
     text: current-value;
     text-alignment: left;
@@ -705,6 +716,7 @@ export component ComboBox inherits Button {
             ComboBoxState.complete-selection();
             DomainState.set-last-domain-id(root.domain-state-real-last);
             root.open = false;
+            selection-made();
         }
     }
 
@@ -722,6 +734,7 @@ export component ComboBox inherits Button {
 }
 
 component ToggleBoxInner inherits Rectangle {
+    in property <bool> locked: false;
     in property <brush> i-background: self.background;
     in property <length> i-x <=> i-switch.x;
     in property <bool> var;
@@ -729,13 +742,13 @@ component ToggleBoxInner inherits Rectangle {
 
     private property <length> switch-padding: 4px;
 
-    background: (accessible-mode || !var) ? grey.darker(80%) : green;
+    background: (accessible-mode || !var) ? grey.darker(80%) : (locked ? green.mix(black, 75%) : green);
     border-radius: self.height / 2;
     clip: true;
 
     i-switch := Rectangle {
         border-radius: self.height / 1.5;
-        background: lightgray;
+        background: root.locked ? lightgray.mix(black, 70%) : lightgray;
         width: root.width * 65% - root.switch-padding - root.border-width;
         x: var ? root.width - root.border-width - root.switch-padding - self.width : root.border-width + root.switch-padding;
         y: root.height / 2 - self.height / 2;
@@ -747,7 +760,7 @@ component ToggleBoxInner inherits Rectangle {
                 width: on-indicator.width;
                 height: self.width;
                 border-radius: self.height / 2;
-                background: red;
+                background: root.locked ? red.mix(black, 75%) : red;
             }
 
             on-indicator := Rectangle {
@@ -756,7 +769,7 @@ component ToggleBoxInner inherits Rectangle {
                 width: 10px;
                 height: self.width;
                 border-radius: self.height / 2;
-                background: limegreen;
+                background: root.locked ? limegreen.mix(black, 75%) : limegreen;
             }
         }
     }
@@ -780,11 +793,13 @@ export component ToggleBox inherits Button {
     width: self.height * 1.8;
 
     if !AccessibilitySettings.animations-enabled: ToggleBoxInner {
+        locked: root.locked;
         var: root.var;
         border-radius: root.border-radius;
         accessible-mode: root.accessible-mode;
     }
     if AccessibilitySettings.animations-enabled: AnimatedToggleBoxInner {
+        locked: root.locked;
         var: root.var;
         border-radius: root.border-radius;
         accessible-mode: root.accessible-mode;
@@ -1214,12 +1229,12 @@ export component ModuleDebug inherits VerticalLayout {
 
     Text {
         color: white;
-        text: "{" + FocusState.focus-box.x / 1px + ", " + FocusState.focus-box.y / 1px + "}";
+        text: "pos {" + FocusState.focus-box.x / 1px + ", " + FocusState.focus-box.y / 1px + "}";
     }
 
     Text {
         color: white;
-        text: "{" + FocusState.focus-box.width / 1px + ", " + FocusState.focus-box.height / 1px + "}";
+        text: "size {" + FocusState.focus-box.width / 1px + ", " + FocusState.focus-box.height / 1px + "}";
     }
 
     Text {
@@ -1254,12 +1269,12 @@ export component ModuleDebug inherits VerticalLayout {
 
     Text {
         color: white;
-        text: "{" + DomainState.focus-box.x / 1px + ", " + DomainState.focus-box.y / 1px + "}";
+        text: "pos {" + DomainState.focus-box.x / 1px + ", " + DomainState.focus-box.y / 1px + "}";
     }
 
     Text {
         color: white;
-        text: "{" + DomainState.focus-box.width / 1px + ", " + DomainState.focus-box.height / 1px + "}";
+        text: "size {" + DomainState.focus-box.width / 1px + ", " + DomainState.focus-box.height / 1px + "}";
     }
 
     Text {
@@ -1307,21 +1322,3 @@ export component ModuleDebug inherits VerticalLayout {
         text: SliderState.domain-id;
     }
 }
-
-// TODO: add static blinker item that has a live resettable timer
-// ex: Blinker { blink_times: 3; blink_duration: 200ms; blinking: logical_eval; }
-/*
-    async blink {
-        timer trigger {
-            if blinking {
-                blink
-                interval reset
-            } else {
-                no blink // probably disable element too
-            }
-        }
-        if !blinking -> timer interrupt {
-            interval reset
-        }
-    }
-*/

@@ -15,6 +15,7 @@ import {
 } from "@lib/state.slint";
 import { SUnitSystem } from "@lib/units.slint";
 import { GlobalThemeData } from "@themes/themes.slint";
+import { ControlledFocusScope } from "../lib/core.slint";
 
 export enum SettingsMenuItemType {
     Parameter,
@@ -48,7 +49,7 @@ export global SettingsLayout {
     callback get-page-layout(path: string) -> [SettingsMenuItem];
     callback get-page-parent(path: string) -> string;
     callback set-by-path(path: string, val: string);
-    callback get-by-path(path: string) -> string;
+    pure callback get-by-path(path: string) -> string;
 
     public pure function stringify-derived-param-type(ty: DerivedParamType) -> string {
         if ty == DerivedParamType.Enum {
@@ -165,7 +166,7 @@ component SettingBarBackground inherits Rectangle {
 component SettingBar inherits Rectangle {
     in property <string> label <=> i-label.text;
     in property <bool> has-focus: FocusState.current-focus-id == self.focus-id;
-    in property <int> focus-id;
+    in-out property <int> focus-id;
 
     property <length> i-padding: 15px;
 
@@ -206,32 +207,53 @@ component SettingBar inherits Rectangle {
 
 component TypedSettingBar inherits SettingBar {
     in property <SettingsMenuItem> item;
+    private property <bool> update-displayed-value: false;
+    private property <bool> readonly: item.item-type == SettingsMenuItemType.ReadOnlyParameter;
 
     callback activated();
 
+    if item.item-type == SettingsMenuItemType.ReadOnlyParameter: Rectangle {
+        width: 0;
+        height: 0;
+        visible: false;
+
+        Timer {
+            interval: 25ms;
+            running: true;
+            triggered => {
+                update-displayed-value = !update-displayed-value
+            }
+        }
+    }
+
     if DebugSettings.debug-mode && DebugSettings.extra-debug-info: VerticalLayout {
         Text {
-            text: SettingsLayout.stringify-derived-param-type(item.param-type-derived);
+            color: tan;
+            text: (readonly ? "readonly " : "") + SettingsLayout.stringify-derived-param-type(item.param-type-derived);
             horizontal-alignment: TextHorizontalAlignment.right;
         }
 
         Text {
+            color: tan;
             text: item.param-type;
             horizontal-alignment: TextHorizontalAlignment.right;
         }
 
         Text {
+            color: tan;
             text: item.param-path;
             horizontal-alignment: TextHorizontalAlignment.right;
         }
     }
 
     if item.param-type-derived == DerivedParamType.Bool: ToggleBox {
-        var: false;
+        locked: root.readonly;
+        var: RSTypeResolver.rs-string-bool(SettingsLayout.get-by-path(item.param-path));
 
-        init => {
+        private property <bool> update: root.update-displayed-value;
+
+        init-ready => {
             root.focus-id = self.focus-id;
-            self.var = RSTypeResolver.rs-string-bool(SettingsLayout.get-by-path(item.param-path));
         }
 
         toggled => {
@@ -239,28 +261,58 @@ component TypedSettingBar inherits SettingBar {
             SettingsLayout.set-by-path(item.param-path, RSTypeResolver.sl-bool-string(self.var));
             root.activated();
         }
+
+        changed update => {
+            self.var = RSTypeResolver.rs-string-bool(SettingsLayout.get-by-path(item.param-path));
+        }
     }
 
     if item.param-type-derived == DerivedParamType.Enum: ComboBox {
+        locked: root.readonly;
         title: root.label;
         model: RSTypeResolver.get-enum-variants(item.param-type);
+        current-value: SettingsLayout.get-by-path(item.param-path);
 
-        init => {
+        private property <bool> update: root.update-displayed-value;
+
+        init-ready => {
             root.focus-id = self.focus-id;
-            self.current-value = SettingsLayout.get-by-path(item.param-path);
         }
 
-        changed current-value => {
+        selection-made => {
             SettingsLayout.set-by-path(item.param-path, self.current-value);
             root.activated();
         }
+
+        changed update => {
+            self.current-value = SettingsLayout.get-by-path(item.param-path);
+        }
     }
+
+    // TODO: currently setting numbers & strings is not implemented
+    if (item.param-type-derived == DerivedParamType.Number) || (item.param-type-derived == DerivedParamType.String): Button {
+        locked: root.readonly;
+        text: SettingsLayout.get-by-path(item.param-path);
+        text-alignment: TextHorizontalAlignment.right;
+
+        private property <bool> update: root.update-displayed-value;
+
+        init-ready => {
+            root.focus-id = self.focus-id;
+        }
+
+        changed update => {
+            self.text = SettingsLayout.get-by-path(item.param-path);
+        }
+    }
+
+    // TODO: bound numbers
 
     if (item.item-type == SettingsMenuItemType.Page) || (item.item-type == SettingsMenuItemType.PageBack): Button {
         width: self.height;
         text: (item.item-type == SettingsMenuItemType.Page) ? ">" : "<";
 
-        init => {
+        init-ready => {
             root.focus-id = self.focus-id;
         }
 
@@ -282,6 +334,7 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
     function update-layout() {
         self.items = SettingsLayout.get-page-layout(self.path);
         self.parent-path = SettingsLayout.get-page-parent(self.path);
+        FocusState.force-focus(self.first-focus-id);
     }
 
     init => update-layout();
@@ -294,6 +347,7 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
                     name: path,
                     param-path: root.path,
                     item-type: SettingsMenuItemType.PageTitle,
+                    param-type-derived: DerivedParamType.Page,
                 };
             }
 
@@ -307,8 +361,6 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
         function update-focus-ids(id: int) {
             if i == 0 {
                 root.first-focus-id = id;
-            } else if i == (SettingsLayout.layout.length - 1) {
-                root.last-focus-id = id;
             }
         }
 
@@ -316,13 +368,13 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
             label: item.name;
             item: item;
 
-            init => update-focus-ids(self.focus-id);
+            changed focus-id => update-focus-ids(self.focus-id);
         }
         if item.item-type == SettingsMenuItemType.Page: TypedSettingBar {
             label: item.name;
             item: item;
 
-            init => update-focus-ids(self.focus-id);
+            changed focus-id => update-focus-ids(self.focus-id);
 
             activated => {
                 root.path = item.param-path;
@@ -338,9 +390,10 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
             name: "Back",
             param-path: root.path,
             item-type: SettingsMenuItemType.PageBack,
+            param-type-derived: DerivedParamType.Page,
         };
 
-        init => {
+        changed focus-id => {
             root.last-focus-id = self.focus-id;
         }
 
@@ -364,9 +417,29 @@ export component SettingsMenu inherits FocusDomain {
     nav-front-forward => FocusState.force-focus(layout.first-focus-id);
     nav-end-backward => FocusState.force-focus(layout.last-focus-id);
 
+    if DebugSettings.debug-mode && DebugSettings.extra-debug-info: VerticalLayout {
+        x: root.width - self.width;
+        y: root.height - self.height;
+        alignment: end;
+
+        Text {
+            color: white;
+            text: layout.first-focus-id;
+        }
+
+        Text {
+            color: white;
+            text: layout.last-focus-id;
+        }
+    }
+
     HorizontalLayout {
         alignment: center;
 
-        layout := SettingsMenuLayoutComponent { }
+        layout := SettingsMenuLayoutComponent {
+            changed first-focus-id => {
+                root.focus();
+            }
+        }
     }
 }

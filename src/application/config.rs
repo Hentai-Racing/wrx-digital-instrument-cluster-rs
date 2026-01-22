@@ -36,9 +36,12 @@ parameter_struct! {Config {
             pub disable_hill_assist: bool = false,
             pub unit_system: UnitSystem,
         },
+
         theme {
-            pub selected_theme: String = String::from("Default"),
+            pub selected_theme: String = String::from("Default"), // TODO: make enum for themes
+            // currently not enum due to circular dependancies in slint while trying to keep generated code in one file
         },
+
         accessibility {
             pub animations_enabled: bool = true,
             pub accessible_switches: bool = false,
@@ -48,14 +51,14 @@ parameter_struct! {Config {
     session {
         // TODO: add conditional hiding for pages and params
         debug {
-            pub [hidden] debug_mode: bool = cfg!(debug_assertions),
+            pub [ro] debug_mode: bool = cfg!(debug_assertions),
             pub debug_highlights: bool = false,
             pub debug_overlay_enabled: bool = true,
             pub extra_debug_info: bool = false,
         },
 
         hardware {
-            pub [hidden] adc_val: i32,
+            pub [ro] adc_val: i32,
         },
 
         simulation {
@@ -67,13 +70,13 @@ parameter_struct! {Config {
         },
 
         system_info {
-            pub [hidden] total_memory_mb: i32,
-            pub [hidden] used_memory_mb: i32,
-            pub [hidden] process_memory_mb: i32,
-            pub [hidden] process_memory_max_mb: i32,
-            pub [hidden] num_cpus: i32,
-            pub [hidden] cpu_usage: f32,
-            pub [hidden] fps: i32,
+            pub [ro] total_memory_mb: i32,
+            pub [ro] used_memory_mb: i32,
+            pub [ro] process_memory_mb: i32,
+            pub [ro] process_memory_max_mb: i32,
+            pub [ro] num_cpus: i32,
+            pub [ro] cpu_usage: f32,
+            pub [ro] fps: i32,
         },
     },
 }}
