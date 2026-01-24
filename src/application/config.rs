@@ -1,5 +1,6 @@
 use crate::data::units::UnitSystem;
 use crate::parameter_struct;
+use crate::slint_generatedApp::ClusterThemes;
 
 use tokio::sync::watch;
 use tokio::time::{Duration, timeout};
@@ -38,8 +39,7 @@ parameter_struct! {Config {
         },
 
         theme {
-            pub selected_theme: String = String::from("Default"), // TODO: make enum for themes
-            // currently not enum due to circular dependancies in slint while trying to keep generated code in one file
+            pub selected_theme: ClusterThemes = ClusterThemes::Default,
         },
 
         accessibility {

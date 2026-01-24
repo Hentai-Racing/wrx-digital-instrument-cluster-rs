@@ -327,8 +327,6 @@ macro_rules! parameter_struct {
             pub fn get_page_layout(&self) -> $crate::data::parameters::Node {
                 return $crate::parameter_struct!(@node $page self| $($entries)*);
             }
-
-            // TODO: add get layout by path for ui
         }
 
         impl Default for [<$page:camel_edge>] {

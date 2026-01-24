@@ -1,16 +1,16 @@
 use crate::data::units::UnitSystem;
-use crate::slint_generatedApp::{App, RSTypeResolver};
+use crate::slint_generatedApp::{App, ClusterThemes, RSTypeResolver};
 
 use slint::{ComponentHandle, SharedString, Weak};
 use strum::VariantArray;
 
 macro_rules! variants_match_as_model {
-    ($val:ident => {$($ty:tt)*}) => {
+    ($val:ident => {$($ty:tt),*}) => {
         match $val.as_str() {
             $(
                 stringify!($ty) => $ty::VARIANTS
                     .iter()
-                    .map(|var| SharedString::from(var.as_ref()))
+                    .map(|var| SharedString::from(var.as_ref()/* .strip_prefix("r#").unwrap() */))
                     .collect::<Vec<SharedString>>()
                     .as_slice()
                     .into(),
@@ -29,7 +29,8 @@ pub fn bridge(handle_weak: Weak<App>) {
 
         resolver.on_get_enum_variants(|ty| {
             variants_match_as_model!(ty => {
-                UnitSystem
+                UnitSystem,
+                ClusterThemes
             })
         });
     }

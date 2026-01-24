@@ -10,7 +10,6 @@ import "@fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
 import { VerticalBox, ComboBox } from "std-widgets.slint";
 
 import { Arc } from "@lib/core.slint";
-import { ThemeParams } from "@themes/themes.slint";
 import { InstrumentGauge } from "components/instrument_gauge.slint";
 import {
     InteriorBrightnessIndicator,
@@ -23,10 +22,6 @@ import {
     GeneralSettings,
 } from "@lib/state.slint";
 import { WidgetContainer } from "@widgets/widget_container.slint";
-
-global DefaultThemeParams {
-    out property <ThemeParams> default-theme-params: { font-family: "Montserrat", font-weight: 400 };
-}
 
 component PrimarySection inherits Rectangle {
     background: transparent;

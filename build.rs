@@ -499,22 +499,25 @@ fn generate_slint_themes() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    gen_output += "import { GlobalThemeData } from \"themes.slint\";\n";
-    gen_output += "\nexport component ThemeLoader {\n\twidth: 100%;\n\theight: 100%;\n\n";
-
     gen_output += &format!(
-        "\tin-out property <[string]> themes: [{}];\n\n",
+        "\n@rust-attr(derive(strum::VariantArray, strum::EnumString, strum::AsRefStr, serde::Serialize, serde::Deserialize))\nexport enum ClusterThemes {{\n{}\n}}\n",
         theme_components
             .iter()
-            .map(|val| format!("\"{}\"", val.strip_suffix("Theme").unwrap()))
+            .map(|val| format!("\t{},", val.strip_suffix("Theme").unwrap()))
             .collect::<Vec<_>>()
-            .join(", ")
+            .join("\n")
     );
-    gen_output += "\tinit() => {\n\t\tGlobalThemeData.themes = self.themes;\n\t}\n\n";
+    gen_output += "\nexport global GlobalThemeData {\n";
+    gen_output += "\tin-out property <ClusterThemes> current-theme: ClusterThemes.Default;\n";
+    gen_output += "\tcallback update_current_theme(ClusterThemes);\n";
+    gen_output += "}\n";
 
-    for (i, theme_component) in theme_components.iter().enumerate() {
+    gen_output += "\nexport component ThemeLoader {\n\twidth: 100%;\n\theight: 100%;\n\n";
+
+    for theme_component in theme_components {
+        let theme_enum = theme_component.strip_suffix("Theme").unwrap();
         gen_output += &format!(
-            "\tif GlobalThemeData.current-theme == root.themes[{i}]: {theme_component} {{width: 100%; height: 100%;}}\n"
+            "\tif GlobalThemeData.current-theme == ClusterThemes.{theme_enum}: {theme_component} {{width: 100%; height: 100%;}}\n"
         );
     }
 

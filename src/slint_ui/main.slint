@@ -29,7 +29,7 @@ import {
     DebugSettings,
     GeneralSettings,
 } from "@lib/state.slint";
-import { GlobalThemeData } from "@themes/themes.slint";
+import { GlobalThemeData, ClusterThemes } from "@themes/theme_loader_gen.slint";
 import { ThemeLoader } from "@themes/theme_loader_gen.slint";
 import { CanDisplay, SCanFrameDisplay } from "@widgets/can_display.slint";
 import { WidgetContainerState } from "@widgets/widget_container.slint";
@@ -56,7 +56,7 @@ import "@fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
 import "@fonts/JetBrainsMono/fonts/ttf/JetBrainsMono-Regular.ttf";
 
 // Export types
-export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, SUnitSystem, SCanFrameDisplay, SettingsMenuItemType, SettingsMenuItem, DerivedParamType }
+export { SFDataParameter, SIDataParameter, SBDataParameter, SStrDataParameter, SUnitSystem, SCanFrameDisplay, SettingsMenuItemType, SettingsMenuItem, DerivedParamType, ClusterThemes }
 // Export globals
 export { SCarData, DebugMenuState, GlobalThemeData, CanDisplay, WidgetContainerState, SettingsLayout, RSTypeResolver }
 export * from "@lib/state.slint";
