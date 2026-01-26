@@ -1,0 +1,140 @@
+use crate::application::config::Config;
+use crate::slint_generatedApp::{App, LangResolver};
+
+use rust_embed::Embed;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use slint::{ComponentHandle, Weak};
+use tokio::select;
+
+use std::collections::HashMap;
+use std::str::FromStr;
+use std::sync::{Arc, RwLock};
+
+#[derive(Embed)]
+#[folder = "resources/lang"]
+#[include = "*.lang"]
+pub struct Lang;
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct StrLang(String);
+
+impl FromStr for StrLang {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(s.to_string()))
+    }
+}
+
+impl std::default::Default for StrLang {
+    fn default() -> Self {
+        Self(String::from("en_US.lang"))
+    }
+}
+
+impl Serialize for StrLang {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // prevent serializing an invalid value
+        let selected_resolved = if let Some(_) = Lang::get(self.0.as_str()) {
+            self
+        } else {
+            &Default::default()
+        };
+
+        selected_resolved.0.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for StrLang {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        String::deserialize(deserializer).map(|val| Self(val))
+    }
+}
+
+pub fn process_lang_file(contents: &[u8]) -> HashMap<String, String> {
+    let mut ret = HashMap::new();
+
+    match str::from_utf8(contents) {
+        Ok(contents) => {
+            for line in contents.lines() {
+                // comment
+                if line.is_empty() || line.starts_with("#") {
+                    continue;
+                } else {
+                    if let Some((src, tr)) = line.split_once("=") {
+                        ret.insert(src.trim().to_owned(), tr.trim().to_owned());
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to parse .lang file as utf-8: {e:?}")
+        }
+    }
+
+    ret
+}
+
+pub fn bridge<'a>(handle_weak: Weak<App>, config: Arc<Config>) {
+    let translations: Arc<RwLock<HashMap<String, String>>> = Default::default();
+
+    if let Some(handle) = handle_weak.upgrade() {
+        let resolver = handle.global::<LangResolver>();
+
+        {
+            let translations = translations.clone();
+            match slint::spawn_local(async_compat::Compat::new(async move {
+                let mut lang_change = config.user.general.lang.watch();
+
+                loop {
+                    let selected_lang = config.user.general.lang.value();
+                    let file = match Lang::get(selected_lang.0.as_str()) {
+                        Some(file) => Some(file),
+                        None => Lang::get(&StrLang::default().0),
+                    };
+
+                    if let Some(file) = file {
+                        println!("Changed translation source: {}", selected_lang.0);
+                        match translations.write() {
+                            Ok(mut translations) => *translations = process_lang_file(&file.data),
+                            Err(e) => {
+                                eprintln!("Failed to mutate translations: {e:?}")
+                            }
+                        }
+                    }
+
+                    select! {
+                        Ok(_) = lang_change.changed() => {},
+                        else => {break;}
+                    }
+                }
+            })) {
+                Err(e) => eprintln!("Failure in translation manager: {e}"),
+                _ => {}
+            }
+        }
+
+        {
+            let translations = translations.clone();
+            resolver.on_translate(move |val| match translations.read() {
+                Ok(translation) => {
+                    if let Some(val) = translation.get(val.as_str()) {
+                        val.into()
+                    } else {
+                        val
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Failed to read translations: {e:?}");
+                    val
+                }
+            });
+        }
+    }
+}

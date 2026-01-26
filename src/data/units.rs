@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, VariantArray};
 
-use std::{default, str::FromStr};
+use std::{default, fmt::write, str::FromStr};
 
 #[derive(
     Copy,

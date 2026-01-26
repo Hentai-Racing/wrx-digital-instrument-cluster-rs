@@ -1,6 +1,7 @@
 use crate::data::units::UnitSystem;
 use crate::parameter_struct;
 use crate::slint_generatedApp::ClusterThemes;
+use crate::slint_ui::backend::lang::StrLang;
 
 use tokio::sync::watch;
 use tokio::time::{Duration, timeout};
@@ -36,6 +37,7 @@ parameter_struct! {Config {
         general {
             pub disable_hill_assist: bool = false,
             pub unit_system: UnitSystem,
+            pub lang: StrLang,
         },
 
         theme {

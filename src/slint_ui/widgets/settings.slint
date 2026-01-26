@@ -15,7 +15,7 @@ import {
 } from "@lib/state.slint";
 import { SUnitSystem } from "@lib/units.slint";
 import { GlobalThemeData } from "@themes/theme_loader_gen.slint";
-import { ControlledFocusScope } from "../lib/core.slint";
+import { ControlledFocusScope, LangLabel } from "../lib/core.slint";
 
 export enum SettingsMenuItemType {
     Parameter,
@@ -76,7 +76,7 @@ component DecorationBar inherits Rectangle {
     width: 100%;
 }
 
-component SettingBarLabelTextBase inherits Text {
+component SettingBarLabelTextBase inherits LangLabel {
     font-size: 20px;
     color: white;
     horizontal-alignment: left;
@@ -209,6 +209,8 @@ component TypedSettingBar inherits SettingBar {
     in property <SettingsMenuItem> item;
     private property <bool> update-displayed-value: false;
     private property <bool> readonly: item.item-type == SettingsMenuItemType.ReadOnlyParameter;
+
+    label: item.param-path;
 
     callback activated();
 
@@ -365,13 +367,11 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
         }
 
         if (item.item-type == SettingsMenuItemType.Parameter) || (item.item-type == SettingsMenuItemType.ReadOnlyParameter): TypedSettingBar {
-            label: item.name;
             item: item;
 
             changed focus-id => update-focus-ids(self.focus-id);
         }
         if item.item-type == SettingsMenuItemType.Page: TypedSettingBar {
-            label: item.name;
             item: item;
 
             changed focus-id => update-focus-ids(self.focus-id);

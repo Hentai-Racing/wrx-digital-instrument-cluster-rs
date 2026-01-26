@@ -5,6 +5,7 @@ import {
     ControlledFocusScope,
     FocusDomain,
     FocusState,
+    LangLabel,
 } from "@lib/core.slint";
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import {
@@ -261,10 +262,11 @@ export component WidgetContainer {
                     nav-front-forward => {
                         debug-menu-widget.focus()
                     }
-
-                    debug-menu-widget := DebugMenuWidget {
-                        height: 100%;
-                        width: 100%;
+                    VerticalLayout {
+                        debug-menu-widget := DebugMenuWidget {
+                            height: 100%;
+                            width: 100%;
+                        }
                     }
                 }
             }

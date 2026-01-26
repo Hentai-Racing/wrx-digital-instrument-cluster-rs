@@ -1,0 +1,31 @@
+lang.test=LANG TEST
+
+en_US.lang=English (US)
+
+# config
+Config.user=User
+
+Config.user.general=General
+Config.user.general.disable_hill_assist=Disable Hill Assist
+Config.user.general.unit_system=Unit System
+Config.user.general.lang=Language
+
+Config.user.theme=Theme
+Config.user.theme.selected_theme=Theme
+
+Config.user.accessibility=Accessibility
+Config.user.accessibility.animations_enabled=Animations Enabled
+Config.user.accessibility.accessible_switches=Accessible Switches
+
+Config.session=Session
+
+Config.session.debug=Debug
+Config.session.debug.debug_mode=Debug Mode
+Config.session.debug.debug_highlights=Debug Highlights
+Config.session.debug.debug_overlay_enabled=Debug Overlay
+Config.session.debug.extra_debug_info=Extra Debug Info
+
+Config.session.hardware=Hardware
+Config.session.simulation=Simulation
+Config.session.can=Can
+Config.session.system_info=System Info

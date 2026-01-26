@@ -4,6 +4,10 @@ import {
     DebugSettings,
 } from "@lib/state.slint";
 
+export global LangResolver {
+    pure callback translate(string) -> string;
+}
+
 export global GlobalSizing {
     out property <length> button-height: 40px;
 }
@@ -296,6 +300,25 @@ export component ControlledFocusScope inherits Rectangle {
     }
 }
 
+export component LangLabel {
+    in property <TextHorizontalAlignment> horizontal-alignment <=> i-text.horizontal-alignment;
+    in property <TextVerticalAlignment> vertical-alignment <=> i-text.vertical-alignment;
+    in property <length> letter-spacing <=> i-text.letter-spacing;
+    in property <TextOverflow> overflow <=> i-text.overflow;
+    in property <TextWrap> wrap <=> i-text.wrap;
+    in property <length> font-size <=> i-text.font-size;
+    in property <brush> color <=> i-text.color;
+
+    in property <string> text;
+
+    // TODO: make font stuff use theme font config
+
+    i-text := Text {
+        text: LangResolver.translate(root.text);
+        color: white;
+    }
+}
+
 export component Button inherits Rectangle {
     in-out property <bool> locked: false;
 
@@ -332,9 +355,8 @@ export component Button inherits Rectangle {
     HorizontalLayout {
         padding: i-padding;
 
-        i-text := Text {
+        i-text := LangLabel {
             color: white;
-            horizontal-alignment: center;
             vertical-alignment: center;
         }
     }
@@ -627,9 +649,8 @@ export component ComboBoxSelectionBox inherits FocusDomain {
             spacing: 5px;
             alignment: center;
 
-            Text {
+            LangLabel {
                 height: self.font-size + 20px;
-                color: white;
                 text: ComboBoxState.title;
                 font-size: 25px;
                 horizontal-alignment: left;
@@ -679,7 +700,7 @@ export component ComboBox inherits Button {
     callback selection-made();
 
     text: current-value;
-    text-alignment: left;
+    text-alignment: TextHorizontalAlignment.left;
 
     i-arrow := Rectangle {
         y: root.height / 2 - self.height / 2;
@@ -916,9 +937,8 @@ export component SliderSelectionBox inherits FocusDomain {
             spacing: 15px;
             alignment: center;
 
-            Text {
+            LangLabel {
                 height: self.font-size + 20px;
-                color: white;
                 text: SliderState.title;
                 font-size: 25px;
                 horizontal-alignment: left;
@@ -977,7 +997,6 @@ export component SliderSelectionBox inherits FocusDomain {
         }
     }
 }
-
 
 // TODO: complete slider
 /* missing:
@@ -1202,6 +1221,16 @@ export component TestComponentSuite inherits VerticalLayout {
 
         Slider {
             title: "Testing Slider";
+        }
+    }
+
+    HorizontalLayout {
+        Text {
+            text: "Testing LangLabel";
+        }
+
+        LangLabel {
+            text: "lang.test";
         }
     }
 }
