@@ -1,6 +1,6 @@
 use crate::data::units::UnitSystem;
 use crate::parameter_struct;
-use crate::slint_generatedApp::ClusterThemes;
+use crate::slint_generatedApp::ClusterTheme;
 use crate::slint_ui::backend::lang::StrLang;
 
 use tokio::sync::watch;
@@ -35,13 +35,13 @@ parameter_struct! {Config {
 
     user {
         general {
-            pub disable_hill_assist: bool = false,
+            pub disable_hill_assist_warning: bool = false,
             pub unit_system: UnitSystem,
             pub lang: StrLang,
         },
 
         theme {
-            pub selected_theme: ClusterThemes = ClusterThemes::Default,
+            pub selected_theme: ClusterTheme = ClusterTheme::Default,
         },
 
         accessibility {

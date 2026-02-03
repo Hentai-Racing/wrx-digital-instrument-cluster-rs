@@ -78,7 +78,6 @@ component DecorationBar inherits Rectangle {
 
 component SettingBarLabelTextBase inherits LangLabel {
     font-size: 20px;
-    color: white;
     horizontal-alignment: left;
     vertical-alignment: center;
 }
@@ -295,7 +294,7 @@ component TypedSettingBar inherits SettingBar {
     if (item.param-type-derived == DerivedParamType.Number) || (item.param-type-derived == DerivedParamType.String): Button {
         locked: root.readonly;
         text: SettingsLayout.get-by-path(item.param-path);
-        text-alignment: TextHorizontalAlignment.right;
+        horizontal-alignment: TextHorizontalAlignment.right;
 
         private property <bool> update: root.update-displayed-value;
 

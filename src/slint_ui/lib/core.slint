@@ -8,8 +8,20 @@ export global LangResolver {
     pure callback translate(string) -> string;
 }
 
+export global BackendLib {
+    pure callback string_list_contains([string], string) -> bool;
+}
+
 export global GlobalSizing {
-    out property <length> button-height: 40px;
+    out property <length> button-height: 50px;
+    out property <length> button-width: button-height * 2.5;
+    out property <length> button-text-padding: 10px;
+    //
+    out property <length> combobox-width: button-height * 3.0;
+    out property <length> combobox-arrow: 12px;
+    out property <length> combobox-selection-indicator: 5px;
+    //
+    out property <length> focus-box-border: 2px;
 }
 
 export struct ItemBox {
@@ -26,7 +38,7 @@ export enum ForceFailedReason {
 }
 
 export global FocusState {
-    in property <length> focus-highlight-size: 3px;
+    in property <length> focus-highlight-size: GlobalSizing.focus-box-border;
 
     out property <int> num-focuses: 1;
     out property <int> current-focus-id: 0;
@@ -308,14 +320,22 @@ export component LangLabel {
     in property <TextWrap> wrap <=> i-text.wrap;
     in property <length> font-size <=> i-text.font-size;
     in property <brush> color <=> i-text.color;
-
     in property <string> text;
 
     // TODO: make font stuff use theme font config
 
     i-text := Text {
+        font-size: 16px;
+        width: 100%;
+        height: 100%;
+        horizontal-alignment: TextHorizontalAlignment.center;
+        vertical-alignment: TextVerticalAlignment.center;
         text: LangResolver.translate(root.text);
         color: white;
+    }
+
+    DebugHighlight {
+        background: purple;
     }
 }
 
@@ -324,12 +344,13 @@ export component Button inherits Rectangle {
 
     in property <bool> enabled: true;
     in property <string> text <=> i-text.text;
-    in property <TextHorizontalAlignment> text-alignment <=> i-text.horizontal-alignment;
+    in property <TextHorizontalAlignment> horizontal-alignment <=> i-text.horizontal-alignment;
+    in property <TextVerticalAlignment> vertical-alignment <=> i-text.vertical-alignment;
 
     out property <bool> has-focus: FocusState.has-focus(i-focus.focus-id);
-    out property <int> focus-id <=> i-focus.focus-id;
+    out property <int> focus-id: i-focus.focus-id;
 
-    private property <length> i-padding: 10px;
+    in property <length> text-padding: GlobalSizing.button-text-padding;
     private property <bool> i-last-locked: locked;
 
     callback focus-gained(FocusReason);
@@ -341,7 +362,7 @@ export component Button inherits Rectangle {
     background: locked ? gray.darker(95%).mix(black, 40%) : gray.darker(95%);
     forward-focus: i-focus;
     height: GlobalSizing.button-height;
-    width: self.height * 2.5;
+    width: GlobalSizing.button-width;
 
     changed enabled => {
         if !self.enabled {
@@ -352,13 +373,11 @@ export component Button inherits Rectangle {
         }
     }
 
-    HorizontalLayout {
-        padding: i-padding;
-
-        i-text := LangLabel {
-            color: white;
-            vertical-alignment: center;
-        }
+    i-text := LangLabel {
+        x: root.text-padding;
+        y: root.text-padding;
+        width: root.width - root.text-padding * 2;
+        height: root.height - root.text-padding * 2;
     }
 
     i-focus := ControlledFocusScope {
@@ -594,8 +613,10 @@ export global ComboBoxState {
 component ComboBoxSelectionBoxButton inherits Button {
     in property <bool> has-selection;
     width: self.height * 4;
+    text-padding: GlobalSizing.button-text-padding + i-layout.padding;
+    horizontal-alignment: TextHorizontalAlignment.left;
 
-    HorizontalLayout {
+    i-layout := HorizontalLayout {
         padding: 6px;
         alignment: start;
 
@@ -603,7 +624,7 @@ component ComboBoxSelectionBoxButton inherits Button {
             alignment: center;
 
             Rectangle {
-                width: 6px;
+                width: GlobalSizing.combobox-selection-indicator;
                 height: 90%;
                 background: white;
                 visible: has-selection;
@@ -700,16 +721,17 @@ export component ComboBox inherits Button {
     callback selection-made();
 
     text: current-value;
-    text-alignment: TextHorizontalAlignment.left;
+    width: GlobalSizing.combobox-width;
+    horizontal-alignment: TextHorizontalAlignment.left;
 
     i-arrow := Rectangle {
         y: root.height / 2 - self.height / 2;
         x: root.width - self.width - (root.height - self.height) / 2;
-        width: 12px;
+        width: GlobalSizing.combobox-arrow;
         height: self.width;
 
         Path {
-            fill: grey;
+            fill: grey.brighter(25%);
             viewbox-height: parent.height / 1px;
             viewbox-width: parent.width / 1px;
 
@@ -742,13 +764,13 @@ export component ComboBox inherits Button {
     }
 
     function activate-open() {
-        root.domain-state-real-last = DomainState.last-domain-id;
-        ComboBoxState.title = root.title;
-        ComboBoxState.current-value = root.current-value;
+        self.domain-state-real-last = DomainState.last-domain-id;
+        ComboBoxState.title = self.title;
+        ComboBoxState.current-value = BackendLib.string_list_contains(self.model, self.current-value) ? root.current-value : self.model[0];
         ComboBoxState.set-focus-coords(self.absolute-position.x, self.absolute-position.y, self.width, self.height);
         ComboBoxState.set-model(self.model);
         ComboBoxState.show-selection-box();
-        root.open = true;
+        self.open = true;
     }
 
     activated => activate-open();
@@ -1021,7 +1043,7 @@ export component Slider inherits Button {
     private property <int> domain-state-real-last;
 
     text: current-value;
-    text-alignment: left;
+    horizontal-alignment: left;
 
     changed selection-state-made => {
         if open {

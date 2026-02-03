@@ -14,8 +14,8 @@ use crate::can::messages::wrx_2018::CanError;
 use crate::data::car_data::{CarData, ParseError, ParseResult};
 use crate::hardware::hardware_backend::{self, HardwareBackend};
 use crate::slint_ui::backend::{
-    can_display::CanFrameDisplay, car_data_bridge, config_bridge, hardware_bridge, lang,
-    rs_type_resolver,
+    backend_lib, can_display::CanFrameDisplay, car_data_bridge, config_bridge, hardware_bridge,
+    lang, rs_type_resolver,
 };
 
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, Pid, ProcessRefreshKind, RefreshKind, System};
@@ -158,9 +158,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    use can_mux_parser::S9VehicleInformation;
-
     if let Some(mut can_backend) = can_backend {
+        use can_mux_parser::S9VehicleInformation;
+
         let mut frame_display = CanFrameDisplay::new(ui.as_weak());
 
         tokio::spawn(async move {
@@ -332,6 +332,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), CONFIG_MANAGER.clone());
     hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
     lang::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
+    backend_lib::bridge(ui.as_weak());
 
     let frames: Arc<AtomicU32> = Default::default();
 

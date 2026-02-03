@@ -5,21 +5,21 @@
 import { DebugTheme } from "debug/theme_main.slint";
 import { DefaultTheme } from "default/theme_main.slint";
 
-@rust-attr(derive(strum::VariantArray, strum::EnumString, strum::AsRefStr, serde::Serialize, serde::Deserialize))
-export enum ClusterThemes {
+@rust-attr(derive(strum::VariantArray, serde::Serialize, serde::Deserialize))
+export enum ClusterTheme {
 	Debug,
 	Default,
 }
 
 export global GlobalThemeData {
-	in-out property <ClusterThemes> current-theme: ClusterThemes.Default;
-	callback update_current_theme(ClusterThemes);
+	in-out property <ClusterTheme> current-theme: ClusterTheme.Default;
+	callback update_current_theme(ClusterTheme);
 }
 
 export component ThemeLoader {
 	width: 100%;
 	height: 100%;
 
-	if GlobalThemeData.current-theme == ClusterThemes.Debug: DebugTheme {width: 100%; height: 100%;}
-	if GlobalThemeData.current-theme == ClusterThemes.Default: DefaultTheme {width: 100%; height: 100%;}
+	if GlobalThemeData.current-theme == ClusterTheme.Debug: DebugTheme {width: 100%; height: 100%;}
+	if GlobalThemeData.current-theme == ClusterTheme.Default: DefaultTheme {width: 100%; height: 100%;}
 }

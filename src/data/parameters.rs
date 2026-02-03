@@ -182,13 +182,13 @@ where
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __default_value {
-    ($type:ty| $param_default:expr) => {
+    ($type:path| $param_default:expr) => {
         $param_default.into()
     };
     (String| ) => {
         String::from("Unknown").into()
     };
-    ($type:ty| ) => {
+    ($type:path| ) => {
         Default::default()
     };
 }
@@ -343,7 +343,7 @@ macro_rules! parameter_struct {
         { $($inits:tt)* }
         { $($defs:tt)* }
         { $($entries:tt)* }
-        $vis:vis $([$permissions:tt])? $param:ident: $ty:ty $(= $val:expr)?, $($rest:tt)*
+        $vis:vis $([$permissions:tt])? $param:ident: $ty:path $(= $val:expr)?, $($rest:tt)*
     ) => {
         $crate::parameter_struct!(@page $page
             { $($params)* $vis $param: $crate::data::parameters::Parameter<$ty>, }
@@ -371,7 +371,7 @@ macro_rules! parameter_struct {
     }};
 
     (@apply $self:ident, $from:ident|) => {};
-    (@apply $self:ident, $from:ident| (param $([$permissions:tt])? $param:ident: $ty:ty) $($rest:tt)*) => {
+    (@apply $self:ident, $from:ident| (param $([$permissions:tt])? $param:ident: $ty:path) $($rest:tt)*) => {
         $self.$param.set_value($from.$param.value());
         $crate::parameter_struct!(@apply $self, $from| $($rest)*)
     };
@@ -380,16 +380,16 @@ macro_rules! parameter_struct {
         $crate::parameter_struct!(@apply $self, $from| $($rest)*)
     };
 
-    (@node-internal $self:ident| param [hidden] $param:ident: $ty:ty) => {
+    (@node-internal $self:ident| param [hidden] $param:ident: $ty:path) => {
         $crate::data::parameters::Node::HiddenParameter()
     };
-    (@node-internal $self:ident| param [ro] $param:ident: $ty:ty) => {
+    (@node-internal $self:ident| param [ro] $param:ident: $ty:path) => {
         $crate::data::parameters::Node::ReadOnlyParameter{
             name: stringify!($param),
             ty: stringify!($ty)
         }
     };
-    (@node-internal $self:ident| param $param:ident: $ty:ty) => {
+    (@node-internal $self:ident| param $param:ident: $ty:path) => {
         $crate::data::parameters::Node::Parameter{
             name: stringify!($param),
             ty: stringify!($ty)
@@ -398,7 +398,7 @@ macro_rules! parameter_struct {
     (@node-internal $self:ident| page $sub:ident) => {
         $self.$sub.get_page_layout()
     };
-    (@node $page:ident $self:ident| $(($node:tt $([$permissions:tt])? $thing:ident $(: $ty:ty)?))*) => {
+    (@node $page:ident $self:ident| $(($node:tt $([$permissions:tt])? $thing:ident $(: $ty:path)?))*) => {
         $crate::data::parameters::Node::Page{
             name: stringify!($page),
             items: Box::new([$(
@@ -407,13 +407,13 @@ macro_rules! parameter_struct {
         }
     };
 
-    (@path-internal $self:ident $path:expr; $value:ident| param [hidden] $param:ident: $ty:ty) => {
+    (@path-internal $self:ident $path:expr; $value:ident| param [hidden] $param:ident: $ty:path) => {
         eprintln!("Failed to set {} to {:?}: Parameter is hidden; inherently read-only", stringify!($param), $value)
     };
-    (@path-internal $self:ident $path:expr; $value:ident| param [ro] $param:ident: $ty:ty) => {
+    (@path-internal $self:ident $path:expr; $value:ident| param [ro] $param:ident: $ty:path) => {
         eprintln!("Failed to set {} to {:?}: Parameter is read-only", stringify!($param), $value)
     };
-    (@path-internal $self:ident $path:expr; $value:ident| param $param:ident: $ty:ty) => {
+    (@path-internal $self:ident $path:expr; $value:ident| param $param:ident: $ty:path) => {
         match $value.parse::<$ty>() {
             Ok(value) => $self.$param.set_value(value),
             Err(e) => eprintln!("Failed to set {} to {:?}: {e:?}", stringify!($param), $value)
@@ -422,7 +422,7 @@ macro_rules! parameter_struct {
     (@path-internal $self:ident $path:expr; $value:ident| page $sub:ident) => {
         $self.$sub.set_by_path($path, $value);
     };
-    (@path $self:ident $target:expr; $path:expr; $val:ident| $(($node:tt $([$permissions:tt])? $thing: ident $(: $ty:ty)?))*) => {
+    (@path $self:ident $target:expr; $path:expr; $val:ident| $(($node:tt $([$permissions:tt])? $thing: ident $(: $ty:path)?))*) => {
         match $target {
             $(stringify!($thing) => {
                 $crate::parameter_struct!(@path-internal $self $path; $val| $node $([$permissions])? $thing $(: $ty)?);
@@ -433,13 +433,13 @@ macro_rules! parameter_struct {
         }
     };
 
-    (@path-get-internal $self:ident $path:expr;| param $([$permissions:tt])? $param:ident: $ty:ty) => {
-        format!("{:?}", $self.$param.value())
+    (@path-get-internal $self:ident $path:expr;| param $([$permissions:tt])? $param:ident: $ty:path) => {
+        format!("{}", $self.$param.value())
     };
     (@path-get-internal $self:ident $path:expr;| page $sub:ident) => {
         $self.$sub.get_by_path($path)
     };
-    (@path-get $self:ident $target:expr; $path:expr;| $(($node:tt $([$permissions:tt])? $thing: ident $(: $ty:ty)?))*) => {
+    (@path-get $self:ident $target:expr; $path:expr;| $(($node:tt $([$permissions:tt])? $thing: ident $(: $ty:path)?))*) => {
         match $target {
             $(stringify!($thing) => {
                 $crate::parameter_struct!(@path-get-internal $self $path;| $node $([$permissions])? $thing $(: $ty)?)

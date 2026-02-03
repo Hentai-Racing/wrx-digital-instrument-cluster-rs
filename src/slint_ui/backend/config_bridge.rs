@@ -54,7 +54,7 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
         bind!(ApplicationState.user_unit <=> config.user.general.unit_system);
         bind!(ApplicationState.running_simulation <=> config.session.simulation.running_simulation);
         bind!(ApplicationState.running_can <=> config.session.can.running_can);
-        bind!(GeneralSettings.disable_hill_assist <=> config.user.general.disable_hill_assist);
+        bind!(GeneralSettings.disable_hill_assist <=> config.user.general.disable_hill_assist_warning);
         bind!(GlobalThemeData.current_theme <=> config.user.theme.selected_theme);
         bind!(AccessibilitySettings.animations_enabled <=> config.user.accessibility.animations_enabled);
         bind!(AccessibilitySettings.accessible_switches <=> config.user.accessibility.accessible_switches);

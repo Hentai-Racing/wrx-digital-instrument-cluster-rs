@@ -6,7 +6,7 @@ en_US.lang=English (US)
 Config.user=User
 
 Config.user.general=General
-Config.user.general.disable_hill_assist=Disable Hill Assist
+Config.user.general.disable_hill_assist_warning=Disable Hill Assist Warning
 Config.user.general.unit_system=Unit System
 Config.user.general.lang=Language
 

@@ -8,8 +8,7 @@ use std::sync::LazyLock;
 use syn;
 use walkdir::WalkDir;
 
-const MANIFEST_DIR: LazyLock<PathBuf> =
-    LazyLock::new(|| PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()));
+const MANIFEST_DIR: LazyLock<PathBuf> = LazyLock::new(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")));
 /// path to the directory that contains `main.slint`
 const SLINT_PATH: LazyLock<PathBuf> = LazyLock::new(|| MANIFEST_DIR.join("src/slint_ui"));
 const RESOURCES_PATH: LazyLock<PathBuf> = LazyLock::new(|| MANIFEST_DIR.join("resources"));
@@ -500,7 +499,7 @@ fn generate_slint_themes() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     gen_output += &format!(
-        "\n@rust-attr(derive(strum::VariantArray, strum::EnumString, strum::AsRefStr, serde::Serialize, serde::Deserialize))\nexport enum ClusterThemes {{\n{}\n}}\n",
+        "\n@rust-attr(derive(strum::VariantArray, serde::Serialize, serde::Deserialize))\nexport enum ClusterTheme {{\n{}\n}}\n",
         theme_components
             .iter()
             .map(|val| format!("\t{},", val.strip_suffix("Theme").unwrap()))
@@ -508,8 +507,8 @@ fn generate_slint_themes() -> Result<(), Box<dyn std::error::Error>> {
             .join("\n")
     );
     gen_output += "\nexport global GlobalThemeData {\n";
-    gen_output += "\tin-out property <ClusterThemes> current-theme: ClusterThemes.Default;\n";
-    gen_output += "\tcallback update_current_theme(ClusterThemes);\n";
+    gen_output += "\tin-out property <ClusterTheme> current-theme: ClusterTheme.Default;\n";
+    gen_output += "\tcallback update_current_theme(ClusterTheme);\n";
     gen_output += "}\n";
 
     gen_output += "\nexport component ThemeLoader {\n\twidth: 100%;\n\theight: 100%;\n\n";
@@ -517,7 +516,7 @@ fn generate_slint_themes() -> Result<(), Box<dyn std::error::Error>> {
     for theme_component in theme_components {
         let theme_enum = theme_component.strip_suffix("Theme").unwrap();
         gen_output += &format!(
-            "\tif GlobalThemeData.current-theme == ClusterThemes.{theme_enum}: {theme_component} {{width: 100%; height: 100%;}}\n"
+            "\tif GlobalThemeData.current-theme == ClusterTheme.{theme_enum}: {theme_component} {{width: 100%; height: 100%;}}\n"
         );
     }
 

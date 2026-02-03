@@ -7,7 +7,6 @@ use slint::{ComponentHandle, Weak};
 use tokio::select;
 
 use std::collections::HashMap;
-use std::str::FromStr;
 use std::sync::{Arc, RwLock};
 
 #[derive(Embed)]
@@ -18,7 +17,7 @@ pub struct Lang;
 #[derive(Clone, PartialEq, Debug)]
 pub struct StrLang(String);
 
-impl FromStr for StrLang {
+impl std::str::FromStr for StrLang {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -29,6 +28,12 @@ impl FromStr for StrLang {
 impl std::default::Default for StrLang {
     fn default() -> Self {
         Self(String::from("en_US.lang"))
+    }
+}
+
+impl std::fmt::Display for StrLang {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -81,7 +86,7 @@ pub fn process_lang_file(contents: &[u8]) -> HashMap<String, String> {
     ret
 }
 
-pub fn bridge<'a>(handle_weak: Weak<App>, config: Arc<Config>) {
+pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
     let translations: Arc<RwLock<HashMap<String, String>>> = Default::default();
 
     if let Some(handle) = handle_weak.upgrade() {

@@ -1,20 +1,11 @@
 #![allow(dead_code, unused)]
 use serde::{Deserialize, Serialize};
-use strum::{AsRefStr, VariantArray};
+use strum::VariantArray;
 
 use std::{default, fmt::write, str::FromStr};
 
 #[derive(
-    Copy,
-    Clone,
-    Default,
-    Debug,
-    Serialize,
-    Deserialize,
-    PartialEq,
-    PartialOrd,
-    VariantArray,
-    AsRefStr,
+    Clone, Copy, Default, Debug, Serialize, Deserialize, PartialEq, PartialOrd, VariantArray,
 )]
 pub enum UnitSystem {
     #[default]
@@ -22,7 +13,7 @@ pub enum UnitSystem {
     USCS, // US Customary System
 }
 
-#[derive(Clone, Copy, Default, Debug, Serialize, Deserialize, AsRefStr)]
+#[derive(Clone, Copy, Default, Debug, Serialize, Deserialize)]
 pub enum PressureUnit {
     #[default]
     BAR,
@@ -165,6 +156,12 @@ impl FromStr for UnitSystem {
             "uscs" => Ok(Self::USCS),
             _ => Err(UnitSystemParseError),
         }
+    }
+}
+
+impl std::fmt::Display for UnitSystem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
 

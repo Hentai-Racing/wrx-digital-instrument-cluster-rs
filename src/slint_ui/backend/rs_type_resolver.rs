@@ -1,5 +1,5 @@
 use crate::data::units::UnitSystem;
-use crate::slint_generatedApp::{App, ClusterThemes, RSTypeResolver};
+use crate::slint_generatedApp::{App, ClusterTheme, RSTypeResolver};
 use crate::slint_ui::backend::lang::{Lang, StrLang};
 
 use slint::{ComponentHandle, SharedString, Weak};
@@ -11,7 +11,7 @@ macro_rules! variants_match_as_model {
             $(
                 stringify!($ty) => $ty::VARIANTS
                     .iter()
-                    .map(|var| SharedString::from(var.as_ref()))
+                    .map(|var| format!("{var}").into())
                     .collect::<Vec<SharedString>>()
                     .as_slice()
                     .into(),
@@ -36,7 +36,7 @@ pub fn bridge(handle_weak: Weak<App>) {
                 .into(),
             _ => variants_match_as_model!(ty => {
                 UnitSystem,
-                ClusterThemes
+                ClusterTheme
             }),
         });
     }
