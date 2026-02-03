@@ -326,20 +326,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // ui backend bridges
-    rs_type_resolver::bridge(ui.as_weak());
-    config_bridge::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
-    config_bridge::bind_config_layout(ui.as_weak(), CONFIG_MANAGER.clone());
-    car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), CONFIG_MANAGER.clone());
-    hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
-    lang::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
-    backend_lib::bridge(ui.as_weak());
+    {
+        rs_type_resolver::bridge(ui.as_weak());
+        config_bridge::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
+        config_bridge::bind_config_layout(ui.as_weak(), CONFIG_MANAGER.clone());
+        car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), CONFIG_MANAGER.clone());
+        hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
+        lang::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
+        backend_lib::bridge(ui.as_weak());
+    }
 
     let frames: Arc<AtomicU32> = Default::default();
 
     {
         let frames = frames.clone();
         let _ = ui.window().set_rendering_notifier(move |state, _api| {
-            if matches!(state, slint::RenderingState::AfterRendering) {
+            if matches!(state, slint::RenderingState::BeforeRendering) {
                 frames.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             }
         });
@@ -348,7 +350,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let frames = frames.clone();
         tokio::spawn(async move {
             let mut last = Instant::now();
-            let mut interval = time::interval(Duration::from_millis(200));
+            let mut interval = time::interval(Duration::from_millis(100));
 
             loop {
                 interval.tick().await;

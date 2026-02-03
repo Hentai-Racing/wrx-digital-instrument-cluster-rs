@@ -25,7 +25,11 @@ Config.session.debug.debug_highlights=Debug Highlights
 Config.session.debug.debug_overlay_enabled=Debug Overlay
 Config.session.debug.extra_debug_info=Extra Debug Info
 
-Config.session.hardware=Hardware
 Config.session.simulation=Simulation
+Config.session.simulation.running_simulation=Simulation Running
+
 Config.session.can=Can
+Config.session.can.running_can=CAN Bus Running
+
+Config.session.hardware=Hardware
 Config.session.system_info=System Info
