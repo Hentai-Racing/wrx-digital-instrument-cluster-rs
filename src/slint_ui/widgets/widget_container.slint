@@ -18,6 +18,7 @@ import {
 } from "@lib/state.slint";
 import { CanDisplayWidget } from "@widgets/can_display.slint";
 import { CarDisplayWidget } from "@widgets/car_display.slint";
+import { GlobalAnimation } from "../lib/core.slint";
 
 export global WidgetContainerState {
     in-out property <int> current-page: 0;
@@ -70,47 +71,21 @@ component FocusableWidget inherits Widget {
     focusable: true;
 }
 
-component InternalContainerLayoutCore {
-    in-out property <length> i-x;
-    in-out property <length> follower: root.i-x;
-
-    changed follower => {
-        self.i-x = self.follower;
-    }
-}
-
-component InternalContainerLayoutAnimated inherits InternalContainerLayoutCore {
-    animate i-x {
-        duration: 125ms;
-        easing: ease-in-out;
-    }
-}
-
 component InternalContainerLayout {
     in-out property <length> i-x: (-WidgetContainerState.current-page * self.width) - (self.spacing * WidgetContainerState.current-page);
     in-out property <length> spacing <=> i-layout.spacing;
 
-    property <length> i-x-out;
-
     width: 100%;
     height: 100%;
 
-    if AccessibilitySettings.animations-enabled: InternalContainerLayoutAnimated {
-        follower: root.i-x;
-
-        // spaceship causes weird jumps
-        changed i-x => {
-            root.i-x-out = self.i-x;
-        }
-    }
-    if !AccessibilitySettings.animations-enabled: InternalContainerLayoutCore {
-        i-x <=> root.i-x-out;
-        follower: root.i-x;
+    animate i-x {
+        duration: GlobalAnimation.page-duration;
+        easing: ease-in-out;
     }
 
     i-layout := HorizontalLayout {
         spacing: 10px;
-        x: root.i-x-out;
+        x: root.i-x;
 
         @children
     }

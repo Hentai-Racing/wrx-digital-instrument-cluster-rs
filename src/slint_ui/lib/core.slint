@@ -24,6 +24,12 @@ export global GlobalSizing {
     out property <length> focus-box-border: 2px;
 }
 
+export global GlobalAnimation {
+    out property <duration> standard-duration: AccessibilitySettings.animations-enabled ? 70ms : 0s;
+    out property <duration> page-duration: AccessibilitySettings.animations-enabled ? 110ms : 0s;
+    out property <duration> notification-duration: AccessibilitySettings.animations-enabled ? 250ms : 0s;
+}
+
 export struct ItemBox {
     x: length,
     y: length,
@@ -215,10 +221,9 @@ export component FocusHoverRect inherits Rectangle {
     background: transparent;
     border-width: size-offset;
     border-color: hover-color;
-}
+    z: 999999;
 
-export component AnimatedFocusHoverRect inherits FocusHoverRect {
-    animate x, y, width, height, border-radius { duration: 60ms; }
+    animate x, y, width, height, border-radius { duration: GlobalAnimation.standard-duration; }
 }
 
 export component ControlledFocusScope inherits Rectangle {
@@ -617,8 +622,6 @@ component ComboBoxSelectionBoxButton inherits Button {
     }
 }
 
-// TODO: add animated version that fades in;
-// TRACKING: https://github.com/slint-ui/slint/issues/348
 // TODO: add background blur (may require image generation in Rust, possibly using Slint's window capture)
 export component ComboBoxSelectionBox inherits FocusDomain {
     in-out property <string> current-value: ComboBoxState.current-value;
@@ -759,18 +762,24 @@ export component ComboBox inherits Button {
     }
 }
 
-component ToggleBoxInner inherits Rectangle {
-    in property <bool> locked: false;
-    in property <brush> i-background: self.background;
-    in property <length> i-x <=> i-switch.x;
+export component ToggleBox inherits Button {
     in property <bool> var;
-    in property <bool> accessible-mode: true;
+    in property <bool> force-accessible-enaled: false;
 
+    private property <bool> accessible-mode: force-accessible-enaled || AccessibilitySettings.accessible-switches;
     private property <length> switch-padding: 4px;
+    private property <length> i-x <=> i-switch.x;
 
-    background: (accessible-mode || !var) ? grey.darker(80%) : (locked ? green.mix(black, 75%) : green);
+    background: (accessible-mode || !var) ? grey.darker(80%) : (self.locked ? green.mix(black, 75%) : green);
     border-radius: self.height / 2;
+    width: self.height * 1.8;
     clip: true;
+
+    animate i-x, background { duration: GlobalAnimation.standard-duration; }
+
+    callback toggled(bool);
+
+    activated => toggled(!var);
 
     i-switch := Rectangle {
         border-radius: self.height / 1.5;
@@ -798,38 +807,6 @@ component ToggleBoxInner inherits Rectangle {
                 background: root.locked ? limegreen.mix(black, 75%) : limegreen;
             }
         }
-    }
-}
-
-component AnimatedToggleBoxInner inherits ToggleBoxInner {
-    animate i-x, i-background { duration: 60ms; }
-}
-
-export component ToggleBox inherits Button {
-    in property <bool> var;
-    in property <bool> force-accessible-enaled: false;
-
-    private property <bool> accessible-mode: force-accessible-enaled || AccessibilitySettings.accessible-switches;
-
-    callback toggled(bool);
-
-    activated => toggled(!var);
-
-    background: transparent;
-    border-radius: self.height / 2;
-    width: self.height * 1.8;
-
-    if !AccessibilitySettings.animations-enabled: ToggleBoxInner {
-        locked: root.locked;
-        var: root.var;
-        border-radius: root.border-radius;
-        accessible-mode: root.accessible-mode;
-    }
-    if AccessibilitySettings.animations-enabled: AnimatedToggleBoxInner {
-        locked: root.locked;
-        var: root.var;
-        border-radius: root.border-radius;
-        accessible-mode: root.accessible-mode;
     }
 }
 
@@ -1117,8 +1094,8 @@ export component Notification inherits NotificationCore {
             }
         }
 
-        animate opacity { // TRACKING: https://github.com/slint-ui/slint/issues/348
-            duration: 250ms;
+        animate opacity {
+            duration: GlobalAnimation.notification-duration;
             easing: Easing.ease-in-out-quad;
         }
 
@@ -1152,7 +1129,7 @@ export component NotificationPopup inherits NotificationCore {
             }
 
             animate opacity {
-                duration: 250ms;
+                duration: GlobalAnimation.notification-duration;
                 easing: Easing.ease-in-out-quad;
             }
 

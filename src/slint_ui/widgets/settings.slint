@@ -15,7 +15,11 @@ import {
 } from "@lib/state.slint";
 import { SUnitSystem } from "@lib/units.slint";
 import { GlobalThemeData } from "@themes/theme_loader_gen.slint";
-import { ControlledFocusScope, LangLabel } from "../lib/core.slint";
+import {
+    ControlledFocusScope,
+    LangLabel,
+    GlobalAnimation,
+} from "../lib/core.slint";
 
 export enum SettingsMenuItemType {
     Parameter,
@@ -43,13 +47,10 @@ export struct SettingsMenuItem {
 }
 
 export global SettingsLayout {
-    // TODO: can be changed to not be a flat array by just returning page contents from the callback
-    in property <[SettingsMenuItem]> layout;
-
-    callback get-page-layout(path: string) -> [SettingsMenuItem];
-    callback get-page-parent(path: string) -> string;
-    callback set-by-path(path: string, val: string);
+    pure callback get-page-layout(path: string) -> [SettingsMenuItem];
+    pure callback get-page-parent(path: string) -> string;
     pure callback get-by-path(path: string) -> string;
+    callback set-by-path(path: string, val: string);
 
     public pure function stringify-derived-param-type(ty: DerivedParamType) -> string {
         if ty == DerivedParamType.Enum {
@@ -76,33 +77,14 @@ component DecorationBar inherits Rectangle {
     width: 100%;
 }
 
-component SettingBarLabelTextBase inherits LangLabel {
-    font-size: 20px;
-    horizontal-alignment: left;
-    vertical-alignment: center;
-}
-
-component SettingBarLabelTextAnimated inherits SettingBarLabelTextBase {
-    animate x { duration: 50ms; }
-}
-
-component SettingBarLabelText {
-    in property <length> i-x;
-    in property <string> text;
-    if AccessibilitySettings.animations-enabled: SettingBarLabelTextAnimated {
-        x: root.i-x;
-        text: root.text;
-    }
-    if !AccessibilitySettings.animations-enabled: SettingBarLabelTextBase {
-        x: root.i-x;
-        text: root.text;
-    }
-}
-
-component SettingsBarLabelBase {
+component SettingBarLabel inherits Rectangle {
     in property <string> text <=> i-label.text;
     in property <bool> has-focus: false;
-    in-out property <length> selector-x: has-focus ? 6px : 0;
+
+    private property <length> selector-x: self.has-focus ? 6px : 0;
+    private property <length> label-x: self.has-focus ? 15px : 0;
+
+    animate selector-x, label-x { duration: GlobalAnimation.standard-duration; }
 
     i-selection-indicator := Rectangle {
         x: 0;
@@ -112,68 +94,29 @@ component SettingsBarLabelBase {
         background: white;
     }
 
-    i-label := SettingBarLabelText {
-        x: 0;
-        i-x: root.has-focus ? 15px : 0;
-    }
-}
-
-component SettingsBarLabelBaseAnimated inherits SettingsBarLabelBase {
-    animate selector-x { duration: 50ms; }
-}
-
-component SettingBarLabel inherits Rectangle {
-    in property <string> text;
-    in property <bool> has-focus: false;
-
-    if AccessibilitySettings.animations-enabled: SettingsBarLabelBaseAnimated {
-        x: 0;
-        text: root.text;
-        has-focus: root.has-focus;
-    }
-    if !AccessibilitySettings.animations-enabled: SettingsBarLabelBase {
-        x: 0;
-        text: root.text;
-        has-focus: root.has-focus;
+    i-label := LangLabel {
+        x: label-x;
+        font-size: 20px;
+        horizontal-alignment: left;
+        vertical-alignment: center;
     }
 
     DebugHighlight { }
 }
 
-component SettingBarBackgroundBase inherits Rectangle {
-    in property <bool> has-focus;
-
-    border-radius: 6px;
-    background: has-focus ? white.transparentize(90%) : transparent;
-}
-
-component SettingBarBackgroundBaseAnimated inherits SettingBarBackgroundBase {
-    animate background { duration: 50ms; }
-}
-
-component SettingBarBackground inherits Rectangle {
-    in property <bool> has-focus;
-
-    if !AccessibilitySettings.animations-enabled: SettingBarBackgroundBase {
-        has-focus: root.has-focus;
-    }
-    if AccessibilitySettings.animations-enabled: SettingBarBackgroundBaseAnimated {
-        has-focus: root.has-focus;
-    }
-}
-
 component SettingBar inherits Rectangle {
-    in property <string> label <=> i-label.text;
-    in property <bool> has-focus: FocusState.current-focus-id == self.focus-id;
     in-out property <int> focus-id;
 
-    property <length> i-padding: 15px;
+    in property <string> label <=> i-label.text;
+    in property <bool> has-focus: FocusState.current-focus-id == self.focus-id;
 
+    private property <length> i-padding: 15px;
+
+    background: root.has-focus ? white.transparentize(90%) : transparent;
+    border-radius: 6px;
     width: 600px;
 
-    SettingBarBackground {
-        has-focus: root.has-focus;
-    }
+    animate background { duration: GlobalAnimation.standard-duration; }
 
     VerticalLayout {
         alignment: center;
@@ -206,6 +149,7 @@ component SettingBar inherits Rectangle {
 
 component TypedSettingBar inherits SettingBar {
     in property <SettingsMenuItem> item;
+
     private property <bool> update-displayed-value: false;
     private property <bool> readonly: item.item-type == SettingsMenuItemType.ReadOnlyParameter;
 

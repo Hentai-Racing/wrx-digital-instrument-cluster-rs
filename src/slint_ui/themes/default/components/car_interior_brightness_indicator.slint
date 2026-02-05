@@ -1,6 +1,7 @@
 import { Notification, Arc } from "@lib/core.slint";
 import { SCarData } from "@data/car_data.slint";
 import { RadialRect } from "instrument_gauge.slint";
+import { GlobalAnimation } from "../../../lib/core.slint";
 
 component Sun inherits Rectangle {
     in property <int> light-rays: 10;
@@ -32,7 +33,7 @@ component Sun inherits Rectangle {
         thickness: 6deg;
 
         animate height, width, rotation {
-            duration: 100ms;
+            duration: GlobalAnimation.standard-duration;
             easing: Easing.ease-in-out-quad;
         }
     }

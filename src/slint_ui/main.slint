@@ -2,7 +2,6 @@ import {
     ControlledFocusScope,
     FocusDomain,
     FocusHoverRect,
-    AnimatedFocusHoverRect,
     ComboBoxSelectionBox,
     ComboBoxState,
     SliderSelectionBox,
@@ -88,8 +87,7 @@ export component App inherits Window {
     if SliderState.visible: SliderSelectionBox { }
 
     // Highest layer
-    if AccessibilitySettings.animations-enabled: AnimatedFocusHoverRect { }
-    if !AccessibilitySettings.animations-enabled: FocusHoverRect { }
+    FocusHoverRect { }
 
     // debug layer
     if (DebugSettings.debug-mode && DebugSettings.debug-overlay-enabled): DebugOverlay { }
