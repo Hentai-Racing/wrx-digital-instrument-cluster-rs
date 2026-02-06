@@ -16,6 +16,7 @@ Config.user.theme.selected_theme=Theme
 Config.user.accessibility=Accessibility
 Config.user.accessibility.animations_enabled=Animations Enabled
 Config.user.accessibility.accessible_switches=Accessible Switches
+Config.user.accessibility.selection_box_thickness=Selection Box Thickness
 
 Config.session=Session
 

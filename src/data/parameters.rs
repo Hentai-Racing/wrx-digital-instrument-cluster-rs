@@ -4,7 +4,114 @@ use crossbeam::atomic::AtomicCell;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use tokio::sync::watch;
 
-use std::fmt::{self, Debug};
+use std::{
+    fmt::{self, Debug, Display},
+    ops::RangeInclusive,
+    str::FromStr,
+};
+
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
+pub struct Bound<T> {
+    value: T,
+
+    start: T,
+    end: T,
+}
+
+impl<T> Bound<T>
+where
+    T: PartialOrd + PartialEq + Copy + Clone + Default + Serialize,
+{
+    pub fn new(value: T, range: RangeInclusive<T>) -> Self {
+        Self {
+            value,
+            start: *range.start(),
+            end: *range.end(),
+        }
+    }
+
+    pub fn value(&self) -> T {
+        self.value
+    }
+
+    pub fn set(&mut self, value: T) {
+        if (self.start..=self.end).contains(&value) {
+            self.value = value
+        }
+    }
+
+    pub fn start(&self) -> T {
+        self.start
+    }
+
+    pub fn end(&self) -> T {
+        self.end
+    }
+}
+
+impl<T> Default for Bound<T>
+where
+    T: PartialOrd + PartialEq + Copy + Clone + Default + Serialize,
+{
+    fn default() -> Self {
+        Self::new(Default::default(), T::default()..=T::default())
+    }
+}
+
+impl<T> From<T> for Bound<T>
+where
+    T: PartialOrd + PartialEq + Copy + Clone + Default + Serialize,
+{
+    fn from(value: T) -> Self {
+        let mut ret = Self::default();
+        ret.set(value);
+        ret
+    }
+}
+
+impl<T> Display for Bound<T>
+where
+    T: PartialOrd + PartialEq + Copy + Clone + Default + Serialize + Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{};{}..={}", self.value(), self.start, self.end)
+    }
+}
+
+impl<T> FromStr for Bound<T>
+where
+    T: PartialOrd + PartialEq + Copy + Clone + Default + Serialize + FromStr,
+{
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut value = s;
+        let mut range = None;
+
+        if let Some((first, rest)) = s.split_once(";") {
+            let (start, end) = rest.split_once("..=").ok_or("expected a..=b")?;
+
+            let start: T = start
+                .trim()
+                .parse()
+                .map_err(|_| "failed to parse range start")?;
+
+            let end: T = end
+                .trim()
+                .parse()
+                .map_err(|_| "failed to parse range end")?;
+
+            value = first;
+            range = Some(start..=end);
+        }
+
+        let value = T::from_str(value).map_err(|_| "bad value")?;
+        Ok(Self::new(
+            value,
+            range.unwrap_or(T::default()..=T::default()),
+        ))
+    }
+}
 
 pub struct Parameter<T> {
     value: AtomicCell<T>,
@@ -90,12 +197,13 @@ where
     }
 }
 
-impl<T> From<T> for Parameter<T>
+impl<T, U> From<U> for Parameter<T>
 where
-    T: Clone + Default + Serialize + PartialEq,
+    T: From<U> + Clone + Default + Serialize + PartialEq,
+    U: Clone + Default + Serialize + PartialEq,
 {
-    fn from(value: T) -> Self {
-        Parameter::new(value)
+    fn from(value: U) -> Self {
+        Parameter::new(T::from(value))
     }
 }
 
@@ -315,7 +423,7 @@ macro_rules! parameter_struct {
                 $crate::parameter_struct!(@path self target; path; value| $($entries)*)
             }
 
-            pub fn get_by_path(&self, param_path: &str) -> String {
+            pub fn get_by_path(&self, param_path: &str) -> Option<(String, Box<dyn std::any::Any>)> {
                 let (target, path) = match param_path.split_once('.') {
                     Some((root, path)) => {(root, path)}
                     _ => {(param_path, "")}
@@ -433,9 +541,10 @@ macro_rules! parameter_struct {
         }
     };
 
-    (@path-get-internal $self:ident $path:expr;| param $([$permissions:tt])? $param:ident: $ty:path) => {
-        format!("{}", $self.$param.value())
-    };
+    (@path-get-internal $self:ident $path:expr;| param $([$permissions:tt])? $param:ident: $ty:path) => {{
+        let value = $self.$param.value();
+        Some((format!("{value}"), Box::new(value)))
+    }};
     (@path-get-internal $self:ident $path:expr;| page $sub:ident) => {
         $self.$sub.get_by_path($path)
     };
@@ -446,7 +555,7 @@ macro_rules! parameter_struct {
             }),*
             _ => {
                 println!("Path [{}] does not exist!", $path);
-                "error".into()
+                None
             }
         }
     };

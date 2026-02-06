@@ -7,6 +7,7 @@ import {
     FocusState,
 } from "@lib/core.slint";
 import { RSTypeResolver } from "@lib/rs.slint";
+import { SBoundInt } from "@data/data_parameter.slint";
 import {
     ApplicationState,
     AccessibilitySettings,
@@ -19,6 +20,7 @@ import {
     ControlledFocusScope,
     LangLabel,
     GlobalAnimation,
+    Slider,
 } from "../lib/core.slint";
 
 export enum SettingsMenuItemType {
@@ -31,7 +33,7 @@ export enum SettingsMenuItemType {
 
 export enum DerivedParamType {
     Enum,
-    BoundNumber,
+    BoundInt,
     Number,
     String,
     Bool,
@@ -50,25 +52,10 @@ export global SettingsLayout {
     pure callback get-page-layout(path: string) -> [SettingsMenuItem];
     pure callback get-page-parent(path: string) -> string;
     pure callback get-by-path(path: string) -> string;
-    callback set-by-path(path: string, val: string);
+    pure callback stringify-derived-param-type(ty: DerivedParamType) -> string;
+    pure callback get-bound-int(path: string) -> SBoundInt;
 
-    public pure function stringify-derived-param-type(ty: DerivedParamType) -> string {
-        if ty == DerivedParamType.Enum {
-            "enum"
-        } else if ty == DerivedParamType.BoundNumber {
-            "boundNumber"
-        } else if ty == DerivedParamType.Number {
-            "number"
-        } else if ty == DerivedParamType.String {
-            "string"
-        } else if ty == DerivedParamType.Bool {
-            "bool"
-        } else if ty == DerivedParamType.Page {
-            "page"
-        } else {
-            "unknown"
-        }
-    }
+    callback set-by-path(path: string, val: string);
 }
 
 component DecorationBar inherits Rectangle {
@@ -90,7 +77,7 @@ component SettingBarLabel inherits Rectangle {
         x: 0;
         width: root.selector-x;
         height: 6px;
-        border-radius: 2px;
+        border-radius: 3px;
         background: white;
     }
 
@@ -234,6 +221,33 @@ component TypedSettingBar inherits SettingBar {
         }
     }
 
+    if item.param-type-derived == DerivedParamType.BoundInt: Slider {
+        locked: root.readonly;
+        title: root.label;
+        current-value: bound.value;
+        range-end: bound.end + 1;
+        range-start: bound.start;
+        step: 1; // TODO: add step to ranges
+
+        private property <SBoundInt> bound: SettingsLayout.get-bound-int(item.param-path);
+        private property <bool> update: root.update-displayed-value;
+
+        init-ready => {
+            self.bound = SettingsLayout.get-bound-int(item.param-path);
+            root.focus-id = self.focus-id;
+        }
+
+        changed current-value => {
+            self.bound.value = self.current-value;
+            SettingsLayout.set-by-path(item.param-path, RSTypeResolver.sboundint-to-string(self.bound));
+            self.update = !update;
+        }
+
+        changed update => {
+            self.bound = SettingsLayout.get-bound-int(item.param-path);
+        }
+    }
+
     // TODO: currently setting numbers & strings is not implemented
     if (item.param-type-derived == DerivedParamType.Number) || (item.param-type-derived == DerivedParamType.String): Button {
         locked: root.readonly;
@@ -250,8 +264,6 @@ component TypedSettingBar inherits SettingBar {
             self.text = SettingsLayout.get-by-path(item.param-path);
         }
     }
-
-    // TODO: bound numbers
 
     if (item.item-type == SettingsMenuItemType.Page) || (item.item-type == SettingsMenuItemType.PageBack): Button {
         width: self.height;

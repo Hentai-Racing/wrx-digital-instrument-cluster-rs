@@ -1,8 +1,8 @@
 use crate::application::config::Config;
-use crate::data::parameters::Node;
+use crate::data::parameters::{Bound, Node};
 use crate::slint_generatedApp::{
     AccessibilitySettings, App, ApplicationState, DebugSettings, DerivedParamType, GeneralSettings,
-    GlobalThemeData, SettingsLayout, SettingsMenuItem, SettingsMenuItemType, SystemInfo,
+    GlobalThemeData, SBoundInt, SettingsLayout, SettingsMenuItem, SettingsMenuItemType, SystemInfo,
 };
 
 use pastey::paste;
@@ -13,8 +13,11 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
-    match slint::spawn_local(async_compat::Compat::new(async move {
-        macro_rules! bind {
+    {
+        let handle_weak = handle_weak.clone();
+        let config = config.clone();
+        match slint::spawn_local(async_compat::Compat::new(async move {
+            macro_rules! bind {
             {$slint_global:ident.$param:tt <=> $root:ident.$($tail:tt)+} => {{paste!{
                 let handle_weak = handle_weak.clone();
                 let root = $root.clone();
@@ -50,35 +53,143 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
             }}};
         }
 
-        // TODO: auto-generate bindings
-        bind!(ApplicationState.user_unit <=> config.user.general.unit_system);
-        bind!(ApplicationState.running_simulation <=> config.session.simulation.running_simulation);
-        bind!(ApplicationState.running_can <=> config.session.can.running_can);
-        bind!(GeneralSettings.disable_hill_assist <=> config.user.general.disable_hill_assist_warning);
-        bind!(GlobalThemeData.current_theme <=> config.user.theme.selected_theme);
-        bind!(AccessibilitySettings.animations_enabled <=> config.user.accessibility.animations_enabled);
-        bind!(AccessibilitySettings.accessible_switches <=> config.user.accessibility.accessible_switches);
-        bind!(DebugSettings.debug_mode <=> config.session.debug.debug_mode);
-        bind!(DebugSettings.debug_highlights <=> config.session.debug.debug_highlights);
-        bind!(DebugSettings.debug_overlay_enabled <=> config.session.debug.debug_overlay_enabled);
-        bind!(DebugSettings.extra_debug_info <=> config.session.debug.extra_debug_info);
+            // TODO: auto-generate bindings
+            bind!(ApplicationState.user_unit <=> config.user.general.unit_system);
+            bind!(ApplicationState.running_simulation <=> config.session.simulation.running_simulation);
+            bind!(ApplicationState.running_can <=> config.session.can.running_can);
+            bind!(GeneralSettings.disable_hill_assist <=> config.user.general.disable_hill_assist_warning);
+            bind!(GlobalThemeData.current_theme <=> config.user.theme.selected_theme);
+            bind!(AccessibilitySettings.animations_enabled <=> config.user.accessibility.animations_enabled);
+            bind!(AccessibilitySettings.accessible_switches <=> config.user.accessibility.accessible_switches);
+            bind!(AccessibilitySettings.selection_box_thickness <=> config.user.accessibility.selection_box_thickness);
+            bind!(DebugSettings.debug_mode <=> config.session.debug.debug_mode);
+            bind!(DebugSettings.debug_highlights <=> config.session.debug.debug_highlights);
+            bind!(DebugSettings.debug_overlay_enabled <=> config.session.debug.debug_overlay_enabled);
+            bind!(DebugSettings.extra_debug_info <=> config.session.debug.extra_debug_info);
 
-        bind!(SystemInfo.total_memory <=| config.session.system_info.total_memory_mb);
-        bind!(SystemInfo.used_memory <=| config.session.system_info.used_memory_mb);
-        bind!(SystemInfo.process_memory <=| config.session.system_info.process_memory_mb);
-        bind!(SystemInfo.process_memory_max <=| config.session.system_info.process_memory_max_mb);
-        bind!(SystemInfo.num_cpus <=| config.session.system_info.num_cpus);
-        bind!(SystemInfo.cpu_usage <=| config.session.system_info.cpu_usage);
-        bind!(SystemInfo.fps <=| config.session.system_info.fps);
-    })) {
-        Err(e) => eprintln!("Failure in settings loader: {e}"),
-        _ => {}
+            bind!(SystemInfo.total_memory <=| config.session.system_info.total_memory_mb);
+            bind!(SystemInfo.used_memory <=| config.session.system_info.used_memory_mb);
+            bind!(SystemInfo.process_memory <=| config.session.system_info.process_memory_mb);
+            bind!(SystemInfo.process_memory_max <=| config.session.system_info.process_memory_max_mb);
+            bind!(SystemInfo.num_cpus <=| config.session.system_info.num_cpus);
+            bind!(SystemInfo.cpu_usage <=| config.session.system_info.cpu_usage);
+            bind!(SystemInfo.fps <=| config.session.system_info.fps);
+        })) {
+            Err(e) => eprintln!("Failure in settings loader: {e}"),
+            _ => {}
+        }
+    }
+
+    if let Some(handle) = handle_weak.upgrade() {
+        let ui_layout = handle.global::<SettingsLayout>();
+        let backend_layout = Rc::new(config.get_page_layout());
+
+        {
+            let backend_layout = backend_layout.clone();
+
+            ui_layout.on_get_page_layout(move |path| {
+                let path: Vec<&str> = path.split_terminator(".").collect();
+                let (layout, current_path) = unroll_path(&backend_layout, &path, String::new(), 0);
+
+                let ret = unroll_layout(layout, &current_path, 0, 1);
+                ret.as_slice()[1..].into() // remove the current page as an entry
+            });
+        }
+
+        ui_layout.on_get_page_parent(move |path| {
+            let mut ret = String::from(path);
+
+            if let Some((rest, _)) = String::from(&ret).rsplit_once(".") {
+                ret = rest.into();
+            }
+
+            ret.into()
+        });
+
+        {
+            let config = config.clone();
+            let backend_layout = backend_layout.clone();
+
+            ui_layout.on_set_by_path(move |path, value| {
+                if let Node::Page { name, items: _ } = &*backend_layout {
+                    if let Some(path) = path.strip_prefix(&format!("{}.", *name)) {
+                        config.set_by_path(path, &value.as_str());
+                    }
+                }
+            });
+        }
+
+        {
+            let config = config.clone();
+            let backend_layout = backend_layout.clone();
+
+            ui_layout.on_get_by_path(move |path| {
+                let mut ret = "error".into();
+
+                if let Node::Page { name, items: _ } = &*backend_layout {
+                    if let Some(path) = path.strip_prefix(&format!("{}.", *name)) {
+                        if let Some((display, _)) = config.get_by_path(path) {
+                            ret = display.into();
+                        }
+                    }
+                }
+
+                ret
+            });
+        }
+
+        {
+            let config = config.clone();
+            let backend_layout = backend_layout.clone();
+
+            ui_layout.on_get_bound_int(move |path| {
+                let mut ret = Default::default();
+
+                if let Node::Page { name, items: _ } = &*backend_layout {
+                    if let Some(path) = path.strip_prefix(&format!("{}.", *name)) {
+                        if let Some((_, value)) = config.get_by_path(path) {
+                            if let Some(value) = value.downcast_ref::<Bound<i32>>() {
+                                ret = (*value).into()
+                            }
+                        }
+                    }
+                }
+
+                ret
+            });
+        }
+
+        ui_layout
+            .on_stringify_derived_param_type(move |ty: DerivedParamType| ty.to_string().into());
     }
 }
 
+/// Remove all generics from Rust types that are passed to Slint
+fn strip_generics(s: &str) -> &str {
+    match s.find('<') {
+        Some(i) => &s[..i],
+        None => s,
+    }
+}
+
+impl ToString for DerivedParamType {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Bool => String::from("bool"),
+            Self::BoundInt => String::from("bound_int"),
+            Self::Number => String::from("number"),
+            Self::String => String::from("string"),
+            Self::Page => String::from("page"),
+            Self::Enum => String::from("enum"),
+        }
+    }
+}
+
+/// Convert Rust types to Slint `DerivedParamType` so we can generate the user interaction in UI procedurally
 fn derive_param_type(ty: &str) -> DerivedParamType {
-    match ty {
+    match ty.trim() {
         stringify!(i32) | stringify!(f32) => DerivedParamType::Number,
+        stringify!(Bound<i32>) => DerivedParamType::BoundInt,
         stringify!(String) => DerivedParamType::String,
         stringify!(bool) => DerivedParamType::Bool,
         "page" => DerivedParamType::Page,
@@ -154,7 +265,7 @@ fn unroll_path<'a>(
                         return unroll_path(
                             item,
                             split_path,
-                            format!("{}.", split_path[..=(current_depth)].join(".")),
+                            format!("{}.", split_path[..=current_depth].join(".")),
                             current_depth + 1,
                         );
                     }
@@ -166,61 +277,38 @@ fn unroll_path<'a>(
     (node, current_path)
 }
 
-pub fn bind_config_layout(handle_weak: Weak<App>, config: Arc<Config>) {
-    if let Some(handle) = handle_weak.upgrade() {
-        let ui_layout = handle.global::<SettingsLayout>();
-        let backend_layout = Rc::new(config.get_page_layout());
-
-        {
-            let backend_layout = backend_layout.clone();
-
-            ui_layout.on_get_page_layout(move |path| {
-                let path: Vec<&str> = path.split_terminator(".").collect();
-                let (layout, current_path) = unroll_path(&backend_layout, &path, String::new(), 0);
-
-                let ret = unroll_layout(layout, &current_path, 0, 1);
-                ret.as_slice()[1..].into() // remove the current page as an entry
-            });
-        }
-
-        ui_layout.on_get_page_parent(move |path| {
-            let mut ret = String::from(path);
-
-            if let Some((rest, _)) = String::from(&ret).rsplit_once(".") {
-                ret = rest.into();
+macro_rules! generate_bound_from {
+    ($($ty:ty),*) => {
+        $(impl From<Bound<$ty>> for $ty {
+            fn from(b: Bound<$ty>) -> Self {
+                b.value()
             }
+        })*
+    };
+}
 
-            ret.into()
-        });
+generate_bound_from!(i32, f32);
 
-        {
-            let config = config.clone();
-            let backend_layout = backend_layout.clone();
-
-            ui_layout.on_set_by_path(move |path, value| {
-                if let Node::Page { name, items: _ } = &*backend_layout {
-                    if let Some(path) = path.strip_prefix(&format!("{}.", *name)) {
-                        config.set_by_path(path, &value.as_str());
-                    }
-                }
-            });
+impl Into<SBoundInt> for Bound<i32> {
+    fn into(self) -> SBoundInt {
+        SBoundInt {
+            end: self.end(),
+            start: self.start(),
+            value: self.value(),
         }
+    }
+}
 
-        {
-            let config = config.clone();
-            let backend_layout = backend_layout.clone();
+impl From<SBoundInt> for Bound<i32> {
+    fn from(value: SBoundInt) -> Self {
+        let mut this = Self::new(0, value.start..=value.end);
+        this.set(value.value);
+        this
+    }
+}
 
-            ui_layout.on_get_by_path(move |path| {
-                let mut ret = "error".into();
-
-                if let Node::Page { name, items: _ } = &*backend_layout {
-                    if let Some(path) = path.strip_prefix(&format!("{}.", *name)) {
-                        ret = config.get_by_path(path).into();
-                    }
-                }
-
-                ret
-            });
-        }
+impl ToString for SBoundInt {
+    fn to_string(&self) -> String {
+        format!("{};{}..={}", self.value, self.start, self.end)
     }
 }

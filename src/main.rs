@@ -329,7 +329,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         rs_type_resolver::bridge(ui.as_weak());
         config_bridge::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
-        config_bridge::bind_config_layout(ui.as_weak(), CONFIG_MANAGER.clone());
         car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), CONFIG_MANAGER.clone());
         hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
         lang::bridge(ui.as_weak(), CONFIG_MANAGER.clone());

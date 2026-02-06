@@ -1,3 +1,4 @@
+// TODO: consider switching to Slint's built-in translation
 use crate::application::config::Config;
 use crate::slint_generatedApp::{App, LangResolver};
 
@@ -14,7 +15,7 @@ use std::sync::{Arc, RwLock};
 #[include = "*.lang"]
 pub struct Lang;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq)]
 pub struct StrLang(String);
 
 impl std::str::FromStr for StrLang {

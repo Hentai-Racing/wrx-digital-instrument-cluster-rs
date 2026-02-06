@@ -30,6 +30,9 @@ export global AccessibilitySettings {
 
     in-out property <bool> accessible-switches: false;
     callback update-accessible-switches(bool);
+
+    in-out property <int> selection-box-thickness: 2;
+    callback update-selection-box-thickness(int);
 }
 
 export global DebugSettings {

@@ -1,3 +1,4 @@
+use crate::data::parameters::Bound;
 use crate::data::units::UnitSystem;
 use crate::parameter_struct;
 use crate::slint_generatedApp::ClusterTheme;
@@ -47,6 +48,7 @@ parameter_struct! {Config {
         accessibility {
             pub animations_enabled: bool = true,
             pub accessible_switches: bool = false,
+            pub selection_box_thickness: Bound<i32> = Bound::new(2, 1..=10),
         },
     },
 
@@ -59,16 +61,16 @@ parameter_struct! {Config {
             pub extra_debug_info: bool = false,
         },
 
-        hardware {
-            pub [ro] adc_val: i32,
-        },
-
         simulation {
             pub running_simulation: bool = true,
         },
 
         can {
             pub running_can: bool = true,
+        },
+
+        hardware {
+            pub [ro] adc_val: i32,
         },
 
         system_info {
@@ -126,7 +128,9 @@ impl Config {
             }
         })
         .await
-        {}
+        {
+            eprintln!("Timeout on config load");
+        }
 
         Ok(())
     }

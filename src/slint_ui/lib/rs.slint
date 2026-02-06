@@ -1,6 +1,9 @@
+import { SBoundInt } from "@data/data_parameter.slint";
+
 export global RSTypeResolver {
     pure callback rs-string-bool(string) -> bool;
     pure callback sl-bool-string(bool) -> string;
+    pure callback sboundint-to-string(SBoundInt) -> string;
 
     pure callback get-enum-variants(string) -> [string];
 }

@@ -21,11 +21,15 @@ export global GlobalSizing {
     out property <length> combobox-arrow: 12px;
     out property <length> combobox-selection-indicator: 5px;
     //
-    out property <length> focus-box-border: 2px;
+    out property <length> slider-width: button-height * 1.25;
+    out property <length> slider-selection-button: 20px;
+    //
+    out property <length> focus-box-border: AccessibilitySettings.selection-box-thickness * 1px;
 }
 
 export global GlobalAnimation {
     out property <duration> standard-duration: AccessibilitySettings.animations-enabled ? 70ms : 0s;
+    out property <duration> toggle-box-switch-duration: AccessibilitySettings.animations-enabled ? 50ms : 0s;
     out property <duration> page-duration: AccessibilitySettings.animations-enabled ? 110ms : 0s;
     out property <duration> notification-duration: AccessibilitySettings.animations-enabled ? 250ms : 0s;
 }
@@ -767,44 +771,56 @@ export component ToggleBox inherits Button {
     in property <bool> force-accessible-enaled: false;
 
     private property <bool> accessible-mode: force-accessible-enaled || AccessibilitySettings.accessible-switches;
-    private property <length> switch-padding: 4px;
+    private property <length> switch-padding: 2px;
     private property <length> i-x <=> i-switch.x;
 
     background: (accessible-mode || !var) ? grey.darker(80%) : (self.locked ? green.mix(black, 75%) : green);
-    border-radius: self.height / 2;
-    width: self.height * 1.8;
+    width: self.height * 2;
     clip: true;
 
-    animate i-x, background { duration: GlobalAnimation.standard-duration; }
+    animate i-x, background { duration: GlobalAnimation.toggle-box-switch-duration; }
 
     callback toggled(bool);
 
     activated => toggled(!var);
 
     i-switch := Rectangle {
-        border-radius: self.height / 1.5;
+        border-radius: 3px;
         background: root.locked ? lightgray.mix(black, 70%) : lightgray;
-        width: root.width * 65% - root.switch-padding - root.border-width;
         x: var ? root.width - root.border-width - root.switch-padding - self.width : root.border-width + root.switch-padding;
         y: root.height / 2 - self.height / 2;
         height: root.height - root.switch-padding * 2 - root.border-width * 2;
+        width: self.height;
 
         if accessible-mode: Rectangle {
             off-indicator := Rectangle {
                 x: parent.width - self.width - on-indicator.x;
                 width: on-indicator.width;
                 height: self.width;
-                border-radius: self.height / 2;
-                background: root.locked ? red.mix(black, 75%) : red;
+                background: transparent;
+
+                Rectangle {
+                    width: 150%;
+                    height: 150%;
+                    border-radius: self.height / 2;
+                    border-width: 2px;
+                    border-color: root.locked ? red.mix(black, 75%) : red;
+                }
             }
 
             on-indicator := Rectangle {
                 visible: true;
                 x: -(root.width - parent.width) / 2 - root.switch-padding / 2;
                 width: 10px;
-                height: self.width;
-                border-radius: self.height / 2;
-                background: root.locked ? limegreen.mix(black, 75%) : limegreen;
+                height: root.height * 40%;
+
+                Rectangle {
+                    height: 100%;
+                    width: 3px;
+                    background: root.locked ? limegreen.mix(black, 75%) : limegreen;
+                }
+
+                background: transparent;
             }
         }
     }
@@ -814,24 +830,21 @@ export global SliderState {
     in-out property <int> first-model-focus-id;
     in-out property <int> last-model-focus-id;
 
-    in property <string> current-value: self.min-value;
+    in property <float> current-value: self.range-start;
     in property <string> title;
     in property <int> domain-id;
 
-    out property <float> max-value: 100;
-    out property <float> min-value: 0;
-    out property <int> ticks: 10;
-    out property <float> value-range: self.max-value - self.min-value;
+    out property <float> range-start: 0;
+    out property <float> range-end: 100;
+    out property <int> step: 1;
     out property <bool> visible: false;
     out property <ItemBox> focus-box;
     out property <bool> selection-made;
-    out property <string> selection-value;
-    out property <int> selection-index;
+    out property <float> selection-value;
 
-    public function make-selection(value: string, index: int) {
+    public function make-selection(value: float, index: int) {
         self.selection-made = true;
         self.selection-value = value;
-        self.selection-index = index;
     }
 
     public function complete-selection() {
@@ -859,17 +872,17 @@ export global SliderState {
         }
     }
 
-    public function set-value-range(min: float, max: float, ticks: int) {
-        self.max-value = max;
-        self.min-value = min;
-        self.ticks = ticks;
+    public function set-value-range(start: float, end: float, step: int) {
+        self.range-start = start;
+        self.range-end = end;
+        self.step = step;
     }
 }
 
 component SliderSelectionBoxButton inherits Button {
     in property <bool> has-selection;
 
-    height: 14px;
+    height: GlobalSizing.slider-selection-button;
     width: self.height;
     border-radius: self.height / 2;
 
@@ -881,13 +894,14 @@ component SliderSelectionBoxButton inherits Button {
         border-width: 2px;
         border-color: root.background.brighter(25%);
         visible: root.has-selection;
+        z: 99;
     }
 }
 
 export component SliderSelectionBox inherits FocusDomain {
     property <length> tick-size: 5px;
 
-    private property <length> tick-step: (interior.width - SliderState.ticks * tick-size) / (SliderState.ticks - 1);
+    private property <int> size: abs(SliderState.range-end - SliderState.range-start);
     private property <bool> i-has-domain: SliderState.visible;
     private property <int> i-init-selection-box-focus;
 
@@ -909,6 +923,10 @@ export component SliderSelectionBox inherits FocusDomain {
         }
     }
 
+    pure function get-range-index(i: int) -> float {
+        SliderState.range-start + i * sign(SliderState.range-end - SliderState.range-start)
+    }
+
     HorizontalLayout {
         padding: 5px;
         alignment: center;
@@ -921,26 +939,33 @@ export component SliderSelectionBox inherits FocusDomain {
                 height: self.font-size + 20px;
                 text: SliderState.title;
                 font-size: 25px;
-                horizontal-alignment: left;
-                vertical-alignment: center;
             }
 
             interior := HorizontalLayout {
                 width: 400px;
                 alignment: center;
-                spacing: root.tick-step;
+                spacing: 20px;
 
-                for value[i] in SliderState.ticks: HorizontalLayout {
-                    alignment: start;
+                for _[i] in size: HorizontalLayout {
+                    alignment: center;
+
                     SliderSelectionBoxButton {
-                        has-selection: SliderState.current-value == value;
+                        private property <float> value: get-range-index(i);
+
+                        Text {
+                            y: parent.height + 5px;
+                            color: white;
+                            text: value;
+                        }
+
+                        has-selection: SliderState.current-value == self.value;
 
                         init-ready => {
                             if i == 0 {
                                 root.tick-size = self.height;
                                 SliderState.first-model-focus-id = self.focus-id;
                             }
-                            if i == (SliderState.ticks - 1) {
+                            if i == (size - 1) {
                                 SliderState.last-model-focus-id = self.focus-id;
                             }
                             if self.has-selection {
@@ -948,22 +973,19 @@ export component SliderSelectionBox inherits FocusDomain {
                             }
                         }
 
+                        if i != (size - 1): Rectangle {
+                            private property <length> i-padding: 3px;
+                            width: interior.spacing - i-padding * 2;
+                            x: parent.width + i-padding;
+                            height: 2px;
+                            background: white;
+                        }
+
                         activated => {
                             SliderState.domain-id = root.domain-id;
-                            SliderState.make-selection(value, i);
+                            SliderState.make-selection(self.value, i);
                         }
                     }
-
-                    // if i != (SliderState.ticks - 1): VerticalLayout {
-                    //     width: root.tick-step;
-                    //     alignment: center;
-                    //     padding: 2px;
-
-                    //     Rectangle {
-                    //         background: white.transparentize(25%);
-                    //         height: 2px;
-                    //     }
-                    // }
                 }
             }
 
@@ -978,34 +1000,25 @@ export component SliderSelectionBox inherits FocusDomain {
     }
 }
 
-// TODO: complete slider
-/* missing:
-    -background bar
-    -interpolate real value
-*/
 export component Slider inherits Button {
-    in property <[string]> model;
+    in-out property <float> current-value;
+
     in property <string> title;
+    in property <float> range-end: 100;
+    in property <float> range-start: 0;
+    in property <int> step: 1;
 
-    in property <float> max-value: 100;
-    in property <float> min-value: 0;
-    in property <int> ticks: 10;
-
-    in-out property <int> current-index: 0;
-    in-out property <string> current-value: model[current-index];
     out property <bool> open;
-
-    private property <float> value-range: self.max-value - self.min-value;
 
     private property <bool> selection-state-made: SliderState.selection-made;
     private property <int> domain-state-real-last;
 
+    width: GlobalSizing.slider-width;
     text: current-value;
     horizontal-alignment: left;
 
     changed selection-state-made => {
         if open {
-            root.current-index = SliderState.selection-index;
             root.current-value = SliderState.selection-value;
             SliderState.complete-selection();
             DomainState.set-last-domain-id(root.domain-state-real-last);
@@ -1018,7 +1031,7 @@ export component Slider inherits Button {
         SliderState.title = root.title;
         SliderState.current-value = root.current-value;
         SliderState.set-focus-coords(self.absolute-position.x, self.absolute-position.y, self.width, self.height);
-        SliderState.set-value-range(self.max-value, self.min-value, self.ticks);
+        SliderState.set-value-range(self.range-start, self.range-end, self.step);
         SliderState.show-selection-box();
         root.open = true;
     }
