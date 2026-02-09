@@ -2,7 +2,7 @@
 
 use crate::can::messages::wrx_2018;
 use crate::can::can_backend::CanFrame;
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 pub fn generate_frames() -> Vec<CanFrame> {
 	let mut ret_frames = vec![];	let g_sensor_lateral = rand::rng().random_range(wrx_2018::GSensor::G_SENSOR_LATERAL_MIN..=wrx_2018::GSensor::G_SENSOR_LATERAL_MAX);

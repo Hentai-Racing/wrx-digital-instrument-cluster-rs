@@ -277,35 +277,35 @@ fn unroll_path<'a>(
     (node, current_path)
 }
 
-macro_rules! generate_bound_from {
-    ($($ty:ty),*) => {
+macro_rules! generate_bound_type {
+    ($($ty:ty $(=> $bound_ty:path)?),*) => {
         $(impl From<Bound<$ty>> for $ty {
             fn from(b: Bound<$ty>) -> Self {
                 b.value()
             }
-        })*
+        }
+
+        $(
+            impl Into<$bound_ty> for Bound<$ty> {
+                fn into(self) -> $bound_ty {
+                    $bound_ty {
+                        end: self.end(),
+                        start: self.start(),
+                        value: self.value()
+                    }
+                }
+            }
+
+            impl From<$bound_ty> for Bound<$ty> {
+                fn from(value: $bound_ty) -> Self {
+                    Self::new(value.value, value.start..=value.end)
+                }
+            }
+        )?)*
     };
 }
 
-generate_bound_from!(i32, f32);
-
-impl Into<SBoundInt> for Bound<i32> {
-    fn into(self) -> SBoundInt {
-        SBoundInt {
-            end: self.end(),
-            start: self.start(),
-            value: self.value(),
-        }
-    }
-}
-
-impl From<SBoundInt> for Bound<i32> {
-    fn from(value: SBoundInt) -> Self {
-        let mut this = Self::new(0, value.start..=value.end);
-        this.set(value.value);
-        this
-    }
-}
+generate_bound_type!(i32 => SBoundInt, f32);
 
 impl ToString for SBoundInt {
     fn to_string(&self) -> String {
