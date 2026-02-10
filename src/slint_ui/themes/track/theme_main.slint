@@ -1,0 +1,99 @@
+import "@fonts/Montserrat/fonts/ttf/Montserrat-Black.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-Bold.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-ExtraLight.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-Light.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-Medium.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-Regular.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-SemiBold.ttf";
+import "@fonts/Montserrat/fonts/ttf/Montserrat-Thin.ttf";
+
+import { VerticalBox, ComboBox } from "std-widgets.slint";
+
+import { Arc } from "@lib/core.slint";
+import {
+    InteriorBrightnessIndicator,
+} from "@themes/default/components/car_interior_brightness_indicator.slint";
+import { SymbolProperties } from "@themes/default/symbol_properties.slint";
+import { SCarData } from "@data/car_data.slint";
+import { SUnitSystem } from "@lib/units.slint";
+import { DebugHighlight } from "@lib/core.slint";
+import {
+    ApplicationState,
+    GeneralSettings,
+} from "@lib/state.slint";
+import { WidgetContainer } from "@widgets/widget_container.slint";
+
+component PrimarySection inherits Rectangle {
+    background: transparent;
+
+    DebugHighlight { }
+}
+
+export component SymbolLight inherits Image {
+    in property <float> scale: 1;
+    width: SymbolProperties.size * scale;
+    height: SymbolProperties.size * scale;
+    image-fit: ImageFit.contain;
+    colorize: Colors.blueviolet;
+}
+
+export component TrackTheme inherits Rectangle {
+    background: transparent;
+
+    width: self.height * (1920 / 720);
+    height: 720px;
+
+    VerticalLayout {
+        top-span := PrimarySection {
+            height: SymbolProperties.size;
+        }
+
+        mid-span := Rectangle {
+            WidgetContainer {
+                x: parent.width * 70%;
+                width: 15%;
+                height: 55%;
+            }
+        }
+
+        bottom-span := PrimarySection {
+            height: 8%;
+
+            InteriorBrightnessIndicator {
+                y: odometer-text-section.y - self.height - 50px;
+            }
+
+            HorizontalLayout {
+                alignment: center;
+                odometer-text-section := Rectangle {
+                    background: transparent;
+
+                    odometer-text := Text {
+                        color: white;
+                        text: floor(SCarData.odometer.value);
+                        font-size: 47.5px;
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                    }
+
+                    odometer-dec-text := Text {
+                        color: odometer-text.color.transparentize(60%);
+                        text: "." + (floor(SCarData.odometer.value * 10) / 10 - floor(SCarData.odometer.value)) * 10;
+                        font-size: odometer-text.font-size;
+                        horizontal-alignment: left;
+                        vertical-alignment: odometer-text.vertical-alignment;
+                        x: odometer-text.x + odometer-text.width;
+                    }
+
+                    odometer-unit-text := Text {
+                        vertical-alignment: center;
+                        color: odometer-text.color.transparentize(70%);
+                        text: SCarData.odometer.unit_str;
+                        font-size: odometer-text.font-size * 70%;
+                        x: odometer-dec-text.x + odometer-dec-text.width;
+                    }
+                }
+            }
+        }
+    }
+}

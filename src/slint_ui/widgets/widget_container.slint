@@ -74,7 +74,7 @@ component FocusableWidget inherits Widget {
 }
 
 component InternalContainerLayout {
-    in-out property <length> i-x: (-WidgetContainerState.current-page * self.width) - (self.spacing * WidgetContainerState.current-page);
+    in-out property <length> i-x: (-WidgetContainerState.current-page * self.width) - (self.spacing * WidgetContainerState.current-page) - i-layout.padding;
     in-out property <length> spacing <=> i-layout.spacing;
 
     width: 100%;
@@ -117,13 +117,15 @@ export component WidgetContainer {
 
             HorizontalLayout {
                 alignment: center;
-                spacing: 10px;
+                spacing: FocusState.focus-highlight-size;
+                padding: FocusState.focus-highlight-size;
 
                 for i in WidgetContainerState.num-pages: Rectangle {
                     private property <bool> has-view: WidgetContainerState.current-page == i;
                     private property <bool> domain-active: center-widget-container-indicator.domain-active;
 
-                    width: indicator-width;
+                    height: 100%;
+                    width: self.height;
                     forward-focus: i-focus;
 
                     function attempt-focus() {

@@ -4,11 +4,13 @@
 
 import { DebugTheme } from "debug/theme_main.slint";
 import { DefaultTheme } from "default/theme_main.slint";
+import { TrackTheme } from "track/theme_main.slint";
 
 @rust-attr(derive(strum::VariantArray, serde::Serialize, serde::Deserialize))
 export enum ClusterTheme {
 	Debug,
 	Default,
+	Track,
 }
 
 export global GlobalThemeData {
@@ -22,4 +24,5 @@ export component ThemeLoader {
 
 	if GlobalThemeData.current-theme == ClusterTheme.Debug: DebugTheme {width: 100%; height: 100%;}
 	if GlobalThemeData.current-theme == ClusterTheme.Default: DefaultTheme {width: 100%; height: 100%;}
+	if GlobalThemeData.current-theme == ClusterTheme.Track: TrackTheme {width: 100%; height: 100%;}
 }
