@@ -49,6 +49,8 @@ component Widget inherits FocusDomain {
 
     force-exit-strategy: focusable && true;
     force-focus: false;
+    height: 100%;
+    width: 100%;
 
     changed has-focus => {
         if focusable && has-focus {

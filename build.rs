@@ -250,7 +250,7 @@ fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
 
         gen_output += &format!("use crate::can::messages::{module};\n");
         gen_output += "use crate::can::can_backend::CanFrame;\n";
-        gen_output += "use rand::{Rng, RngExt};\n\n";
+        gen_output += "use rand::RngExt;\n\n";
         gen_output += &format!("pub fn generate_frames() -> Vec<CanFrame> {{\n\t{gen_block}\n}}");
 
         rs_out_file.write_all(gen_output.as_bytes()).unwrap();

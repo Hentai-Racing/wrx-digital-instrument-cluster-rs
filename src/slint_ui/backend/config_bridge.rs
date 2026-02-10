@@ -164,14 +164,6 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
     }
 }
 
-/// Remove all generics from Rust types that are passed to Slint
-fn strip_generics(s: &str) -> &str {
-    match s.find('<') {
-        Some(i) => &s[..i],
-        None => s,
-    }
-}
-
 impl ToString for DerivedParamType {
     fn to_string(&self) -> String {
         match self {
