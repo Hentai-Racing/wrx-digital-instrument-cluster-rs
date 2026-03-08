@@ -4,6 +4,7 @@ use std::ffi::OsStr;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
+use std::process::Command;
 use std::sync::LazyLock;
 use syn;
 use walkdir::WalkDir;
@@ -12,6 +13,8 @@ const MANIFEST_DIR: LazyLock<PathBuf> = LazyLock::new(|| PathBuf::from(env!("CAR
 /// path to the directory that contains `main.slint`
 const SLINT_PATH: LazyLock<PathBuf> = LazyLock::new(|| MANIFEST_DIR.join("src/slint_ui"));
 const RESOURCES_PATH: LazyLock<PathBuf> = LazyLock::new(|| MANIFEST_DIR.join("resources"));
+const OUT_DIR: LazyLock<PathBuf> =
+    LazyLock::new(|| PathBuf::from(std::env::var("OUT_DIR").expect("No output directory")));
 
 static SLINT_LIBRARY_PATHS: LazyLock<HashMap<String, PathBuf>> = LazyLock::new(|| {
     HashMap::from([
@@ -560,12 +563,45 @@ fn update_vscode_slint_libpaths() {
     }
 }
 
+fn populate_metadata() {
+    let git_rev = Command::new("git")
+        .args(["log", "-1", "--pretty=%h"])
+        .output()
+        .expect("Failed to get git commit hash");
+
+    fs::write(
+        OUT_DIR.join("gitrev"),
+        String::from_utf8_lossy(&git_rev.stdout).to_string(),
+    )
+    .expect("Failed to write git commit hash");
+
+    let metadata = cargo_metadata::MetadataCommand::new().exec().unwrap();
+    let dep = metadata
+        .packages
+        .iter()
+        .find(|p| p.name == "slint")
+        .unwrap();
+    let mut slint_version = dep.version.to_string();
+
+    if cfg!(debug_assertions) {
+        if let Some(source) = &dep.source {
+            if let Some(rev) = source.repr.rsplit('#').next() {
+                slint_version.push_str(&format!(" ({})", &rev[..7]));
+            }
+        }
+    }
+
+    fs::write(OUT_DIR.join("slint_version"), slint_version)
+        .expect("Failed to write slint version metadata");
+}
+
 fn main() {
     build_dbc().unwrap();
     generate_can_data_emulator().unwrap();
     generate_slint_car_data().unwrap();
     generate_slint_themes().unwrap();
     update_vscode_slint_libpaths();
+    populate_metadata();
 
     let config = slint_build::CompilerConfiguration::new()
         .with_library_paths(LazyLock::force(&SLINT_LIBRARY_PATHS).clone());

@@ -55,25 +55,25 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
 
             // TODO: auto-generate bindings
             bind!(ApplicationState.user_unit <=> config.user.general.unit_system);
-            bind!(ApplicationState.running_simulation <=> config.session.simulation.running_simulation);
-            bind!(ApplicationState.running_can <=> config.session.can.running_can);
+            bind!(ApplicationState.running_simulation <=> config.developer.simulation.running_simulation);
+            bind!(ApplicationState.running_can <=> config.developer.can.running_can);
             bind!(GeneralSettings.disable_hill_assist <=> config.user.general.disable_hill_assist_warning);
             bind!(GlobalThemeData.current_theme <=> config.user.theme.selected_theme);
             bind!(AccessibilitySettings.animations_enabled <=> config.user.accessibility.animations_enabled);
             bind!(AccessibilitySettings.accessible_switches <=> config.user.accessibility.accessible_switches);
             bind!(AccessibilitySettings.selection_box_thickness <=> config.user.accessibility.selection_box_thickness);
-            bind!(DebugSettings.debug_mode <=> config.session.debug.debug_mode);
-            bind!(DebugSettings.debug_highlights <=> config.session.debug.debug_highlights);
-            bind!(DebugSettings.debug_overlay_enabled <=> config.session.debug.debug_overlay_enabled);
-            bind!(DebugSettings.extra_debug_info <=> config.session.debug.extra_debug_info);
+            bind!(DebugSettings.debug_mode <=> config.developer.debug.debug_mode);
+            bind!(DebugSettings.debug_highlights <=> config.developer.debug.debug_highlights);
+            bind!(DebugSettings.debug_overlay_enabled <=> config.developer.debug.debug_overlay_enabled);
+            bind!(DebugSettings.extra_debug_info <=> config.developer.debug.extra_debug_info);
 
-            bind!(SystemInfo.total_memory <=| config.session.system_info.total_memory_mb);
-            bind!(SystemInfo.used_memory <=| config.session.system_info.used_memory_mb);
-            bind!(SystemInfo.process_memory <=| config.session.system_info.process_memory_mb);
-            bind!(SystemInfo.process_memory_max <=| config.session.system_info.process_memory_max_mb);
-            bind!(SystemInfo.num_cpus <=| config.session.system_info.num_cpus);
-            bind!(SystemInfo.cpu_usage <=| config.session.system_info.cpu_usage);
-            bind!(SystemInfo.fps <=| config.session.system_info.fps);
+            bind!(SystemInfo.total_memory <=| config.developer.system_info.total_memory_mb);
+            bind!(SystemInfo.used_memory <=| config.developer.system_info.used_memory_mb);
+            bind!(SystemInfo.process_memory <=| config.developer.system_info.process_memory_mb);
+            bind!(SystemInfo.process_memory_max <=| config.developer.system_info.process_memory_max_mb);
+            bind!(SystemInfo.num_cpus <=| config.developer.system_info.num_cpus);
+            bind!(SystemInfo.cpu_usage <=| config.developer.system_info.cpu_usage);
+            bind!(SystemInfo.fps <=| config.developer.system_info.fps);
         })) {
             Err(e) => eprintln!("Failure in settings loader: {e}"),
             _ => {}
@@ -173,6 +173,7 @@ impl ToString for DerivedParamType {
             Self::String => String::from("string"),
             Self::Page => String::from("page"),
             Self::Enum => String::from("enum"),
+            Self::Trigger => String::from("trigger"),
         }
     }
 }
@@ -184,6 +185,7 @@ fn derive_param_type(ty: &str) -> DerivedParamType {
         stringify!(Bound<i32>) => DerivedParamType::BoundInt,
         stringify!(String) => DerivedParamType::String,
         stringify!(bool) => DerivedParamType::Bool,
+        stringify!(PageTrigger) => DerivedParamType::Trigger,
         "page" => DerivedParamType::Page,
         _ => DerivedParamType::Enum, //* More complex types need to be dealt with by param_type
     }

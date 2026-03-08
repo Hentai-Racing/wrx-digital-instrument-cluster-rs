@@ -200,7 +200,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // CanFrame::new(obd_id, 8, &[0x01, OBDService::StoredDTCs.into()]),
             ]);
 
-            let running_can = &CONFIG_MANAGER.session.can.running_can;
+            let running_can = &CONFIG_MANAGER.developer.can.running_can;
 
             loop {
                 if running_can.value() {
@@ -283,7 +283,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             tokio::spawn(async move {
                 let mut interval = time::interval(Duration::from_millis(10));
 
-                let running_vcan = &CONFIG_MANAGER.session.simulation.running_simulation;
+                let running_vcan = &CONFIG_MANAGER.developer.simulation.running_simulation;
 
                 loop {
                     let gen_frames = wrx_2018_emulator::generate_frames();
@@ -355,7 +355,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 interval.tick().await;
                 let secs = last.elapsed().as_secs_f32();
 
-                CONFIG_MANAGER.session.system_info.fps.set_value(
+                CONFIG_MANAGER.developer.system_info.fps.set_value(
                     ((frames.swap(0, std::sync::atomic::Ordering::Relaxed) as f32) / secs) as i32,
                 );
 
@@ -544,13 +544,13 @@ async fn bridge_system_info() {
         .with_processes(ProcessRefreshKind::nothing().with_memory());
 
     CONFIG_MANAGER
-        .session
+        .developer
         .system_info
         .num_cpus
         .set_value(sys.cpus().len() as i32);
 
     CONFIG_MANAGER
-        .session
+        .developer
         .system_info
         .total_memory_mb
         .set_value((sys.total_memory() / 1_048_576) as i32);
@@ -567,26 +567,26 @@ async fn bridge_system_info() {
             process_memory_max = std::cmp::max(process_memory, process_memory_max);
 
             CONFIG_MANAGER
-                .session
+                .developer
                 .system_info
                 .process_memory_mb
                 .set_value(process_memory);
 
             CONFIG_MANAGER
-                .session
+                .developer
                 .system_info
                 .process_memory_max_mb
                 .set_value(process_memory_max);
         }
 
         CONFIG_MANAGER
-            .session
+            .developer
             .system_info
             .used_memory_mb
             .set_value(used_memory);
 
         CONFIG_MANAGER
-            .session
+            .developer
             .system_info
             .cpu_usage
             .set_value(sys.global_cpu_usage());

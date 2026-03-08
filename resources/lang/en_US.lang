@@ -18,19 +18,19 @@ Config.user.accessibility.animations_enabled=Animations Enabled
 Config.user.accessibility.accessible_switches=Accessible Switches
 Config.user.accessibility.selection_box_thickness=Selection Box Thickness
 
-Config.session=Session
+Config.developer=Developer
 
-Config.session.debug=Debug
-Config.session.debug.debug_mode=Debug Mode
-Config.session.debug.debug_highlights=Debug Highlights
-Config.session.debug.debug_overlay_enabled=Debug Overlay
-Config.session.debug.extra_debug_info=Extra Debug Info
+Config.developer.debug=Debug
+Config.developer.debug.debug_mode=Debug Mode
+Config.developer.debug.debug_highlights=Debug Highlights
+Config.developer.debug.debug_overlay_enabled=Debug Overlay
+Config.developer.debug.extra_debug_info=Extra Debug Info
 
-Config.session.simulation=Simulation
-Config.session.simulation.running_simulation=Simulation Running
+Config.developer.simulation=Simulation
+Config.developer.simulation.running_simulation=Simulation Running
 
-Config.session.can=Can
-Config.session.can.running_can=CAN Bus Running
+Config.developer.can=Can
+Config.developer.can.running_can=CAN Bus Running
 
-Config.session.hardware=Hardware
-Config.session.system_info=System Info
+Config.developer.hardware=Hardware
+Config.developer.system_info=System Info

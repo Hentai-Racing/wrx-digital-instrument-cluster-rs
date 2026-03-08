@@ -1,0 +1,27 @@
+{
+  "disable_ai": true,
+  "lsp": {
+    "slint": {
+      "binary": {
+        "arguments": [
+          "--backend",
+          "skia",
+          "-L",
+          "images=resources/images",
+          "-L",
+          "lib=src/slint_ui/lib",
+          "-L",
+          "themes=src/slint_ui/themes",
+          "-L",
+          "fonts=resources/fonts",
+          "-L",
+          "svg=resources/svg",
+          "-L",
+          "data=src/slint_ui/data",
+          "-L",
+          "widgets=src/slint_ui/widgets",
+        ],
+      },
+    },
+  },
+}

@@ -5,7 +5,7 @@ import {
     ControlledFocusScope,
     FocusDomain,
     FocusState,
-    LangLabel,
+    Label,
 } from "@lib/core.slint";
 import { DebugMenuWidget, DebugMenuState } from "debug.slint";
 import {
@@ -22,8 +22,10 @@ import { GlobalAnimation } from "../lib/core.slint";
 
 export global WidgetContainerState {
     in-out property <int> current-page: 0;
-    in property <int> num-pages: 0;
     in-out property <int> focused-page: -1; // -1 if not entered
+
+    in property <int> num-pages: 0;
+    in property <[image]> widget-icons;
 
     public function change-page(to-page: int) {
         if to-page != current-page {
@@ -44,6 +46,7 @@ export global WidgetContainerState {
 
 component Widget inherits FocusDomain {
     in-out property <bool> focusable: false;
+    in property <image> icon: @image-url("@svg/abs-warning-light.svg");
     out property <int> page-number;
     out property <bool> has-focus: WidgetContainerState.focused-page == self.page-number;
 
@@ -64,6 +67,7 @@ component Widget inherits FocusDomain {
     init => {
         self.page-number = WidgetContainerState.num-pages;
         WidgetContainerState.num-pages += 1;
+        // TODO: WidgetContainerState.set-page-icon(self.page-number, self.icon);
     }
 
     exited => WidgetContainerState.exit-page();
@@ -104,7 +108,6 @@ export component WidgetContainer {
 
     VerticalLayout {
         // TODO: add dynamic images
-        // requires backend
         center-widget-container-indicator := FocusDomain {
             property <length> indicator-width: self.height;
 
@@ -153,6 +156,12 @@ export component WidgetContainer {
                         text: i + 1;
                     }
 
+                    Image {
+                        source: WidgetContainerState.widget-icons[i];
+                        colorize: white;
+                        image-fit: ImageFit.contain;
+                    }
+
                     i-focus := ControlledFocusScope {
                         init-focus: false;
 
@@ -191,9 +200,7 @@ export component WidgetContainer {
                 }
 
                 settings-menu-widget := FocusableWidget {
-                    nav-front-forward => {
-                        settings-button.focus()
-                    }
+                    nav-front-forward => settings-button.focus();
 
                     HorizontalLayout {
                         alignment: center;
@@ -238,9 +245,8 @@ export component WidgetContainer {
                 }
 
                 if DebugSettings.debug-mode: FocusableWidget {
-                    nav-front-forward => {
-                        debug-menu-widget.focus()
-                    }
+                    nav-front-forward => debug-menu-widget.focus();
+
                     VerticalLayout {
                         debug-menu-widget := DebugMenuWidget {
                             height: 100%;

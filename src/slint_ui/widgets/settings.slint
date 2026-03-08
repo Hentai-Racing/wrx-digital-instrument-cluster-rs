@@ -18,7 +18,7 @@ import { SUnitSystem } from "@lib/units.slint";
 import { GlobalThemeData } from "@themes/theme_loader_gen.slint";
 import {
     ControlledFocusScope,
-    LangLabel,
+    Label,
     GlobalAnimation,
     Slider,
 } from "../lib/core.slint";
@@ -38,6 +38,12 @@ export enum DerivedParamType {
     String,
     Bool,
     Page,
+    Trigger,
+}
+
+@rust-attr(derive(strum::VariantArray, serde::Serialize, serde::Deserialize))
+export enum SettingsSpecialPages {
+    Attributions,
 }
 
 export struct SettingsMenuItem {
@@ -81,7 +87,7 @@ component SettingBarLabel inherits Rectangle {
         background: white;
     }
 
-    i-label := LangLabel {
+    i-label := Label {
         x: label-x;
         font-size: 20px;
         horizontal-alignment: left;
@@ -248,8 +254,23 @@ component TypedSettingBar inherits SettingBar {
         }
     }
 
+    if (item.param-type-derived == DerivedParamType.Trigger) && (item.param-type == "PageTrigger"): Button {
+        width: self.height;
+        text: ">";
+
+        init-ready => {
+            root.focus-id = self.focus-id;
+        }
+
+        activated => {
+            // TODO: page trigger
+            debug("TODO: page trigger")
+        }
+    }
+
     // TODO: currently setting numbers & strings is not implemented
     if (item.param-type-derived == DerivedParamType.Number) || (item.param-type-derived == DerivedParamType.String): Button {
+        width: 150px;
         locked: root.readonly;
         text: SettingsLayout.get-by-path(item.param-path);
         horizontal-alignment: TextHorizontalAlignment.right;

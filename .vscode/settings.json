@@ -8,6 +8,7 @@
     "chat.disableAIFeatures": true,
     "todo-tree.general.tags": [
         "TODO",
+        "todo",
         "FIXME",
         "TRACKING",
         "XXX"

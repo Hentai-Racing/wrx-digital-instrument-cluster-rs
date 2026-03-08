@@ -1,9 +1,10 @@
 use crate::data::parameters::Bound;
 use crate::data::units::UnitSystem;
 use crate::parameter_struct;
-use crate::slint_generatedApp::ClusterTheme;
+use crate::slint_generatedApp::{ClusterTheme, SettingsSpecialPages};
 use crate::slint_ui::backend::lang::StrLang;
 
+use serde::{Deserialize, Serialize};
 use tokio::sync::watch;
 use tokio::time::{Duration, timeout};
 use toml;
@@ -14,13 +15,16 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 
 const CONFIG_NAME: &str = "config.toml";
-const LOAD_TIMEOUT_SECS: u64 = 10;
+const LOAD_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Debug)]
 pub enum SaveError {
     DirError, // TODO: make proper errors
     Error(Box<dyn std::error::Error>),
 }
+
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+pub struct PageTrigger(SettingsSpecialPages);
 
 impl std::fmt::Display for SaveError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -52,7 +56,7 @@ parameter_struct! {Config {
         },
     },
 
-    session {
+    developer {
         // TODO: add conditional hiding for pages and params
         debug {
             pub [ro] debug_mode: bool = cfg!(debug_assertions),
@@ -82,6 +86,14 @@ parameter_struct! {Config {
             pub [ro] cpu_usage: f32,
             pub [ro] fps: i32,
         },
+    },
+
+    about {
+        pub [ro] version: String = get_build_version(),
+        pub [ro] slint_version: String = get_slint_version(),
+        pub attributions: PageTrigger = PageTrigger(SettingsSpecialPages::Attributions),
+        // TODO: allow icons or similar thing to allow showing the built with slint banner
+        // pub [ro] built_with_slint: Icon
     },
 }}
 
@@ -121,7 +133,7 @@ impl Config {
         let config_dir = self.get_config_path()?;
         let config_file = fs::read_to_string(&config_dir)?;
 
-        if let Err(_) = timeout(Duration::from_secs(LOAD_TIMEOUT_SECS), async move {
+        if let Err(_) = timeout(LOAD_TIMEOUT, async move {
             if let Ok(loaded_config) = toml::from_str(config_file.as_str()) {
                 self.user.apply(loaded_config);
                 self.loaded.set_value(true);
@@ -178,5 +190,52 @@ impl Config {
     #[allow(unused)]
     pub fn loaded(&self) -> watch::Receiver<bool> {
         self.loaded.watch()
+    }
+}
+
+fn get_build_version() -> String {
+    let mut ret = String::from(env!("CARGO_PKG_VERSION"));
+    if cfg!(debug_assertions) {
+        let git_rev = PathBuf::from(env!("OUT_DIR")).join("gitrev");
+        if git_rev.exists() {
+            if let Ok(value) = fs::read_to_string(git_rev) {
+                ret.push_str(&format!(" ({})", value.trim()));
+            }
+        }
+    } else {
+    }
+
+    ret
+}
+
+fn get_slint_version() -> String {
+    let mut ret = String::from("unknown");
+    let git_rev = PathBuf::from(env!("OUT_DIR")).join("slint_version");
+    if git_rev.exists() {
+        if let Ok(value) = fs::read_to_string(git_rev) {
+            ret = value.trim().to_string();
+        }
+    }
+
+    ret
+}
+
+impl Default for PageTrigger {
+    fn default() -> Self {
+        Self(SettingsSpecialPages::Attributions)
+    }
+}
+
+impl std::str::FromStr for PageTrigger {
+    type Err = ();
+
+    fn from_str(_s: &str) -> Result<Self, Self::Err> {
+        Err(())
+    }
+}
+
+impl std::fmt::Display for PageTrigger {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }

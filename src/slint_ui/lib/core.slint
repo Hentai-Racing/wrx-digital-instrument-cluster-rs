@@ -346,7 +346,7 @@ export component ControlledFocusScope inherits Rectangle {
     }
 }
 
-export component LangLabel {
+export component Label {
     in property <TextHorizontalAlignment> horizontal-alignment <=> i-text.horizontal-alignment;
     in property <TextVerticalAlignment> vertical-alignment <=> i-text.vertical-alignment;
     in property <length> letter-spacing <=> i-text.letter-spacing;
@@ -355,6 +355,7 @@ export component LangLabel {
     in property <length> font-size <=> i-text.font-size;
     in property <brush> color <=> i-text.color;
     in property <string> text;
+    in property <bool> translate: true;
 
     // TODO: make font stuff use theme font config
 
@@ -364,7 +365,7 @@ export component LangLabel {
         height: 100%;
         horizontal-alignment: TextHorizontalAlignment.center;
         vertical-alignment: TextVerticalAlignment.center;
-        text: LangResolver.translate(root.text);
+        text: root.translate ? LangResolver.translate(root.text) : root.text;
         color: white;
     }
 
@@ -385,7 +386,7 @@ export component Button inherits ControlledFocusScope {
     width: GlobalSizing.button-width;
     init-focus: false;
 
-    i-text := LangLabel {
+    i-text := Label {
         x: root.text-padding;
         y: root.text-padding;
         width: root.width - root.text-padding * 2;
@@ -679,7 +680,7 @@ component SelectionDomain inherits FocusDomain {
             spacing: 15px;
             alignment: center;
 
-            i-title := LangLabel {
+            i-title := Label {
                 height: self.font-size + 20px;
                 text: root.title;
                 font-size: 25px;
@@ -1183,10 +1184,10 @@ export component TestComponentSuite inherits VerticalLayout {
 
     HorizontalLayout {
         Text {
-            text: "Testing LangLabel";
+            text: "Testing Label";
         }
 
-        LangLabel {
+        Label {
             text: "lang.test";
         }
     }
