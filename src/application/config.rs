@@ -23,8 +23,14 @@ pub enum SaveError {
     Error(Box<dyn std::error::Error>),
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, Copy, PartialEq, Serialize, Deserialize, Debug)]
 pub struct PageTrigger(SettingsSpecialPages);
+
+impl Into<SettingsSpecialPages> for PageTrigger {
+    fn into(self) -> SettingsSpecialPages {
+        self.0
+    }
+}
 
 impl std::fmt::Display for SaveError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

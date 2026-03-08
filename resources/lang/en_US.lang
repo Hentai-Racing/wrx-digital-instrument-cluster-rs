@@ -34,3 +34,8 @@ Config.developer.can.running_can=CAN Bus Running
 
 Config.developer.hardware=Hardware
 Config.developer.system_info=System Info
+
+Config.about=About
+Config.about.version=Version
+Config.about.slint_version=Slint Version
+Config.about.attributions=Attributions

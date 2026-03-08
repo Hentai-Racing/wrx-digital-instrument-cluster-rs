@@ -1,4 +1,5 @@
-use crate::application::config::Config;
+use crate::SettingsSpecialPages;
+use crate::application::config::{Config, PageTrigger};
 use crate::data::parameters::{Bound, Node};
 use crate::slint_generatedApp::{
     AccessibilitySettings, App, ApplicationState, DebugSettings, DerivedParamType, GeneralSettings,
@@ -11,6 +12,14 @@ use tokio::select;
 
 use std::rc::Rc;
 use std::sync::Arc;
+
+fn resolve_path<'a>(path: &'a str, backend_layout: &Rc<Node>) -> Option<&'a str> {
+    if let Node::Page { name, items: _ } = &**backend_layout {
+        path.strip_prefix(&format!("{}.", *name))
+    } else {
+        None
+    }
+}
 
 pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
     {
@@ -111,10 +120,8 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
             let backend_layout = backend_layout.clone();
 
             ui_layout.on_set_by_path(move |path, value| {
-                if let Node::Page { name, items: _ } = &*backend_layout {
-                    if let Some(path) = path.strip_prefix(&format!("{}.", *name)) {
-                        config.set_by_path(path, &value.as_str());
-                    }
+                if let Some(path) = resolve_path(path.as_str(), &backend_layout) {
+                    config.set_by_path(path, &value.as_str());
                 }
             });
         }
@@ -126,11 +133,9 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
             ui_layout.on_get_by_path(move |path| {
                 let mut ret = "error".into();
 
-                if let Node::Page { name, items: _ } = &*backend_layout {
-                    if let Some(path) = path.strip_prefix(&format!("{}.", *name)) {
-                        if let Some((display, _)) = config.get_by_path(path) {
-                            ret = display.into();
-                        }
+                if let Some(path) = resolve_path(path.as_str(), &backend_layout) {
+                    if let Some((display, _)) = config.get_by_path(path) {
+                        ret = display.into();
                     }
                 }
 
@@ -145,12 +150,29 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
             ui_layout.on_get_bound_int(move |path| {
                 let mut ret = Default::default();
 
-                if let Node::Page { name, items: _ } = &*backend_layout {
-                    if let Some(path) = path.strip_prefix(&format!("{}.", *name)) {
-                        if let Some((_, value)) = config.get_by_path(path) {
-                            if let Some(value) = value.downcast_ref::<Bound<i32>>() {
-                                ret = (*value).into()
-                            }
+                if let Some(path) = resolve_path(path.as_str(), &backend_layout) {
+                    if let Some((_, value)) = config.get_by_path(path) {
+                        if let Some(value) = value.downcast_ref::<Bound<i32>>() {
+                            ret = (*value).into()
+                        }
+                    }
+                }
+
+                ret
+            });
+        }
+
+        {
+            let config = config.clone();
+            let backend_layout = backend_layout.clone();
+
+            ui_layout.on_get_settings_special_page(move |path| {
+                let mut ret = Default::default();
+
+                if let Some(path) = resolve_path(path.as_str(), &backend_layout) {
+                    if let Some((_, value)) = config.get_by_path(path) {
+                        if let Some(value) = value.downcast_ref::<PageTrigger>() {
+                            ret = (*value).into()
                         }
                     }
                 }

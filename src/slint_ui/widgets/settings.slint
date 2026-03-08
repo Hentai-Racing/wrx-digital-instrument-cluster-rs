@@ -43,6 +43,7 @@ export enum DerivedParamType {
 
 @rust-attr(derive(strum::VariantArray, serde::Serialize, serde::Deserialize))
 export enum SettingsSpecialPages {
+    None,
     Attributions,
 }
 
@@ -55,13 +56,23 @@ export struct SettingsMenuItem {
 }
 
 export global SettingsLayout {
+    out property <SettingsSpecialPages> special-page-target;
+
+    public function trigger-special-page(page: SettingsSpecialPages) {
+        self.special-page-target = page;
+    }
+
+    public function exit-special-page() {
+        self.special-page-target = SettingsSpecialPages.None;
+    }
+
     pure callback get-page-layout(path: string) -> [SettingsMenuItem];
     pure callback get-page-parent(path: string) -> string;
     pure callback get-by-path(path: string) -> string;
+    pure callback set-by-path(path: string, val: string);
     pure callback stringify-derived-param-type(ty: DerivedParamType) -> string;
     pure callback get-bound-int(path: string) -> SBoundInt;
-
-    callback set-by-path(path: string, val: string);
+    pure callback get-settings-special-page(path: string) -> SettingsSpecialPages;
 }
 
 component DecorationBar inherits Rectangle {
@@ -263,8 +274,7 @@ component TypedSettingBar inherits SettingBar {
         }
 
         activated => {
-            // TODO: page trigger
-            debug("TODO: page trigger")
+            SettingsLayout.trigger-special-page(SettingsLayout.get-settings-special-page(item.param-path))
         }
     }
 
@@ -387,6 +397,50 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
     }
 }
 
+component AttributionPage inherits Rectangle {
+    background: black;
+    HorizontalLayout {
+        alignment: center;
+
+        VerticalLayout {
+            spacing: 12px;
+
+            page-title := TypedSettingBar {
+                label: "settings.about.attributions";
+                item: {
+                    name: "settings.about.attributions",
+                    param-path: "settings.about.attributions",
+                    item-type: SettingsMenuItemType.PageTitle,
+                    param-type-derived: DerivedParamType.Page,
+                };
+            }
+
+            DecorationBar { }
+
+            Text {
+                text: "Attributions";
+            }
+
+            DecorationBar { }
+
+            HorizontalLayout {
+                alignment: center;
+                Button {
+                    text: "Exit";
+                    activated => SettingsLayout.exit-special-page();
+                }
+            }
+        }
+    }
+}
+
+component SpecialPageLoader {
+
+    HorizontalLayout {
+        if SettingsLayout.special-page-target == SettingsSpecialPages.Attributions: AttributionPage { }
+    }
+}
+
 export component SettingsMenu inherits FocusDomain {
     force-exit-strategy: false;
     width: 2400px;
@@ -420,4 +474,6 @@ export component SettingsMenu inherits FocusDomain {
             }
         }
     }
+
+    SpecialPageLoader { }
 }
