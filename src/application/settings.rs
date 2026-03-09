@@ -97,11 +97,9 @@ parameter_struct! {Settings {
 
     about {
         pub [ro] version: String = get_build_version(),
-        pub [ro] can_dbc_version: String = wrx_2018::VERSION,
-        pub [hidden] slint_version: String = get_slint_version(),
+        pub [ro] can_database_version: String = get_dbc_version(),
+        pub [hidden] slint_version: String = get_slint_version(), // hidden because it is accessed within the attributions page
         pub attributions: PageTrigger = PageTrigger(SettingsSpecialPages::Attributions),
-        // TODO: allow icons or similar thing to allow showing the built with slint banner
-        // pub [ro] built_with_slint: Icon
     },
 }}
 
@@ -204,7 +202,22 @@ impl Settings {
 fn get_build_version() -> String {
     let mut ret = String::from(env!("CARGO_PKG_VERSION"));
     if cfg!(debug_assertions) {
-        let git_rev = PathBuf::from(env!("OUT_DIR")).join("gitrev");
+        let git_rev = PathBuf::from(env!("OUT_DIR")).join("Crate_gitrev");
+        if git_rev.exists() {
+            if let Ok(value) = fs::read_to_string(git_rev) {
+                ret.push_str(&format!(" ({})", value.trim()));
+            }
+        }
+    } else {
+    }
+
+    ret
+}
+
+fn get_dbc_version() -> String {
+    let mut ret = String::from(crate::can::messages::wrx_2018::VERSION);
+    if cfg!(debug_assertions) {
+        let git_rev = PathBuf::from(env!("OUT_DIR")).join("CAN_database_gitrev");
         if git_rev.exists() {
             if let Ok(value) = fs::read_to_string(git_rev) {
                 ret.push_str(&format!(" ({})", value.trim()));

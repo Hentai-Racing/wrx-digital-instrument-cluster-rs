@@ -577,12 +577,12 @@ fn populate_metadata() {
 
     let dbc_git_rev = Command::new("git")
         .args(["rev-parse", "HEAD"])
-        .current_dir(RESOURCES_PATH.join("database/CAN-database"))
+        .current_dir(RESOURCES_PATH.join("database/CAN_database"))
         .output()
         .expect("Failed to get git commit hash");
 
     fs::write(
-        OUT_DIR.join("CAN-database_gitrev"),
+        OUT_DIR.join("CAN_database_gitrev"),
         String::from_utf8_lossy(&dbc_git_rev.stdout[..7]).to_string(),
     )
     .expect("Failed to write git commit hash");

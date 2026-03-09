@@ -9,4 +9,3 @@
 [submodule "resources/database/CAN_database"]
 	path = resources/database/CAN_database
 	url = https://github.com/Hentai-Racing/CAN-database.git
-	fetchRecurseSubmodules = on-demand
