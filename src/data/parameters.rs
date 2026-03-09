@@ -384,8 +384,8 @@ impl fmt::Display for Node {
 /// TODO: add example (src/application/user.rs:@Settings)
 #[macro_export]
 macro_rules! parameter_struct {
-    ($page:ident { $($items:tt)* }) => {
-        $crate::parameter_struct!(@page $page
+    ($([$condition:expr])? $page:ident { $($items:tt)* }) => {
+        $crate::parameter_struct!(@page $([$condition])? $page
             { }
             { }
             { }
@@ -394,7 +394,7 @@ macro_rules! parameter_struct {
         );
     };
 
-    (@page $page:ident
+    (@page $([$condition:expr])? $page:ident
         { $($params:tt)* }
         { $($inits:tt)* }
         { $($defs:tt)* }
@@ -462,18 +462,18 @@ macro_rules! parameter_struct {
         );
     };
 
-    (@page $page:ident
+    (@page $([$condition:expr])? $page:ident
         { $($params:tt)* }
         { $($inits:tt)* }
         { $($defs:tt)* }
         { $($entries:tt)* }
-        $sub:ident { $($inner:tt)* }, $($rest:tt)*
+        $([$sub_condition:expr])? $sub:ident { $($inner:tt)* }, $($rest:tt)*
     ) => {pastey::paste!{
         $crate::parameter_struct!(@page $page
             { $($params)* pub $sub: [<$sub:camel_edge>], }
             { $($inits)* $sub: Default::default(), }
-            { $($defs)* $crate::parameter_struct!($sub { $($inner)* }); }
-            { $($entries)* (page $sub) }
+            { $($defs)* $crate::parameter_struct!($([$sub_condition])? $sub { $($inner)* }); }
+            { $($entries)* (page $([$sub_condition])? $sub) }
             $($rest)*
         );
     }};
@@ -483,7 +483,7 @@ macro_rules! parameter_struct {
         $self.$param.set_value($from.$param.value());
         $crate::parameter_struct!(@apply $self, $from| $($rest)*)
     };
-    (@apply $self:ident, $from:ident| (page $sub:ident) $($rest:tt)*) => {
+    (@apply $self:ident, $from:ident| (page $([$condition:expr])? $sub:ident) $($rest:tt)*) => {
         $self.$sub.apply($from.$sub);
         $crate::parameter_struct!(@apply $self, $from| $($rest)*)
     };
@@ -503,14 +503,21 @@ macro_rules! parameter_struct {
             ty: stringify!($ty)
         }
     };
+    (@node-internal $self:ident| page [$sub_condition:expr] $sub:ident) => {
+        if $sub_condition {
+            $self.$sub.get_page_layout()
+        } else {
+            $crate::data::parameters::Node::HiddenParameter()
+        }
+    };
     (@node-internal $self:ident| page $sub:ident) => {
         $self.$sub.get_page_layout()
     };
-    (@node $page:ident $self:ident| $(($node:tt $([$permissions:tt])? $thing:ident $(: $ty:path)?))*) => {
+    (@node $page:ident $self:ident| $(($([$condition:expr])? $node:tt $([$permissions:tt])? $thing:ident $(: $ty:path)?))*) => {
         $crate::data::parameters::Node::Page{
             name: stringify!($page),
             items: Box::new([$(
-                $crate::parameter_struct!(@node-internal $self| $node $([$permissions])? $thing $(: $ty)?)
+                $crate::parameter_struct!(@node-internal $self| $node $([$condition])? $([$permissions])? $thing $(: $ty)?)
             ),*])
         }
     };
@@ -527,7 +534,7 @@ macro_rules! parameter_struct {
             Err(e) => eprintln!("Failed to set {} to {:?}: {e:?}", stringify!($param), $value)
         }
     };
-    (@path-internal $self:ident $path:expr; $value:ident| page $sub:ident) => {
+    (@path-internal $self:ident $path:expr; $value:ident| page $([$condition:expr])? $sub:ident) => {
         $self.$sub.set_by_path($path, $value);
     };
     (@path $self:ident $target:expr; $path:expr; $val:ident| $(($node:tt $([$permissions:tt])? $thing: ident $(: $ty:path)?))*) => {
@@ -545,7 +552,7 @@ macro_rules! parameter_struct {
         let value = $self.$param.value();
         Some((format!("{value}"), Box::new(value)))
     }};
-    (@path-get-internal $self:ident $path:expr;| page $sub:ident) => {
+    (@path-get-internal $self:ident $path:expr;| page $([$condition:expr])? $sub:ident) => {
         $self.$sub.get_by_path($path)
     };
     (@path-get $self:ident $target:expr; $path:expr;| $(($node:tt $([$permissions:tt])? $thing: ident $(: $ty:path)?))*) => {

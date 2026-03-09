@@ -63,8 +63,7 @@ parameter_struct! {Settings {
         },
     },
 
-    developer {
-        // TODO: add conditional hiding for pages and params
+    [cfg!(debug_assertions)] developer {
         debug {
             pub [ro] debug_mode: bool = cfg!(debug_assertions),
             pub debug_highlights: bool = false,

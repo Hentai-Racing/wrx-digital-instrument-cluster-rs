@@ -38,6 +38,7 @@ Settings.developer.hardware=Hardware
 Settings.developer.system_info=System Info
 
 Settings.about=About
-Settings.about.version=Version
+Settings.about.version=Software Version
+Settings.about.can_database_version=Database Version
 Settings.about.slint_version=Slint Version
 Settings.about.attributions=Attributions
