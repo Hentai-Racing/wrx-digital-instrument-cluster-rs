@@ -50,7 +50,7 @@ component Widget inherits FocusDomain {
     out property <int> page-number;
     out property <bool> has-focus: WidgetContainerState.focused-page == self.page-number;
 
-    force-exit-strategy: focusable && true;
+    force-exit-strategy: self.focusable;
     force-focus: false;
     height: 100%;
     width: 100%;

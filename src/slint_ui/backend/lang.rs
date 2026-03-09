@@ -1,5 +1,5 @@
 // TODO: consider switching to Slint's built-in translation
-use crate::application::config::Config;
+use crate::application::settings::Settings;
 use crate::slint_generatedApp::{App, LangResolver};
 
 use rust_embed::Embed;
@@ -87,7 +87,7 @@ pub fn process_lang_file(contents: &[u8]) -> HashMap<String, String> {
     ret
 }
 
-pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
+pub fn bridge(handle_weak: Weak<App>, settings: Arc<Settings>) {
     let translations: Arc<RwLock<HashMap<String, String>>> = Default::default();
 
     if let Some(handle) = handle_weak.upgrade() {
@@ -96,10 +96,10 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
         {
             let translations = translations.clone();
             match slint::spawn_local(async_compat::Compat::new(async move {
-                let mut lang_change = config.user.general.lang.watch();
+                let mut lang_change = settings.user.general.lang.watch();
 
                 loop {
-                    let selected_lang = config.user.general.lang.value();
+                    let selected_lang = settings.user.general.lang.value();
                     let file = match Lang::get(selected_lang.0.as_str()) {
                         Some(file) => Some(file),
                         None => Lang::get(&StrLang::default().0),

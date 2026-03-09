@@ -6,7 +6,7 @@
 	path = resources/fonts/JetBrainsMono
 	url = https://github.com/JetBrains/JetBrainsMono.git
 	fetchRecurseSubmodules = on-demand
-[submodule "resources/database/can/CAN-database"]
-	path = resources/database/can/CAN-database
+[submodule "resources/database/CAN-database"]
+	path = resources/database/CAN_database
 	url = https://github.com/Hentai-Racing/CAN-database.git
 	fetchRecurseSubmodules = on-demand

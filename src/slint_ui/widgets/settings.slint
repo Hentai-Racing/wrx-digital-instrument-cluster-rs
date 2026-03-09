@@ -22,6 +22,7 @@ import {
     GlobalAnimation,
     Slider,
 } from "../lib/core.slint";
+import { AboutSlint } from "std-widgets.slint";
 
 export enum SettingsMenuItemType {
     Parameter,
@@ -316,8 +317,8 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
     out property <int> last-focus-id;
 
     property <[SettingsMenuItem]> items;
-    property <string> path: "Config";
-    property <string> parent-path: "Config";
+    property <string> path: "Settings";
+    property <string> parent-path: "Settings";
 
     function update-layout() {
         self.items = SettingsLayout.get-page-layout(self.path);
@@ -328,6 +329,8 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
     init => update-layout();
 
     HorizontalLayout {
+        alignment: center;
+
         VerticalLayout {
             spacing: 12px;
 
@@ -386,7 +389,7 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
         }
 
         activated => {
-            if (path == "") || (path == "Config") {
+            if (path == "") || (path == "Settings") {
                 ApplicationState.settings-menu-visible = false;
             } else {
                 root.path = root.parent-path;
@@ -397,47 +400,76 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
     }
 }
 
-component AttributionPage inherits Rectangle {
+component AttributionPage inherits FocusDomain {
+    force-exit-strategy: false;
+    force-focus: true;
     background: black;
+
+    nav-front-forward => exit.focus();
+    nav-end-backward => exit.focus();
+
     HorizontalLayout {
         alignment: center;
-
         VerticalLayout {
-            spacing: 12px;
-
-            page-title := TypedSettingBar {
-                label: "settings.about.attributions";
-                item: {
-                    name: "settings.about.attributions",
-                    param-path: "settings.about.attributions",
-                    item-type: SettingsMenuItemType.PageTitle,
-                    param-type-derived: DerivedParamType.Page,
-                };
-            }
-
-            DecorationBar { }
-
-            Text {
-                text: "Attributions";
-            }
-
-            DecorationBar { }
+            alignment: center;
+            spacing: 2px;
 
             HorizontalLayout {
                 alignment: center;
-                Button {
-                    text: "Exit";
-                    activated => SettingsLayout.exit-special-page();
+
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 12px;
+
+                    page-title := TypedSettingBar {
+                        label: "Settings.about.attributions";
+                        item: {
+                            name: self.label,
+                            item-type: SettingsMenuItemType.PageTitle,
+                            param-type-derived: DerivedParamType.Page,
+                        };
+                    }
+
+                    DecorationBar { }
+
+                    AboutSlint { }
+
+                    TypedSettingBar {
+                        label: "Settings.about.slint_version";
+                        item: {
+                            name: self.label,
+                            param-path: self.label,
+                            param-type: "String",
+                            param-type-derived: DerivedParamType.String,
+                            item-type: SettingsMenuItemType.ReadOnlyParameter,
+                        };
+                    }
+
+                    DecorationBar { }
+
+                    HorizontalLayout {
+                        alignment: center;
+
+                        exit := Button {
+                            text: "Exit";
+
+                            activated => root.exit-domain();
+                            init => self.focus();
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-component SpecialPageLoader {
+component SpecialPageLoader inherits Rectangle {
+    background: transparent;
 
     HorizontalLayout {
-        if SettingsLayout.special-page-target == SettingsSpecialPages.Attributions: AttributionPage { }
+        if SettingsLayout.special-page-target == SettingsSpecialPages.Attributions: AttributionPage {
+            exited => SettingsLayout.exit-special-page();
+        }
     }
 }
 
@@ -475,5 +507,8 @@ export component SettingsMenu inherits FocusDomain {
         }
     }
 
-    SpecialPageLoader { }
+    SpecialPageLoader {
+        width: 100%;
+        height: 100%;
+    }
 }

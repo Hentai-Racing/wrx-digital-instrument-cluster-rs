@@ -39,7 +39,7 @@ static SLINT_LIBRARY_PATHS: LazyLock<HashMap<String, PathBuf>> = LazyLock::new(|
 fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
     use dbc_codegen::{self, Config};
 
-    let dbc_file_dir = MANIFEST_DIR.join("resources/database/can/");
+    let dbc_file_dir = MANIFEST_DIR.join("resources/database/");
     let rs_messages_out_dir = MANIFEST_DIR.join("src/can/messages/");
     let rs_messages_mod_dir = rs_messages_out_dir.join("mod.rs");
 
@@ -565,13 +565,25 @@ fn update_vscode_slint_libpaths() {
 
 fn populate_metadata() {
     let git_rev = Command::new("git")
-        .args(["log", "-1", "--pretty=%h"])
+        .args(["rev-parse", "HEAD"])
         .output()
         .expect("Failed to get git commit hash");
 
     fs::write(
-        OUT_DIR.join("gitrev"),
-        String::from_utf8_lossy(&git_rev.stdout).to_string(),
+        OUT_DIR.join("Crate_gitrev"),
+        String::from_utf8_lossy(&git_rev.stdout[..7]).to_string(),
+    )
+    .expect("Failed to write git commit hash");
+
+    let dbc_git_rev = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(RESOURCES_PATH.join("database/CAN-database"))
+        .output()
+        .expect("Failed to get git commit hash");
+
+    fs::write(
+        OUT_DIR.join("CAN-database_gitrev"),
+        String::from_utf8_lossy(&dbc_git_rev.stdout[..7]).to_string(),
     )
     .expect("Failed to write git commit hash");
 
@@ -603,7 +615,7 @@ fn main() {
     update_vscode_slint_libpaths();
     populate_metadata();
 
-    let config = slint_build::CompilerConfiguration::new()
+    let settings = slint_build::CompilerConfiguration::new()
         .with_library_paths(LazyLock::force(&SLINT_LIBRARY_PATHS).clone());
-    slint_build::compile_with_config(SLINT_PATH.join("main.slint"), config).unwrap();
+    slint_build::compile_with_config(SLINT_PATH.join("main.slint"), settings).unwrap();
 }

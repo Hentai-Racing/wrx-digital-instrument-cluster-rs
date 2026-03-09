@@ -1,7 +1,6 @@
 // Generated code!
 //
 // Message definitions from file `WRX_2018.dbc`
-// Version: 0.7.2
 
 #[allow(unused_imports)]
 use core::ops::BitOr;
@@ -10,6 +9,9 @@ use bitvec::prelude::*;
 #[allow(unused_imports)]
 use embedded_can::{Id, StandardId, ExtendedId};
 use serde::{Serialize, Deserialize};
+
+#[allow(dead_code)]
+pub const VERSION: &'static str = "0.7.2";
 
 /// All messages
 #[allow(

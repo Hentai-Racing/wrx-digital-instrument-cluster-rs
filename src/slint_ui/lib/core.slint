@@ -271,6 +271,10 @@ export component ControlledFocusScope inherits Rectangle {
         })
     }
 
+    public function force-focus() {
+        FocusState.force-focus(self.focus-id)
+    }
+
     changed i-forcing-focus => {
         if i-forcing-focus {
             if root.enabled {
@@ -357,7 +361,7 @@ export component Label {
     in property <string> text;
     in property <bool> translate: true;
 
-    // TODO: make font stuff use theme font config
+    // TODO: make font stuff use theme font settings
 
     i-text := Text {
         font-size: 16px;
@@ -468,7 +472,7 @@ export component FocusDomain inherits Rectangle {
         self.domain-id = DomainState.create-domain-id();
 
         if force-focus {
-            enter-domain();
+            self.enter-domain();
         }
     }
 
@@ -1201,17 +1205,7 @@ export component ModuleDebug inherits VerticalLayout {
 
     Text {
         color: white;
-        text: FocusState.num-focuses;
-    }
-
-    Text {
-        color: white;
-        text: FocusState.current-focus-id;
-    }
-
-    Text {
-        color: white;
-        text: FocusState.last-focus-id;
+        text: "id {" + FocusState.num-focuses + ", " + FocusState.current-focus-id + ", " + FocusState.last-focus-id + "}";
     }
 
     Text {
@@ -1230,7 +1224,7 @@ export component ModuleDebug inherits VerticalLayout {
     }
 
     Text {
-        color: orange;
+        color: red;
         text: FocusState.failed-forces;
     }
 
@@ -1241,17 +1235,7 @@ export component ModuleDebug inherits VerticalLayout {
 
     Text {
         color: white;
-        text: DomainState.num-domains;
-    }
-
-    Text {
-        color: white;
-        text: DomainState.current-domain-id;
-    }
-
-    Text {
-        color: white;
-        text: DomainState.last-domain-id;
+        text: "id {" + DomainState.num-domains + ", " + DomainState.current-domain-id + ", " + DomainState.last-domain-id + "}";
     }
 
     Text {

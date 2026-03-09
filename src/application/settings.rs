@@ -1,3 +1,4 @@
+use crate::can::messages::wrx_2018;
 use crate::data::parameters::Bound;
 use crate::data::units::UnitSystem;
 use crate::parameter_struct;
@@ -14,7 +15,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::PathBuf;
 
-const CONFIG_NAME: &str = "config.toml";
+const CONFIG_NAME: &str = "settings.toml";
 const LOAD_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Debug)]
@@ -41,7 +42,7 @@ impl std::fmt::Display for SaveError {
     }
 }
 
-parameter_struct! {Config {
+parameter_struct! {Settings {
     [hidden] loaded: bool,
 
     user {
@@ -96,19 +97,20 @@ parameter_struct! {Config {
 
     about {
         pub [ro] version: String = get_build_version(),
-        pub [ro] slint_version: String = get_slint_version(),
+        pub [ro] can_dbc_version: String = wrx_2018::VERSION,
+        pub [hidden] slint_version: String = get_slint_version(),
         pub attributions: PageTrigger = PageTrigger(SettingsSpecialPages::Attributions),
         // TODO: allow icons or similar thing to allow showing the built with slint banner
         // pub [ro] built_with_slint: Icon
     },
 }}
 
-impl Config {
+impl Settings {
     pub fn get_config_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
         let exe_dir = Some(env::current_exe()?.to_path_buf()).unwrap();
 
         let config_dir = exe_dir.parent().unwrap().join(format!(
-            "{}-config/",
+            "{}-settings/",
             exe_dir.file_name().unwrap().display()
         ));
         match fs::create_dir_all(&config_dir) {
@@ -147,14 +149,14 @@ impl Config {
         })
         .await
         {
-            eprintln!("Timeout on config load");
+            eprintln!("Timeout on settings load");
         }
 
         Ok(())
     }
 
     pub fn save_to_fs(&self) -> Result<(), SaveError> {
-        // TODO: add timestamp and config version to file
+        // TODO: add timestamp and settings version to file
         let toml_str =
             toml::to_string_pretty(&self.user).map_err(|e| SaveError::Error(e.into()))?;
 

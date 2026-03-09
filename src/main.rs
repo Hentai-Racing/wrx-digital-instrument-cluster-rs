@@ -4,7 +4,7 @@ mod data;
 mod hardware;
 mod slint_ui;
 
-use crate::application::config::Config;
+use crate::application::settings::Settings;
 use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
 use crate::can::can_mux_parser::{
     self, ISOTPAckFrame, MuxContext, MuxParseResult, OBDService, S1CurrentData,
@@ -38,12 +38,12 @@ const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
 #[cfg(target_vendor = "apple")]
 const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 
-static CONFIG_MANAGER: LazyLock<Arc<Config>> = LazyLock::new(|| {
+static CONFIG_MANAGER: LazyLock<Arc<Settings>> = LazyLock::new(|| {
     let ret = Default::default();
 
     tokio::spawn(async move {
         if let Err(e) = CONFIG_MANAGER.load_from_fs().await {
-            println!("Failed to load user config from fs: {e:?}");
+            println!("Failed to load user settings from fs: {e:?}");
         }
     });
 
@@ -414,7 +414,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn save_config() {
     if let Err(e) = CONFIG_MANAGER.save_to_fs() {
-        eprintln!("Failed to save user config: {e:?}");
+        eprintln!("Failed to save user settings: {e:?}");
     }
 }
 

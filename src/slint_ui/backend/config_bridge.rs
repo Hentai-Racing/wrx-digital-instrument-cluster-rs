@@ -1,5 +1,5 @@
 use crate::SettingsSpecialPages;
-use crate::application::config::{Config, PageTrigger};
+use crate::application::settings::{PageTrigger, Settings};
 use crate::data::parameters::{Bound, Node};
 use crate::slint_generatedApp::{
     AccessibilitySettings, App, ApplicationState, DebugSettings, DerivedParamType, GeneralSettings,
@@ -21,10 +21,10 @@ fn resolve_path<'a>(path: &'a str, backend_layout: &Rc<Node>) -> Option<&'a str>
     }
 }
 
-pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
+pub fn bridge(handle_weak: Weak<App>, settings: Arc<Settings>) {
     {
         let handle_weak = handle_weak.clone();
-        let config = config.clone();
+        let settings = settings.clone();
         match slint::spawn_local(async_compat::Compat::new(async move {
             macro_rules! bind {
             {$slint_global:ident.$param:tt <=> $root:ident.$($tail:tt)+} => {{paste!{
@@ -63,26 +63,26 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
         }
 
             // TODO: auto-generate bindings
-            bind!(ApplicationState.user_unit <=> config.user.general.unit_system);
-            bind!(ApplicationState.running_simulation <=> config.developer.simulation.running_simulation);
-            bind!(ApplicationState.running_can <=> config.developer.can.running_can);
-            bind!(GeneralSettings.disable_hill_assist <=> config.user.general.disable_hill_assist_warning);
-            bind!(GlobalThemeData.current_theme <=> config.user.theme.selected_theme);
-            bind!(AccessibilitySettings.animations_enabled <=> config.user.accessibility.animations_enabled);
-            bind!(AccessibilitySettings.accessible_switches <=> config.user.accessibility.accessible_switches);
-            bind!(AccessibilitySettings.selection_box_thickness <=> config.user.accessibility.selection_box_thickness);
-            bind!(DebugSettings.debug_mode <=> config.developer.debug.debug_mode);
-            bind!(DebugSettings.debug_highlights <=> config.developer.debug.debug_highlights);
-            bind!(DebugSettings.debug_overlay_enabled <=> config.developer.debug.debug_overlay_enabled);
-            bind!(DebugSettings.extra_debug_info <=> config.developer.debug.extra_debug_info);
+            bind!(ApplicationState.user_unit <=> settings.user.general.unit_system);
+            bind!(ApplicationState.running_simulation <=> settings.developer.simulation.running_simulation);
+            bind!(ApplicationState.running_can <=> settings.developer.can.running_can);
+            bind!(GeneralSettings.disable_hill_assist <=> settings.user.general.disable_hill_assist_warning);
+            bind!(GlobalThemeData.current_theme <=> settings.user.theme.selected_theme);
+            bind!(AccessibilitySettings.animations_enabled <=> settings.user.accessibility.animations_enabled);
+            bind!(AccessibilitySettings.accessible_switches <=> settings.user.accessibility.accessible_switches);
+            bind!(AccessibilitySettings.selection_box_thickness <=> settings.user.accessibility.selection_box_thickness);
+            bind!(DebugSettings.debug_mode <=> settings.developer.debug.debug_mode);
+            bind!(DebugSettings.debug_highlights <=> settings.developer.debug.debug_highlights);
+            bind!(DebugSettings.debug_overlay_enabled <=> settings.developer.debug.debug_overlay_enabled);
+            bind!(DebugSettings.extra_debug_info <=> settings.developer.debug.extra_debug_info);
 
-            bind!(SystemInfo.total_memory <=| config.developer.system_info.total_memory_mb);
-            bind!(SystemInfo.used_memory <=| config.developer.system_info.used_memory_mb);
-            bind!(SystemInfo.process_memory <=| config.developer.system_info.process_memory_mb);
-            bind!(SystemInfo.process_memory_max <=| config.developer.system_info.process_memory_max_mb);
-            bind!(SystemInfo.num_cpus <=| config.developer.system_info.num_cpus);
-            bind!(SystemInfo.cpu_usage <=| config.developer.system_info.cpu_usage);
-            bind!(SystemInfo.fps <=| config.developer.system_info.fps);
+            bind!(SystemInfo.total_memory <=| settings.developer.system_info.total_memory_mb);
+            bind!(SystemInfo.used_memory <=| settings.developer.system_info.used_memory_mb);
+            bind!(SystemInfo.process_memory <=| settings.developer.system_info.process_memory_mb);
+            bind!(SystemInfo.process_memory_max <=| settings.developer.system_info.process_memory_max_mb);
+            bind!(SystemInfo.num_cpus <=| settings.developer.system_info.num_cpus);
+            bind!(SystemInfo.cpu_usage <=| settings.developer.system_info.cpu_usage);
+            bind!(SystemInfo.fps <=| settings.developer.system_info.fps);
         })) {
             Err(e) => eprintln!("Failure in settings loader: {e}"),
             _ => {}
@@ -91,7 +91,7 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
 
     if let Some(handle) = handle_weak.upgrade() {
         let ui_layout = handle.global::<SettingsLayout>();
-        let backend_layout = Rc::new(config.get_page_layout());
+        let backend_layout = Rc::new(settings.get_page_layout());
 
         {
             let backend_layout = backend_layout.clone();
@@ -116,25 +116,25 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
         });
 
         {
-            let config = config.clone();
+            let settings = settings.clone();
             let backend_layout = backend_layout.clone();
 
             ui_layout.on_set_by_path(move |path, value| {
                 if let Some(path) = resolve_path(path.as_str(), &backend_layout) {
-                    config.set_by_path(path, &value.as_str());
+                    settings.set_by_path(path, &value.as_str());
                 }
             });
         }
 
         {
-            let config = config.clone();
+            let settings = settings.clone();
             let backend_layout = backend_layout.clone();
 
             ui_layout.on_get_by_path(move |path| {
                 let mut ret = "error".into();
 
                 if let Some(path) = resolve_path(path.as_str(), &backend_layout) {
-                    if let Some((display, _)) = config.get_by_path(path) {
+                    if let Some((display, _)) = settings.get_by_path(path) {
                         ret = display.into();
                     }
                 }
@@ -144,14 +144,14 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
         }
 
         {
-            let config = config.clone();
+            let settings = settings.clone();
             let backend_layout = backend_layout.clone();
 
             ui_layout.on_get_bound_int(move |path| {
                 let mut ret = Default::default();
 
                 if let Some(path) = resolve_path(path.as_str(), &backend_layout) {
-                    if let Some((_, value)) = config.get_by_path(path) {
+                    if let Some((_, value)) = settings.get_by_path(path) {
                         if let Some(value) = value.downcast_ref::<Bound<i32>>() {
                             ret = (*value).into()
                         }
@@ -163,14 +163,14 @@ pub fn bridge(handle_weak: Weak<App>, config: Arc<Config>) {
         }
 
         {
-            let config = config.clone();
+            let settings = settings.clone();
             let backend_layout = backend_layout.clone();
 
             ui_layout.on_get_settings_special_page(move |path| {
                 let mut ret = Default::default();
 
                 if let Some(path) = resolve_path(path.as_str(), &backend_layout) {
-                    if let Some((_, value)) = config.get_by_path(path) {
+                    if let Some((_, value)) = settings.get_by_path(path) {
                         if let Some(value) = value.downcast_ref::<PageTrigger>() {
                             ret = (*value).into()
                         }
