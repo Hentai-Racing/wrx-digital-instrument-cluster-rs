@@ -1,4 +1,4 @@
-use crate::application::settings::Settings;
+use crate::application::settings::SETTINGS;
 use crate::data::{car_data::CarData, units::UnitSystem};
 use crate::slint_generatedApp::*;
 
@@ -44,14 +44,13 @@ macro_rules! param_convertion_handle {
 }
 
 #[allow(unused)]
-pub fn bridge(ui: Weak<App>, car_data: Arc<CarData>, config_manager: Arc<Settings>) {
+pub fn bridge(ui: Weak<App>, car_data: Arc<CarData>) {
     macro_rules! bridge {($($param:ident: $type:tt),+ $(,)? ) => {$({
         let ui = ui.clone();
         let car_data = car_data.clone();
-        let config_manager = config_manager.clone();
         tokio::spawn(async move {
             let mut thread_watch = car_data.$param().watch();
-            let unit_system_parameter = &(config_manager.user.general.unit_system);
+            let unit_system_parameter = &(SETTINGS.user.general.unit_system);
             let mut unit_system_changed = unit_system_parameter.watch();
             let mut unit_system: UnitSystem = unit_system_parameter.value();
             let mut value = car_data.$param().value();

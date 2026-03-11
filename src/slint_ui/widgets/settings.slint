@@ -43,7 +43,7 @@ export enum DerivedParamType {
 }
 
 @rust-attr(derive(strum::VariantArray, serde::Serialize, serde::Deserialize))
-export enum SettingsSpecialPages {
+export enum SettingsPageTarget {
     None,
     Attributions,
 }
@@ -57,14 +57,14 @@ export struct SettingsMenuItem {
 }
 
 export global SettingsLayout {
-    out property <SettingsSpecialPages> special-page-target;
+    out property <SettingsPageTarget> special-page-target;
 
-    public function trigger-special-page(page: SettingsSpecialPages) {
+    public function trigger-special-page(page: SettingsPageTarget) {
         self.special-page-target = page;
     }
 
     public function exit-special-page() {
-        self.special-page-target = SettingsSpecialPages.None;
+        self.special-page-target = SettingsPageTarget.None;
     }
 
     pure callback get-page-layout(path: string) -> [SettingsMenuItem];
@@ -73,7 +73,7 @@ export global SettingsLayout {
     pure callback set-by-path(path: string, val: string);
     pure callback stringify-derived-param-type(ty: DerivedParamType) -> string;
     pure callback get-bound-int(path: string) -> SBoundInt;
-    pure callback get-settings-special-page(path: string) -> SettingsSpecialPages;
+    pure callback get-settings-special-page(path: string) -> SettingsPageTarget;
 }
 
 component DecorationBar inherits Rectangle {
@@ -311,7 +311,7 @@ component TypedSettingBar inherits SettingBar {
 
 component SettingsMenuLayoutComponent inherits VerticalLayout {
     alignment: center;
-    spacing: 2px;
+    spacing: 4px;
 
     out property <int> first-focus-id: -1;
     out property <int> last-focus-id;
@@ -375,10 +375,10 @@ component SettingsMenuLayoutComponent inherits VerticalLayout {
     }
 
     page-back := TypedSettingBar {
-        label: "Back";
+        label: "Settings.page_back";
 
         item: {
-            name: "Back",
+            name: self.label,
             param-path: root.path,
             item-type: SettingsMenuItemType.PageBack,
             param-type-derived: DerivedParamType.Page,
@@ -467,7 +467,7 @@ component SpecialPageLoader inherits Rectangle {
     background: transparent;
 
     HorizontalLayout {
-        if SettingsLayout.special-page-target == SettingsSpecialPages.Attributions: AttributionPage {
+        if SettingsLayout.special-page-target == SettingsPageTarget.Attributions: AttributionPage {
             exited => SettingsLayout.exit-special-page();
         }
     }

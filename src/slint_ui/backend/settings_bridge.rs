@@ -1,5 +1,4 @@
-use crate::SettingsSpecialPages;
-use crate::application::settings::{PageTrigger, Settings};
+use crate::application::settings::{PageTrigger, SETTINGS};
 use crate::data::parameters::{Bound, Node};
 use crate::slint_generatedApp::{
     AccessibilitySettings, App, ApplicationState, DebugSettings, DerivedParamType, GeneralSettings,
@@ -10,21 +9,21 @@ use pastey::paste;
 use slint::{ComponentHandle, Weak};
 use tokio::select;
 
-use std::rc::Rc;
-use std::sync::Arc;
-
-fn resolve_path<'a>(path: &'a str, backend_layout: &Rc<Node>) -> Option<&'a str> {
-    if let Node::Page { name, items: _ } = &**backend_layout {
+fn resolve_node<'a>(path: &'a str, layout_node: &'static Node) -> Option<&'a str> {
+    if let Node::Page { name, items: _ } = layout_node {
         path.strip_prefix(&format!("{}.", *name))
     } else {
         None
     }
 }
 
-pub fn bridge(handle_weak: Weak<App>, settings: Arc<Settings>) {
+fn resolve_path(path: &str) -> Option<(String, Box<dyn std::any::Any>)> {
+    resolve_node(path, SETTINGS.get_page_layout()).and_then(|path| SETTINGS.get_by_path(path))
+}
+
+pub fn bridge(handle_weak: Weak<App>) {
     {
         let handle_weak = handle_weak.clone();
-        let settings = settings.clone();
         match slint::spawn_local(async_compat::Compat::new(async move {
             macro_rules! bind {
             {$slint_global:ident.$param:tt <=> $root:ident.$($tail:tt)+} => {{paste!{
@@ -63,26 +62,26 @@ pub fn bridge(handle_weak: Weak<App>, settings: Arc<Settings>) {
         }
 
             // TODO: auto-generate bindings
-            bind!(ApplicationState.user_unit <=> settings.user.general.unit_system);
-            bind!(ApplicationState.running_simulation <=> settings.developer.simulation.running_simulation);
-            bind!(ApplicationState.running_can <=> settings.developer.can.running_can);
-            bind!(GeneralSettings.disable_hill_assist <=> settings.user.general.disable_hill_assist_warning);
-            bind!(GlobalThemeData.current_theme <=> settings.user.theme.selected_theme);
-            bind!(AccessibilitySettings.animations_enabled <=> settings.user.accessibility.animations_enabled);
-            bind!(AccessibilitySettings.accessible_switches <=> settings.user.accessibility.accessible_switches);
-            bind!(AccessibilitySettings.selection_box_thickness <=> settings.user.accessibility.selection_box_thickness);
-            bind!(DebugSettings.debug_mode <=> settings.developer.debug.debug_mode);
-            bind!(DebugSettings.debug_highlights <=> settings.developer.debug.debug_highlights);
-            bind!(DebugSettings.debug_overlay_enabled <=> settings.developer.debug.debug_overlay_enabled);
-            bind!(DebugSettings.extra_debug_info <=> settings.developer.debug.extra_debug_info);
+            bind!(ApplicationState.user_unit <=> SETTINGS.user.general.unit_system);
+            bind!(ApplicationState.running_simulation <=> SETTINGS.developer.simulation.running_simulation);
+            bind!(ApplicationState.running_can <=> SETTINGS.developer.can.running_can);
+            bind!(GeneralSettings.disable_hill_assist <=> SETTINGS.user.general.disable_hill_assist_warning);
+            bind!(GlobalThemeData.current_theme <=> SETTINGS.user.theme.selected_theme);
+            bind!(AccessibilitySettings.animations_enabled <=> SETTINGS.user.accessibility.animations_enabled);
+            bind!(AccessibilitySettings.accessible_switches <=> SETTINGS.user.accessibility.accessible_switches);
+            bind!(AccessibilitySettings.selection_box_thickness <=> SETTINGS.user.accessibility.selection_box_thickness);
+            bind!(DebugSettings.debug_mode <=> SETTINGS.developer.debug.debug_mode);
+            bind!(DebugSettings.debug_highlights <=> SETTINGS.developer.debug.debug_highlights);
+            bind!(DebugSettings.debug_overlay_enabled <=> SETTINGS.developer.debug.debug_overlay_enabled);
+            bind!(DebugSettings.extra_debug_info <=> SETTINGS.developer.debug.extra_debug_info);
 
-            bind!(SystemInfo.total_memory <=| settings.developer.system_info.total_memory_mb);
-            bind!(SystemInfo.used_memory <=| settings.developer.system_info.used_memory_mb);
-            bind!(SystemInfo.process_memory <=| settings.developer.system_info.process_memory_mb);
-            bind!(SystemInfo.process_memory_max <=| settings.developer.system_info.process_memory_max_mb);
-            bind!(SystemInfo.num_cpus <=| settings.developer.system_info.num_cpus);
-            bind!(SystemInfo.cpu_usage <=| settings.developer.system_info.cpu_usage);
-            bind!(SystemInfo.fps <=| settings.developer.system_info.fps);
+            bind!(SystemInfo.total_memory <=| SETTINGS.developer.system_info.total_memory_mb);
+            bind!(SystemInfo.used_memory <=| SETTINGS.developer.system_info.used_memory_mb);
+            bind!(SystemInfo.process_memory <=| SETTINGS.developer.system_info.process_memory_mb);
+            bind!(SystemInfo.process_memory_max <=| SETTINGS.developer.system_info.process_memory_max_mb);
+            bind!(SystemInfo.num_cpus <=| SETTINGS.developer.system_info.num_cpus);
+            bind!(SystemInfo.cpu_usage <=| SETTINGS.developer.system_info.cpu_usage);
+            bind!(SystemInfo.fps <=| SETTINGS.developer.system_info.fps);
         })) {
             Err(e) => eprintln!("Failure in settings loader: {e}"),
             _ => {}
@@ -91,98 +90,49 @@ pub fn bridge(handle_weak: Weak<App>, settings: Arc<Settings>) {
 
     if let Some(handle) = handle_weak.upgrade() {
         let ui_layout = handle.global::<SettingsLayout>();
-        let backend_layout = Rc::new(settings.get_page_layout());
 
-        {
-            let backend_layout = backend_layout.clone();
+        ui_layout.on_get_page_layout(move |path| {
+            let path: Vec<&str> = path.split_terminator(".").collect();
+            let (layout, current_path) =
+                unroll_path(SETTINGS.get_page_layout(), &path, String::new(), 0);
 
-            ui_layout.on_get_page_layout(move |path| {
-                let path: Vec<&str> = path.split_terminator(".").collect();
-                let (layout, current_path) = unroll_path(&backend_layout, &path, String::new(), 0);
-
-                let ret = unroll_layout(layout, &current_path, 0, 1);
-                ret.as_slice()[1..].into() // remove the current page as an entry
-            });
-        }
-
-        ui_layout.on_get_page_parent(move |path| {
-            let mut ret = String::from(path);
-
-            if let Some((rest, _)) = String::from(&ret).rsplit_once(".") {
-                ret = rest.into();
-            }
-
-            ret.into()
+            let ret = unroll_layout(layout, &current_path, 0, 1);
+            ret.as_slice()[1..].into() // remove the current page as an entry
         });
 
-        {
-            let settings = settings.clone();
-            let backend_layout = backend_layout.clone();
+        ui_layout.on_get_page_parent(move |path| {
+            path.rsplit_once(".")
+                .map(|(rest, _)| rest.into())
+                .unwrap_or(path)
+        });
 
-            ui_layout.on_set_by_path(move |path, value| {
-                if let Some(path) = resolve_path(path.as_str(), &backend_layout) {
-                    settings.set_by_path(path, &value.as_str());
-                }
-            });
-        }
+        ui_layout.on_set_by_path(move |path, value| {
+            resolve_node(path.as_str(), SETTINGS.get_page_layout())
+                .map(|path| SETTINGS.set_by_path(path, &value.as_str()));
+        });
 
-        {
-            let settings = settings.clone();
-            let backend_layout = backend_layout.clone();
+        ui_layout.on_get_by_path(move |path| {
+            resolve_path(path.as_str())
+                .map(|(display, _)| display)
+                .unwrap_or(String::from("error"))
+                .into()
+        });
 
-            ui_layout.on_get_by_path(move |path| {
-                let mut ret = "error".into();
+        ui_layout.on_get_bound_int(move |path| {
+            resolve_path(path.as_str())
+                .and_then(|(_, value)| value.downcast_ref::<Bound<i32>>().copied())
+                .unwrap_or_default()
+                .into()
+        });
 
-                if let Some(path) = resolve_path(path.as_str(), &backend_layout) {
-                    if let Some((display, _)) = settings.get_by_path(path) {
-                        ret = display.into();
-                    }
-                }
+        ui_layout.on_get_settings_special_page(move |path| {
+            resolve_path(path.as_str())
+                .and_then(|(_, value)| value.downcast_ref::<PageTrigger>().copied())
+                .unwrap_or_default()
+                .into()
+        });
 
-                ret
-            });
-        }
-
-        {
-            let settings = settings.clone();
-            let backend_layout = backend_layout.clone();
-
-            ui_layout.on_get_bound_int(move |path| {
-                let mut ret = Default::default();
-
-                if let Some(path) = resolve_path(path.as_str(), &backend_layout) {
-                    if let Some((_, value)) = settings.get_by_path(path) {
-                        if let Some(value) = value.downcast_ref::<Bound<i32>>() {
-                            ret = (*value).into()
-                        }
-                    }
-                }
-
-                ret
-            });
-        }
-
-        {
-            let settings = settings.clone();
-            let backend_layout = backend_layout.clone();
-
-            ui_layout.on_get_settings_special_page(move |path| {
-                let mut ret = Default::default();
-
-                if let Some(path) = resolve_path(path.as_str(), &backend_layout) {
-                    if let Some((_, value)) = settings.get_by_path(path) {
-                        if let Some(value) = value.downcast_ref::<PageTrigger>() {
-                            ret = (*value).into()
-                        }
-                    }
-                }
-
-                ret
-            });
-        }
-
-        ui_layout
-            .on_stringify_derived_param_type(move |ty: DerivedParamType| ty.to_string().into());
+        ui_layout.on_stringify_derived_param_type(move |ty| ty.to_string().into());
     }
 }
 
@@ -267,7 +217,7 @@ fn unroll_layout(
 }
 
 fn unroll_path<'a>(
-    node: &'a Node,
+    node: &'static Node,
     split_path: &Vec<&str>,
     current_path: String,
     current_depth: usize,

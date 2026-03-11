@@ -1,8 +1,7 @@
-use crate::can::messages::wrx_2018;
 use crate::data::parameters::Bound;
 use crate::data::units::UnitSystem;
 use crate::parameter_struct;
-use crate::slint_generatedApp::{ClusterTheme, SettingsSpecialPages};
+use crate::slint_generatedApp::{ClusterTheme, SettingsPageTarget};
 use crate::slint_ui::backend::lang::StrLang;
 
 use serde::{Deserialize, Serialize};
@@ -14,9 +13,22 @@ use std::env;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::PathBuf;
+use std::sync::{Arc, LazyLock};
 
 const CONFIG_NAME: &str = "settings.toml";
 const LOAD_TIMEOUT: Duration = Duration::from_secs(10);
+
+pub static SETTINGS: LazyLock<Arc<Settings>> = LazyLock::new(|| {
+    let ret = Default::default();
+
+    tokio::spawn(async move {
+        if let Err(e) = SETTINGS.load_from_fs().await {
+            println!("Failed to load user settings from fs: {e:?}");
+        }
+    });
+
+    ret
+});
 
 #[derive(Debug)]
 pub enum SaveError {
@@ -25,10 +37,10 @@ pub enum SaveError {
 }
 
 #[derive(Clone, Copy, PartialEq, Serialize, Deserialize, Debug)]
-pub struct PageTrigger(SettingsSpecialPages);
+pub struct PageTrigger(SettingsPageTarget);
 
-impl Into<SettingsSpecialPages> for PageTrigger {
-    fn into(self) -> SettingsSpecialPages {
+impl Into<SettingsPageTarget> for PageTrigger {
+    fn into(self) -> SettingsPageTarget {
         self.0
     }
 }
@@ -49,7 +61,7 @@ parameter_struct! {Settings {
         general {
             pub disable_hill_assist_warning: bool = false,
             pub unit_system: UnitSystem,
-            pub lang: StrLang,
+            pub language: StrLang,
         },
 
         theme {
@@ -98,7 +110,7 @@ parameter_struct! {Settings {
         pub [ro] version: String = get_build_version(),
         pub [ro] can_database_version: String = get_dbc_version(),
         pub [hidden] slint_version: String = get_slint_version(), // hidden because it is accessed within the attributions page
-        pub attributions: PageTrigger = PageTrigger(SettingsSpecialPages::Attributions),
+        pub attributions: PageTrigger = PageTrigger(SettingsPageTarget::Attributions),
     },
 }}
 
@@ -242,7 +254,7 @@ fn get_slint_version() -> String {
 
 impl Default for PageTrigger {
     fn default() -> Self {
-        Self(SettingsSpecialPages::Attributions)
+        Self(SettingsPageTarget::Attributions)
     }
 }
 

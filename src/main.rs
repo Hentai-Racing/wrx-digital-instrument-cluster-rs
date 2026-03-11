@@ -4,7 +4,7 @@ mod data;
 mod hardware;
 mod slint_ui;
 
-use crate::application::settings::Settings;
+use crate::application::settings::SETTINGS;
 use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
 use crate::can::can_mux_parser::{
     self, ISOTPAckFrame, MuxContext, MuxParseResult, OBDService, S1CurrentData,
@@ -14,8 +14,8 @@ use crate::can::messages::wrx_2018::CanError;
 use crate::data::car_data::{CarData, ParseError, ParseResult};
 use crate::hardware::hardware_backend::{self, HardwareBackend};
 use crate::slint_ui::backend::{
-    backend_lib, can_display::CanFrameDisplay, car_data_bridge, config_bridge, hardware_bridge,
-    lang, rs_type_resolver,
+    backend_lib, can_display::CanFrameDisplay, car_data_bridge, hardware_bridge, lang,
+    rs_type_resolver, settings_bridge,
 };
 
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, Pid, ProcessRefreshKind, RefreshKind, System};
@@ -38,17 +38,6 @@ const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
 #[cfg(target_vendor = "apple")]
 const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 
-static CONFIG_MANAGER: LazyLock<Arc<Settings>> = LazyLock::new(|| {
-    let ret = Default::default();
-
-    tokio::spawn(async move {
-        if let Err(e) = CONFIG_MANAGER.load_from_fs().await {
-            println!("Failed to load user settings from fs: {e:?}");
-        }
-    });
-
-    ret
-});
 static CAR_DATA: LazyLock<Arc<CarData>> = LazyLock::new(|| Default::default());
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -200,7 +189,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // CanFrame::new(obd_id, 8, &[0x01, OBDService::StoredDTCs.into()]),
             ]);
 
-            let running_can = &CONFIG_MANAGER.developer.can.running_can;
+            let running_can = &SETTINGS.developer.can.running_can;
 
             loop {
                 if running_can.value() {
@@ -283,7 +272,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             tokio::spawn(async move {
                 let mut interval = time::interval(Duration::from_millis(10));
 
-                let running_vcan = &CONFIG_MANAGER.developer.simulation.running_simulation;
+                let running_vcan = &SETTINGS.developer.simulation.running_simulation;
 
                 loop {
                     let gen_frames = wrx_2018_emulator::generate_frames();
@@ -328,10 +317,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ui backend bridges
     {
         rs_type_resolver::bridge(ui.as_weak());
-        config_bridge::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
-        car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone(), CONFIG_MANAGER.clone());
+        settings_bridge::bridge(ui.as_weak());
+        car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone());
         hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
-        lang::bridge(ui.as_weak(), CONFIG_MANAGER.clone());
+        lang::bridge(ui.as_weak());
         backend_lib::bridge(ui.as_weak());
     }
 
@@ -355,7 +344,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 interval.tick().await;
                 let secs = last.elapsed().as_secs_f32();
 
-                CONFIG_MANAGER.developer.system_info.fps.set_value(
+                SETTINGS.developer.system_info.fps.set_value(
                     ((frames.swap(0, std::sync::atomic::Ordering::Relaxed) as f32) / secs) as i32,
                 );
 
@@ -413,7 +402,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn save_config() {
-    if let Err(e) = CONFIG_MANAGER.save_to_fs() {
+    if let Err(e) = SETTINGS.save_to_fs() {
         eprintln!("Failed to save user settings: {e:?}");
     }
 }
@@ -511,10 +500,10 @@ async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<Ha
                 "set_param" => {
                     let param_path = *cmd_splt.get(1).unwrap_or(&"");
                     let value = *cmd_splt.get(2).unwrap_or(&"");
-                    CONFIG_MANAGER.set_by_path(param_path, value);
+                    SETTINGS.set_by_path(param_path, value);
                 }
                 "param_layout" => {
-                    println!("\n{}", CONFIG_MANAGER.get_page_layout());
+                    println!("\n{}", SETTINGS.get_page_layout());
                 }
                 "set_car_data" => {
                     // FIXME: if canbus and sim are both disabled, you must update multiple cardata params before the ui updates
@@ -543,13 +532,13 @@ async fn bridge_system_info() {
         .with_cpu(CpuRefreshKind::nothing().with_cpu_usage())
         .with_processes(ProcessRefreshKind::nothing().with_memory());
 
-    CONFIG_MANAGER
+    SETTINGS
         .developer
         .system_info
         .num_cpus
         .set_value(sys.cpus().len() as i32);
 
-    CONFIG_MANAGER
+    SETTINGS
         .developer
         .system_info
         .total_memory_mb
@@ -566,26 +555,26 @@ async fn bridge_system_info() {
             let process_memory = (this.memory() / 1_048_576) as i32;
             process_memory_max = std::cmp::max(process_memory, process_memory_max);
 
-            CONFIG_MANAGER
+            SETTINGS
                 .developer
                 .system_info
                 .process_memory_mb
                 .set_value(process_memory);
 
-            CONFIG_MANAGER
+            SETTINGS
                 .developer
                 .system_info
                 .process_memory_max_mb
                 .set_value(process_memory_max);
         }
 
-        CONFIG_MANAGER
+        SETTINGS
             .developer
             .system_info
             .used_memory_mb
             .set_value(used_memory);
 
-        CONFIG_MANAGER
+        SETTINGS
             .developer
             .system_info
             .cpu_usage

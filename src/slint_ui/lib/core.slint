@@ -735,8 +735,12 @@ export component ComboBoxSelectionBox inherits SelectionDomain {
             has-selection: ComboBoxState.current-value == model;
 
             init-ready => {
-                if i == 0 {
+                if (i == 0) {
                     root.first-model-focus-id = self.focus-id;
+
+                    if ComboBoxState.model.length == 1 {
+                        root.last-model-focus-id = self.focus-id;
+                    }
                 } else if i == (ComboBoxState.model.length - 1) {
                     root.last-model-focus-id = self.focus-id;
                 }
@@ -838,11 +842,11 @@ export component SliderSelectionBox inherits SelectionDomain {
     i-background-bar := Rectangle {
         width: 900px;
         height: 8px;
-        background: gray.darker(95%);
+        background: gray.darker(95%).mix(black, 40%);
         border-radius: 3px;
 
         i-filler-bar := Rectangle {
-            background: teal.darker(50%);
+            background: gray.darker(95%) /* teal.darker(50%) */;
             border-radius: i-background-bar.border-radius;
 
             Rectangle {
@@ -878,7 +882,7 @@ export component SliderSelectionBox inherits SelectionDomain {
 
                         Text {
                             y: parent.height + 10px + (parent.has-focus ? 3px + FocusState.focus-highlight-size : 0px);
-                            color: parent.has-focus ? white : i-background-bar.background;
+                            color: parent.has-focus ? white : i-filler-bar.background;
                             text: value;
                             font-size: parent.has-focus ? 22px : 17.5px;
 

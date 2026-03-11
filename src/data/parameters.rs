@@ -344,7 +344,7 @@ pub enum Node {
     },
     Page {
         name: &'static str,
-        items: Box<[Node]>,
+        items: Box<[&'static Node]>,
     },
 }
 
@@ -432,8 +432,11 @@ macro_rules! parameter_struct {
                 $crate::parameter_struct!(@path-get self target; path;| $($entries)*)
             }
 
-            pub fn get_page_layout(&self) -> $crate::data::parameters::Node {
-                return $crate::parameter_struct!(@node $page self| $($entries)*);
+            pub fn get_page_layout(&self) -> &'static $crate::data::parameters::Node {
+                static [<$page:upper _LAYOUT>]: std::sync::OnceLock<$crate::data::parameters::Node> = std::sync::OnceLock::new();
+                [<$page:upper _LAYOUT>].get_or_init(||
+                    $crate::parameter_struct!(@node $page self| $($entries)*)
+                )
             }
         }
 
@@ -472,7 +475,7 @@ macro_rules! parameter_struct {
         $crate::parameter_struct!(@page $page
             { $($params)* pub $sub: [<$sub:camel_edge>], }
             { $($inits)* $sub: Default::default(), }
-            { $($defs)* $crate::parameter_struct!($([$sub_condition])? $sub { $($inner)* }); }
+            { $($defs)* $crate::parameter_struct!($([$condition])? $sub { $($inner)* }); }
             { $($entries)* (page $([$sub_condition])? $sub) }
             $($rest)*
         );
@@ -489,16 +492,16 @@ macro_rules! parameter_struct {
     };
 
     (@node-internal $self:ident| param [hidden] $param:ident: $ty:path) => {
-        $crate::data::parameters::Node::HiddenParameter()
+        &$crate::data::parameters::Node::HiddenParameter()
     };
     (@node-internal $self:ident| param [ro] $param:ident: $ty:path) => {
-        $crate::data::parameters::Node::ReadOnlyParameter{
+        &$crate::data::parameters::Node::ReadOnlyParameter{
             name: stringify!($param),
             ty: stringify!($ty)
         }
     };
     (@node-internal $self:ident| param $param:ident: $ty:path) => {
-        $crate::data::parameters::Node::Parameter{
+        &$crate::data::parameters::Node::Parameter{
             name: stringify!($param),
             ty: stringify!($ty)
         }
@@ -507,7 +510,7 @@ macro_rules! parameter_struct {
         if $sub_condition {
             $self.$sub.get_page_layout()
         } else {
-            $crate::data::parameters::Node::HiddenParameter()
+            &$crate::data::parameters::Node::HiddenParameter()
         }
     };
     (@node-internal $self:ident| page $sub:ident) => {

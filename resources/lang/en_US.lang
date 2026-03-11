@@ -6,11 +6,12 @@ dev.lang=English (US) DEV
 
 # settings
 Settings.user=User
+Settings.page_back=Back
 
 Settings.user.general=General
 Settings.user.general.disable_hill_assist_warning=Disable Hill Assist Warning
 Settings.user.general.unit_system=Unit System
-Settings.user.general.lang=Language
+Settings.user.general.language=Language
 
 Settings.user.theme=Theme
 Settings.user.theme.selected_theme=Theme
