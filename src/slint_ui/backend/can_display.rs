@@ -28,6 +28,7 @@ impl CanFrameDisplay {
                 return;
             }
 
+            // TODO: this can all be simplified into a StandardListView and use a rust-side tracked data model instead of get and set, just set
             let display_frames = can_display.get_CanFrames();
             if let Some(frames) = display_frames
                 .as_any()
