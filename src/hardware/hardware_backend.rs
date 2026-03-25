@@ -4,7 +4,10 @@ use crate::data::parameters::Parameter;
 #[cfg(feature = "apalis_imx8")]
 use crate::hardware::apalis_imx8;
 
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
+
+pub(crate) static HARDWARE_NAVIGATION_INPUT: LazyLock<Arc<Parameter<HardwareNavigationState>>> =
+    LazyLock::new(|| Default::default());
 
 #[derive(Default)]
 pub enum Backend {
@@ -26,7 +29,6 @@ pub enum HardwareNavigationState {
 #[derive(Default)]
 pub struct HardwareBackend {
     backend: Backend,
-    pub navigation_state: Arc<Parameter<HardwareNavigationState>>,
     pub dbg_adc: Arc<Parameter<u32>>,
 }
 
@@ -39,7 +41,6 @@ impl HardwareBackend {
 
                 apalis_imx8.register_adc_reader(ApalisIMX8ADC::ADC0);
 
-                let navigation_state: Arc<Parameter<HardwareNavigationState>> = Default::default();
                 let adc0: Arc<Parameter<u32>> = apalis_imx8.get_adc_param(ApalisIMX8ADC::ADC0);
 
                 {
@@ -49,7 +50,6 @@ impl HardwareBackend {
                     const _UP_RANGE: u32 = 0;
 
                     let adc0 = adc0.clone();
-                    let navigation_state = navigation_state.clone();
                     tokio::spawn(async move {
                         let mut adc0_watch = adc0.watch();
                         loop {
@@ -57,13 +57,15 @@ impl HardwareBackend {
 
                             let value = adc0.value();
                             if value >= IDLE_RANGE {
-                                navigation_state.set_value(HardwareNavigationState::Idle);
+                                HARDWARE_NAVIGATION_INPUT.set_value(HardwareNavigationState::Idle);
                             } else if (value < IDLE_RANGE) && (value >= DOWN_RANGE) {
-                                navigation_state.set_value(HardwareNavigationState::Forward);
+                                HARDWARE_NAVIGATION_INPUT
+                                    .set_value(HardwareNavigationState::Forward);
                             } else if (value < DOWN_RANGE) && (value >= ENTER_RANGE) {
-                                navigation_state.set_value(HardwareNavigationState::Enter);
+                                HARDWARE_NAVIGATION_INPUT.set_value(HardwareNavigationState::Enter);
                             } else {
-                                navigation_state.set_value(HardwareNavigationState::Backward);
+                                HARDWARE_NAVIGATION_INPUT
+                                    .set_value(HardwareNavigationState::Backward);
                             }
 
                             select! {
@@ -76,7 +78,6 @@ impl HardwareBackend {
 
                 Self {
                     backend,
-                    navigation_state,
                     dbg_adc: adc0,
                     ..Default::default()
                 }

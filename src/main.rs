@@ -12,14 +12,15 @@ use crate::can::can_mux_parser::{
 use crate::can::messages::emulators::wrx_2018_emulator;
 use crate::can::messages::wrx_2018::CanError;
 use crate::data::car_data::{CarData, ParseError, ParseResult};
-use crate::hardware::hardware_backend::{self, HardwareBackend};
+use crate::hardware::hardware_backend::{self, HARDWARE_NAVIGATION_INPUT, HardwareBackend};
 use crate::slint_ui::backend::{
     backend_lib, can_display::CanFrameDisplay, car_data_bridge, hardware_bridge, lang,
     rs_type_resolver, settings_bridge,
 };
 
+use clap::ArgMatches;
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, Pid, ProcessRefreshKind, RefreshKind, System};
-use tokio::sync::mpsc::{self, UnboundedSender};
+use tokio::sync::Notify;
 use tokio::time::{self, Duration, Instant};
 
 use std::collections::VecDeque;
@@ -38,17 +39,19 @@ const DEFAULT_SL_DEV: &str = "/dev/ttyACM0";
 #[cfg(target_vendor = "apple")]
 const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 
-static CAR_DATA: LazyLock<Arc<CarData>> = LazyLock::new(|| Default::default());
+pub static SHUTDOWN_SIGNAL: LazyLock<Notify> = LazyLock::new(|| Notify::new());
+pub static SHUTDOWN_FINISHED: LazyLock<Notify> = LazyLock::new(|| Notify::new());
+pub static CAR_DATA: LazyLock<Arc<CarData>> = LazyLock::new(|| Default::default());
+pub static BIN_ARGS: LazyLock<ArgMatches> = LazyLock::new(|| {
+    let conflicting_args = vec![
+        "fakedev",
+        "candev",
+        "sldev",
+        #[cfg(target_os = "linux")]
+        "virtual",
+    ];
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    #[allow(unused_mut)]
-    let mut conflicting_args = vec!["fakedev", "candev", "sldev"];
-    #[cfg(target_os = "linux")]
-    {
-        conflicting_args.push("virtual");
-    }
-
-    let clap_args = clap::Command::new("").version(env!("CARGO_PKG_VERSION"))
+    clap::Command::new("").version(env!("CARGO_PKG_VERSION"))
         .args([
             #[cfg(target_os = "linux")]
             clap::arg!(-v --virtual "Runs the application in virtual mode using socketcan vcan")
@@ -68,14 +71,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             #[cfg(debug_assertions)]
             clap::arg!(--cli "Enable internal cli")
                 .required(false),
-        ])
-        .get_matches();
+            #[cfg(debug_assertions)]
+            clap::arg!(--highlight "Enables UI highlights")
+                .required(false),
+            #[cfg(debug_assertions)]
+            clap::arg!(--no_overlay "Disables debug overlay")
+                .required(false),
+            ])
+        .get_matches()
+});
 
-    let fake_dev = clap_args.get_flag("fakedev");
-    #[cfg(debug_assertions)]
-    let is_cli_mode = clap_args.get_flag("cli");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let fake_dev = BIN_ARGS.get_flag("fakedev");
     #[cfg(target_os = "linux")]
-    let virtual_cluster = clap_args.get_flag("virtual") || fake_dev;
+    let virtual_cluster = BIN_ARGS.get_flag("virtual") || fake_dev;
     #[cfg(not(target_os = "linux"))]
     let virtual_cluster = fake_dev;
 
@@ -91,9 +100,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         {
             CanInterface::Fake
         }
-    } else if clap_args.value_source("candev") == Some(clap::parser::ValueSource::CommandLine) {
+    } else if BIN_ARGS.value_source("candev") == Some(clap::parser::ValueSource::CommandLine) {
         CanInterface::SocketCan
-    } else if clap_args.value_source("sldev") == Some(clap::parser::ValueSource::CommandLine) {
+    } else if BIN_ARGS.value_source("sldev") == Some(clap::parser::ValueSource::CommandLine) {
         CanInterface::SerialCan
     } else {
         #[cfg(feature = "apalis_imx8")]
@@ -112,9 +121,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap();
     let _guard = tokio_runtime.enter();
 
-    let (shutdown_send, mut shutdown_recv) = mpsc::unbounded_channel::<bool>();
-    let (shutdown_finished, mut shutdown_finished_recv) = mpsc::unbounded_channel::<bool>();
-
     let ui = App::new()?;
     ui.show()?;
 
@@ -123,14 +129,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut interface_path = match &selected_interface {
         CanInterface::VirtualSocketCan | CanInterface::Fake => VCAN_IF_NAME,
         CanInterface::SerialCan => {
-            if let Some(sldev) = clap_args.get_one::<String>("sldev") {
+            if let Some(sldev) = BIN_ARGS.get_one::<String>("sldev") {
                 sldev.as_str()
             } else {
                 DEFAULT_SL_DEV
             }
         }
         CanInterface::SocketCan => {
-            if let Some(candev) = clap_args.get_one::<String>("candev") {
+            if let Some(candev) = BIN_ARGS.get_one::<String>("candev") {
                 candev.as_str()
             } else {
                 CAN_IF_NAME
@@ -309,11 +315,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::spawn(run_autosave_loop());
     tokio::spawn(bridge_system_info());
 
-    #[cfg(debug_assertions)]
-    if is_cli_mode {
-        tokio::spawn(cli_mode(shutdown_send.clone(), hardware_backend.clone()));
-    }
-
     // ui backend bridges
     {
         rs_type_resolver::bridge(ui.as_weak());
@@ -353,49 +354,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 
-    let cleanup = move || {
-        if let Err(e) = slint::quit_event_loop() {
-            panic!("Failed to quit Slint event loop: {e:?}");
-        }
-
-        save_config();
-
-        if let Err(e) = shutdown_finished.send(true) {
-            panic!("Failed to send `shutdown_finished` signal: {e:?}")
-        }
-    };
-
     // graceful shutdown
     {
         use tokio::signal;
 
-        let shutdown_send = shutdown_send.clone();
-        tokio::spawn(async move {
+        tokio::spawn(async {
             match signal::ctrl_c().await {
-                Ok(_) => shutdown_send.send(true),
+                Ok(_) => SHUTDOWN_SIGNAL.notify_one(),
                 Err(e) => panic!("Failed to forward shutdown signal: {e:?}"),
             }
         });
 
-        tokio::spawn(async move {
-            match shutdown_recv.recv().await {
-                Some(_) => {
-                    cleanup();
-                }
-                _ => {}
-            }
+        tokio::spawn(async {
+            SHUTDOWN_SIGNAL.notified().await;
+            shutdown();
         });
     }
 
+    init_state();
     ui.run()?;
 
-    if !shutdown_send.is_closed() {
-        if let Err(e) = shutdown_send.send(true) {
-            panic!("Failed to send shutdown signal: {e:?}");
-        }
-    }
+    SHUTDOWN_SIGNAL.notify_one();
 
-    tokio_runtime.block_on(async move { shutdown_finished_recv.recv().await });
+    tokio_runtime.block_on(async { SHUTDOWN_FINISHED.notified().await });
     tokio_runtime.shutdown_background();
 
     Ok(())
@@ -407,6 +388,37 @@ fn save_config() {
     }
 }
 
+fn init_state() {
+    #[cfg(debug_assertions)]
+    {
+        if BIN_ARGS.get_flag("highlight") {
+            SETTINGS.developer.debug.debug_highlights.set_value(true);
+        }
+
+        if BIN_ARGS.get_flag("no_overlay") {
+            SETTINGS
+                .developer
+                .debug
+                .debug_overlay_enabled
+                .set_value(false);
+        }
+
+        if BIN_ARGS.get_flag("cli") {
+            tokio::spawn(cli_mode());
+        }
+    }
+}
+
+fn shutdown() {
+    if let Err(e) = slint::quit_event_loop() {
+        panic!("Failed to quit Slint event loop: {e:?}");
+    }
+
+    save_config();
+
+    SHUTDOWN_FINISHED.notify_one();
+}
+
 async fn run_autosave_loop() {
     let mut interval = time::interval(Duration::from_secs(60));
     loop {
@@ -416,7 +428,7 @@ async fn run_autosave_loop() {
 }
 
 #[cfg(debug_assertions)]
-async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<HardwareBackend>) {
+async fn cli_mode() {
     use std::io::{stdin, stdout};
 
     let mut buf = String::new();
@@ -439,7 +451,7 @@ async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<Ha
             let cmd_splt: Vec<&str> = command.as_str().split(" ").collect();
             match *cmd_splt.get(0).unwrap_or(&"") {
                 "q" | "quit" => {
-                    let _ = shutdown_send.send(true);
+                    SHUTDOWN_SIGNAL.notify_one();
                     break;
                 }
                 "h" | "help" => {
@@ -473,18 +485,15 @@ async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<Ha
                 "nav" => {
                     match *cmd_splt.get(1).unwrap_or(&"") {
                         "up" => {
-                            hardware_backend
-                                .navigation_state
+                            HARDWARE_NAVIGATION_INPUT
                                 .set_value(hardware_backend::HardwareNavigationState::Backward);
                         }
                         "down" => {
-                            hardware_backend
-                                .navigation_state
+                            HARDWARE_NAVIGATION_INPUT
                                 .set_value(hardware_backend::HardwareNavigationState::Forward);
                         }
                         "enter" => {
-                            hardware_backend
-                                .navigation_state
+                            HARDWARE_NAVIGATION_INPUT
                                 .set_value(hardware_backend::HardwareNavigationState::Enter);
                         }
                         _ => {}
@@ -493,8 +502,7 @@ async fn cli_mode(shutdown_send: UnboundedSender<bool>, hardware_backend: Arc<Ha
                     interval.tick().await;
                     interval.tick().await;
                     println!("resetting input");
-                    hardware_backend
-                        .navigation_state
+                    HARDWARE_NAVIGATION_INPUT
                         .set_value(hardware_backend::HardwareNavigationState::Idle);
                 }
                 "set_param" => {

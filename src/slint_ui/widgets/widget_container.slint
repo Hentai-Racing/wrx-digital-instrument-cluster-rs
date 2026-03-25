@@ -18,7 +18,7 @@ import {
 } from "@lib/state.slint";
 import { CanDisplayWidget } from "@widgets/can_display.slint";
 import { CarDisplayWidget } from "@widgets/car_display.slint";
-import { GlobalAnimation } from "../lib/core.slint";
+import { GlobalAnimation, DebugHighlight } from "../lib/core.slint";
 
 export global WidgetContainerState {
     in-out property <int> current-page: 0;
@@ -75,26 +75,6 @@ component Widget inherits FocusDomain {
 
 component FocusableWidget inherits Widget {
     focusable: true;
-}
-
-component InternalContainerLayout {
-    in-out property <length> i-x: (-WidgetContainerState.current-page * self.width) - (self.spacing * WidgetContainerState.current-page) - i-layout.padding;
-    in-out property <length> spacing <=> i-layout.spacing;
-
-    width: 100%;
-    height: 100%;
-
-    animate i-x {
-        duration: GlobalAnimation.page-duration;
-        easing: ease-in-out;
-    }
-
-    i-layout := HorizontalLayout {
-        spacing: 10px;
-        x: root.i-x;
-
-        @children
-    }
 }
 
 export component WidgetContainer {
@@ -178,14 +158,23 @@ export component WidgetContainer {
         }
 
         center-widget-container-inner := Rectangle {
-            width: 80%;
+            width: 100%;
             height: 90%;
 
             clip: true;
 
-            center-widget-container-layout := InternalContainerLayout {
+            center-widget-container-layout := HorizontalLayout {
+                x: (-WidgetContainerState.current-page * self.width) - (self.spacing * WidgetContainerState.current-page);
+
+                animate x {
+                    duration: GlobalAnimation.page-duration;
+                    easing: ease-in-out;
+                }
+
                 // todo: disable all widgets when they're not in use
                 car-display-widget := Widget {
+                    height: 100%;
+                    width: 100%;
                     CarDisplayWidget {
                         height: 100%;
                         width: 100%;

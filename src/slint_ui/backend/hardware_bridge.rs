@@ -1,4 +1,6 @@
-use crate::hardware::hardware_backend::{HardwareBackend, HardwareNavigationState};
+use crate::hardware::hardware_backend::{
+    HARDWARE_NAVIGATION_INPUT, HardwareBackend, HardwareNavigationState,
+};
 use crate::slint_generatedApp::{App, DebugMenuState, HardwareBackendData};
 
 use slint::platform::{Key, WindowEvent};
@@ -56,10 +58,9 @@ pub fn bridge(ui: Weak<App>, backend: Arc<HardwareBackend>) {
 
         {
             let ui = ui.clone_strong();
-            let backend = backend.clone();
             let _ = slint::spawn_local(async_compat::Compat::new(async move {
                 let hardware_backend_data = ui.global::<HardwareBackendData>();
-                let mut navigation_state = backend.navigation_state.watch();
+                let mut navigation_state = HARDWARE_NAVIGATION_INPUT.watch();
                 loop {
                     let value = *navigation_state.borrow_and_update();
                     hardware_backend_data.set_navigation_state(format!("{value:?}").into());
