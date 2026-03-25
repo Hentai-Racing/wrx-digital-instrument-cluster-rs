@@ -1,4 +1,5 @@
 use crate::{App, CanDisplay, SCanFrameDisplay};
+include!(concat!(env!("OUT_DIR"), "/dependencies.rs"));
 
 use embedded_can::{Frame, Id};
 use slint::{ComponentHandle, Model, ModelRc, SharedString, VecModel, Weak};

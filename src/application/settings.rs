@@ -1,3 +1,4 @@
+use crate::application::dependencies::DEPENDENCIES;
 use crate::data::parameters::Bound;
 use crate::data::units::UnitSystem;
 use crate::parameter_struct;
@@ -107,9 +108,9 @@ parameter_struct! {Settings {
     },
 
     about {
-        pub [ro] version: String = get_build_version(),
+        pub [ro] version: String = format!("{}", DEPENDENCIES.wrx_digital_instrument_cluster_rs),
         pub [ro] can_database_version: String = get_dbc_version(),
-        pub [hidden] slint_version: String = get_slint_version(), // hidden because it is accessed within the attributions page
+        pub [hidden] slint_version: String = format!("{}", DEPENDENCIES.slint), // hidden because it is accessed within the attributions page
         pub attributions: PageTrigger = PageTrigger(SettingsPageTarget::Attributions),
     },
 }}
@@ -210,21 +211,6 @@ impl Settings {
     }
 }
 
-fn get_build_version() -> String {
-    let mut ret = String::from(env!("CARGO_PKG_VERSION"));
-    if cfg!(debug_assertions) {
-        let git_rev = PathBuf::from(env!("OUT_DIR")).join("Crate_gitrev");
-        if git_rev.exists() {
-            if let Ok(value) = fs::read_to_string(git_rev) {
-                ret.push_str(&format!(" ({})", value.trim()));
-            }
-        }
-    } else {
-    }
-
-    ret
-}
-
 fn get_dbc_version() -> String {
     let mut ret = String::from(crate::can::messages::wrx_2018::VERSION);
     if cfg!(debug_assertions) {
@@ -235,18 +221,6 @@ fn get_dbc_version() -> String {
             }
         }
     } else {
-    }
-
-    ret
-}
-
-fn get_slint_version() -> String {
-    let mut ret = String::from("unknown");
-    let git_rev = PathBuf::from(env!("OUT_DIR")).join("slint_version");
-    if git_rev.exists() {
-        if let Ok(value) = fs::read_to_string(git_rev) {
-            ret = value.trim().to_string();
-        }
     }
 
     ret

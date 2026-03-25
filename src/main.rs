@@ -459,6 +459,13 @@ async fn cli_mode() {
 
                     println!("\nq | quit     => close application");
 
+                    println!("\nlist");
+                    println!(
+                        "    parameters     => list the layout of {}",
+                        stringify!(CONFIG_MANAGER)
+                    );
+                    println!("    dependencies   => list the dependencies of the crate");
+
                     println!("\nnav up       => force ui navigation up");
                     println!("    down     => force ui navigation down");
                     println!("    enter    => force ui navigation enter");
@@ -469,11 +476,6 @@ async fn cli_mode() {
                     );
                     println!("    usage    |  set_param <path> <value>");
                     println!("  example    |  set_param user.general.unit_system uscs");
-
-                    println!(
-                        "\nparam_layout => show the layout of `{}`",
-                        stringify!(CONFIG_MANAGER)
-                    );
 
                     println!("\nset_car_data => set the value of any `<Parameter>` in `CAR_DATA`");
                     println!("    usage    |  set_car_data <param> <value>");
@@ -503,6 +505,19 @@ async fn cli_mode() {
                     println!("resetting input");
                     HARDWARE_NAVIGATION_INPUT
                         .set_value(hardware_backend::HardwareNavigationState::Idle);
+                }
+                "list" => {
+                    match *cmd_splt.get(1).unwrap_or(&"") {
+                        "parameters" => {
+                            println!("\n{}", SETTINGS.get_page_layout());
+                        }
+                        "dependencies" => {
+                            for dep in crate::application::dependencies::DEPENDENCIES.as_slice() {
+                                println!("{dep:?}");
+                            }
+                        }
+                        _ => {}
+                    };
                 }
                 "set_param" => {
                     let param_path = *cmd_splt.get(1).unwrap_or(&"");
