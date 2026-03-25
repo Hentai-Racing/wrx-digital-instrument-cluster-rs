@@ -71,7 +71,7 @@ impl CanFrame {
         }
     }
 
-    pub fn from_frame(frame: impl Frame) -> Self {
+    pub fn from_frame(frame: &impl Frame) -> Self {
         Self::new(frame.id(), frame.dlc(), frame.data())
     }
 }
@@ -215,14 +215,14 @@ impl CanBackend {
             #[cfg(target_os = "linux")]
             CanSocket::SocketCan(ref socket) => {
                 if let Ok(frame) = socket.read_frame() {
-                    return Some(CanFrame::from_frame(frame));
+                    return Some(CanFrame::from_frame(&frame));
                 }
             }
 
             #[cfg(feature = "slcan")]
             CanSocket::Serial(ref mut socket) => {
                 if let Ok(frame) = socket.read() {
-                    return Some(CanFrame::from_frame(frame));
+                    return Some(CanFrame::from_frame(&frame));
                 }
             }
 
@@ -256,7 +256,7 @@ impl CanBackend {
                 }
             }
 
-            CanSocket::Fake(ref mut socket) => match socket.write(CanFrame::from_frame(frame)) {
+            CanSocket::Fake(ref mut socket) => match socket.write(CanFrame::from_frame(&frame)) {
                 Ok(_) => Ok(()),
                 Err(e) => Err(e.into()),
             },

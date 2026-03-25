@@ -8,6 +8,7 @@ use std::{
     fmt::{self, Debug, Display},
     ops::RangeInclusive,
     str::FromStr,
+    sync::RwLock,
 };
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
@@ -114,7 +115,7 @@ where
 }
 
 pub struct Parameter<T> {
-    value: AtomicCell<T>,
+    value: RwLock<T>,
 
     changed: watch::Sender<T>,
 }
@@ -127,26 +128,20 @@ where
         let (changed, _) = watch::channel(Default::default());
 
         Self {
-            value: AtomicCell::new(value),
+            value: RwLock::new(value),
             changed,
         }
     }
 
     pub fn value(&self) -> T {
-        let tmp = self.value.take();
-        let ret = tmp.clone();
-        self.value.store(tmp);
-        ret
+        self.value.read().unwrap_or_else(|e| e.into_inner()).clone()
     }
 
     pub fn set_value(&self, value: T) {
-        let current = self.value.take();
-
-        if current != value {
-            self.value.store(value.clone());
+        let mut this = self.value.write().unwrap_or_else(|e| e.into_inner());
+        if *this != value {
+            *this = value.clone();
             self.send_changed(value);
-        } else {
-            self.value.store(current);
         }
     }
 
@@ -170,16 +165,13 @@ where
 
 impl<T> Serialize for Parameter<T>
 where
-    T: Serialize + Default,
+    T: Clone + Default + Serialize + PartialEq,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let value = self.value.take();
-        let ret = value.serialize(serializer);
-
-        self.value.store(value);
+        let ret = self.value().serialize(serializer);
 
         ret
     }
@@ -219,7 +211,7 @@ pub struct DataParameter<T> {
 
 impl<T> DataParameter<T>
 where
-    T: Copy + Clone + Default + PartialEq + PartialOrd + Debug,
+    T: Copy + Default + PartialEq + PartialOrd + Debug,
 {
     pub fn new(min: T, max: T, value: Option<T>, units: Option<Unit>) -> Self {
         let (changed, _) = watch::channel(Default::default());
@@ -271,7 +263,7 @@ where
 
 impl<T> Default for DataParameter<T>
 where
-    T: Copy + Clone + Default + PartialEq + PartialOrd + Debug,
+    T: Copy + Default + PartialEq + PartialOrd + Debug,
 {
     fn default() -> Self {
         Self::new(Default::default(), Default::default(), None, None)
@@ -280,7 +272,7 @@ where
 
 impl<T> From<T> for DataParameter<T>
 where
-    T: Copy + Clone + Default + PartialEq + PartialOrd + Debug,
+    T: Copy + Default + PartialEq + PartialOrd + Debug,
 {
     fn from(value: T) -> Self {
         Self::new(Default::default(), Default::default(), Some(value), None)

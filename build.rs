@@ -242,7 +242,7 @@ fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
                             param_names.join(", ")
                         );
                         let write_frame_expression =
-                            format!("\tret_frames.push(CanFrame::from_frame({frame_ident}));",);
+                            format!("\tret_frames.push(CanFrame::from_frame(&{frame_ident}));",);
 
                         gen_block += &format!(
                             "\t{}\n{frame_constructor_expression}\n{write_frame_expression}\n\n",
