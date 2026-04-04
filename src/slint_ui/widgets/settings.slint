@@ -21,6 +21,7 @@ import {
     Label,
     GlobalAnimation,
     Slider,
+    GlobalSizing,
 } from "../lib/core.slint";
 import { AboutSlint } from "std-widgets.slint";
 
@@ -74,6 +75,7 @@ export global SettingsLayout {
     pure callback stringify-derived-param-type(ty: DerivedParamType) -> string;
     pure callback get-bound-int(path: string) -> SBoundInt;
     pure callback get-settings-special-page(path: string) -> SettingsPageTarget;
+    pure callback trigger-fn(path: string);
 }
 
 component DecorationBar inherits Rectangle {
@@ -245,7 +247,7 @@ component TypedSettingBar inherits SettingBar {
         current-value: bound.value;
         range-end: bound.end + 1;
         range-start: bound.start;
-        step: 1; // TODO: add step to ranges
+        step: bound.step != 0 ? bound.step : 1;
 
         private property <SBoundInt> bound: SettingsLayout.get-bound-int(item.param-path);
         private property <bool> update: root.update-displayed-value;
@@ -266,16 +268,34 @@ component TypedSettingBar inherits SettingBar {
         }
     }
 
-    if (item.param-type-derived == DerivedParamType.Trigger) && (item.param-type == "PageTrigger"): Button {
-        width: self.height;
-        text: ">";
+    if (item.param-type-derived == DerivedParamType.Trigger): Rectangle {
+        width: GlobalSizing.button-height;
+        height: self.width;
 
-        init-ready => {
-            root.focus-id = self.focus-id;
+        if item.param-type == "PageTrigger": Button {
+            width: self.height;
+            text: ">";
+
+            init-ready => {
+                root.focus-id = self.focus-id;
+            }
+
+            activated => {
+                SettingsLayout.trigger-special-page(SettingsLayout.get-settings-special-page(item.param-path))
+            }
         }
 
-        activated => {
-            SettingsLayout.trigger-special-page(SettingsLayout.get-settings-special-page(item.param-path))
+        if item.param-type == "FnTrigger": Button {
+            width: self.height;
+            text: "{>}";
+
+            init-ready => {
+                root.focus-id = self.focus-id;
+            }
+
+            activated => {
+                SettingsLayout.trigger-fn(item.param-path);
+            }
         }
     }
 

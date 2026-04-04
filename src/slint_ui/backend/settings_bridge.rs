@@ -1,4 +1,4 @@
-use crate::application::settings::{PageTrigger, SETTINGS};
+use crate::application::settings::{FnTrigger, FnTriggers, PageTrigger, SETTINGS};
 use crate::data::parameters::{Bound, Node};
 use crate::slint_generatedApp::{
     AccessibilitySettings, App, ApplicationState, DebugSettings, DerivedParamType, GeneralSettings,
@@ -132,6 +132,15 @@ pub fn bridge(handle_weak: Weak<App>) {
                 .into()
         });
 
+        ui_layout.on_trigger_fn(move |path| {
+            Into::<FnTriggers>::into(
+                resolve_path(path.as_str())
+                    .and_then(|(_, value)| value.downcast_ref::<FnTrigger>().copied())
+                    .unwrap_or_default(),
+            )
+            .trigger()
+        });
+
         ui_layout.on_stringify_derived_param_type(move |ty| ty.to_string().into());
     }
 }
@@ -144,8 +153,8 @@ impl ToString for DerivedParamType {
             Self::Number => String::from("number"),
             Self::String => String::from("string"),
             Self::Page => String::from("page"),
-            Self::Enum => String::from("enum"),
             Self::Trigger => String::from("trigger"),
+            Self::Enum => String::from("enum"),
         }
     }
 }
@@ -153,12 +162,12 @@ impl ToString for DerivedParamType {
 /// Convert Rust types to Slint `DerivedParamType` so we can generate the user interaction in UI procedurally
 fn derive_param_type(ty: &str) -> DerivedParamType {
     match ty.trim() {
-        stringify!(i32) | stringify!(f32) => DerivedParamType::Number,
-        stringify!(Bound<i32>) => DerivedParamType::BoundInt,
-        stringify!(String) => DerivedParamType::String,
         stringify!(bool) => DerivedParamType::Bool,
-        stringify!(PageTrigger) => DerivedParamType::Trigger,
+        stringify!(Bound<i32>) => DerivedParamType::BoundInt,
+        stringify!(i32) | stringify!(f32) => DerivedParamType::Number,
+        stringify!(String) => DerivedParamType::String,
         "page" => DerivedParamType::Page,
+        stringify!(PageTrigger) | stringify!(FnTrigger) => DerivedParamType::Trigger,
         _ => DerivedParamType::Enum, //* More complex types need to be dealt with by param_type
     }
 }
@@ -256,6 +265,7 @@ macro_rules! generate_bound_type {
                 fn into(self) -> $bound_ty {
                     $bound_ty {
                         end: self.end(),
+                        step: self.step(),
                         start: self.start(),
                         value: self.value()
                     }
@@ -264,7 +274,7 @@ macro_rules! generate_bound_type {
 
             impl From<$bound_ty> for Bound<$ty> {
                 fn from(value: $bound_ty) -> Self {
-                    Self::new(value.value, value.start..=value.end)
+                    Self::new(value.value, value.start..=value.end, value.step)
                 }
             }
         )?)*
@@ -275,6 +285,6 @@ generate_bound_type!(i32 => SBoundInt, f32);
 
 impl ToString for SBoundInt {
     fn to_string(&self) -> String {
-        format!("{};{}..={}", self.value, self.start, self.end)
+        format!("{};{}..={};{}", self.value, self.start, self.end, self.step)
     }
 }

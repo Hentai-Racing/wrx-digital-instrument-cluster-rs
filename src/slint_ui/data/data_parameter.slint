@@ -1,31 +1,28 @@
 export struct SFDataParameter {
-	unit_str: string,
-
-	min: float,
-	max: float,
-
-	value: float,
+    unit_str: string,
+    min: float,
+    max: float,
+    value: float,
 }
 
 export struct SIDataParameter {
-	unit_str: string,
-
-	min: int,
-	max: int,
-
-	value: int,
+    unit_str: string,
+    min: int,
+    max: int,
+    value: int,
 }
 
 export struct SBDataParameter {
-	value: bool,
+    value: bool,
 }
 
 export struct SStrDataParameter {
-	value: string,
+    value: string,
 }
 
 export struct SBoundInt {
     value: int,
+    step: int,
     start: int,
     end: int,
 }

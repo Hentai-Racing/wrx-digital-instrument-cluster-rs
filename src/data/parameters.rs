@@ -14,7 +14,7 @@ use std::{
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub struct Bound<T> {
     value: T,
-
+    step: T,
     start: T,
     end: T,
 }
@@ -23,9 +23,10 @@ impl<T> Bound<T>
 where
     T: PartialOrd + PartialEq + Copy + Clone + Default + Serialize,
 {
-    pub fn new(value: T, range: RangeInclusive<T>) -> Self {
+    pub fn new(init: T, range: RangeInclusive<T>, step: T) -> Self {
         Self {
-            value,
+            value: init,
+            step,
             start: *range.start(),
             end: *range.end(),
         }
@@ -39,6 +40,10 @@ where
         if (self.start..=self.end).contains(&value) {
             self.value = value
         }
+    }
+
+    pub fn step(&self) -> T {
+        self.step
     }
 
     pub fn start(&self) -> T {
@@ -55,7 +60,11 @@ where
     T: PartialOrd + PartialEq + Copy + Clone + Default + Serialize,
 {
     fn default() -> Self {
-        Self::new(Default::default(), T::default()..=T::default())
+        Self::new(
+            Default::default(),
+            T::default()..=T::default(),
+            T::default(),
+        )
     }
 }
 
@@ -86,31 +95,29 @@ where
     type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut value = s;
-        let mut range = None;
+        let Some((value, rest)) = s.split_once(';') else {
+            let value = T::from_str(s).map_err(|_| "bad value")?;
+            return Ok(Self::new(value, T::default()..=T::default(), T::default()));
+        };
 
-        if let Some((first, rest)) = s.split_once(";") {
-            let (start, end) = rest.split_once("..=").ok_or("expected a..=b")?;
+        let (range_str, step) = rest.rsplit_once(';').ok_or("expected step")?;
+        let (start, end) = range_str.split_once("..=").ok_or("expected a..=b")?;
 
-            let start: T = start
-                .trim()
-                .parse()
-                .map_err(|_| "failed to parse range start")?;
+        let value = value.trim().parse().map_err(|_| "bad value")?;
+        let start = start
+            .trim()
+            .parse()
+            .map_err(|_| "failed to parse range start")?;
+        let end = end
+            .trim()
+            .parse()
+            .map_err(|_| "failed to parse range end")?;
+        let step = step
+            .trim()
+            .parse()
+            .map_err(|_| "failed to parse range step")?;
 
-            let end: T = end
-                .trim()
-                .parse()
-                .map_err(|_| "failed to parse range end")?;
-
-            value = first;
-            range = Some(start..=end);
-        }
-
-        let value = T::from_str(value).map_err(|_| "bad value")?;
-        Ok(Self::new(
-            value,
-            range.unwrap_or(T::default()..=T::default()),
-        ))
+        Ok(Self::new(value, start..=end, step))
     }
 }
 

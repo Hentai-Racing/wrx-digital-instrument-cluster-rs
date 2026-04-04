@@ -827,7 +827,8 @@ export component ComboBox inherits Button {
 }
 
 export component SliderSelectionBox inherits SelectionDomain {
-    private property <float> range: abs(SliderState.range-end - SliderState.range-start);
+    private property <float> aligned-start: ceil(SliderState.range-start / SliderState.step) * SliderState.step;
+    private property <float> range: abs(SliderState.range-end - aligned-start);
     private property <int> int-range: ceil(range / SliderState.step);
 
     i-has-domain: SliderState.visible;
@@ -835,7 +836,7 @@ export component SliderSelectionBox inherits SelectionDomain {
     title: SliderState.title;
 
     pure function get-range-index(i: int) -> float {
-        SliderState.range-start + i * sign(SliderState.range-end - SliderState.range-start) * SliderState.step
+        aligned-start + i * sign(SliderState.range-end - SliderState.range-start) * SliderState.step
     }
 
     i-background-bar := Rectangle {

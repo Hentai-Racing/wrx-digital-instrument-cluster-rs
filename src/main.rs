@@ -278,6 +278,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let mut interval = time::interval(Duration::from_millis(10));
 
                 let running_vcan = &SETTINGS.developer.simulation.running_simulation;
+                let mut simulation_speed =
+                    SETTINGS.developer.simulation.simulation_speed_ms.watch();
 
                 loop {
                     let gen_frames = wrx_2018_emulator::generate_frames();
@@ -290,6 +292,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         } else {
                             let _ = running_vcan.watch().wait_for(|v| *v).await;
                         }
+                    }
+
+                    if simulation_speed.has_changed().is_ok_and(|val| val) {
+                        let value = simulation_speed.borrow_and_update().value() as u64;
+                        interval = time::interval(Duration::from_millis(value));
                     }
 
                     interval.tick().await;

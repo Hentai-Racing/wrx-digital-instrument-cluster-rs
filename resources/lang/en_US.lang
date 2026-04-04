@@ -31,6 +31,7 @@ Settings.developer.debug.extra_debug_info=Extra Debug Info
 
 Settings.developer.simulation=Simulation
 Settings.developer.simulation.running_simulation=Simulation Running
+Settings.developer.simulation.simulation_speed_ms=Simulation Speed (ms)
 
 Settings.developer.can=Can
 Settings.developer.can.running_can=CAN Bus Running

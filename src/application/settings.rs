@@ -37,15 +37,6 @@ pub enum SaveError {
     Error(Box<dyn std::error::Error>),
 }
 
-#[derive(Clone, Copy, PartialEq, Serialize, Deserialize, Debug)]
-pub struct PageTrigger(SettingsPageTarget);
-
-impl Into<SettingsPageTarget> for PageTrigger {
-    fn into(self) -> SettingsPageTarget {
-        self.0
-    }
-}
-
 impl std::fmt::Display for SaveError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -72,7 +63,7 @@ parameter_struct! {Settings {
         accessibility {
             pub animations_enabled: bool = true,
             pub accessible_switches: bool = false,
-            pub selection_box_thickness: Bound<i32> = Bound::new(2, 1..=10),
+            pub selection_box_thickness: Bound<i32> = Bound::new(2, 1..=10, 1),
         },
     },
 
@@ -85,6 +76,7 @@ parameter_struct! {Settings {
         },
 
         simulation {
+            pub simulation_speed_ms: Bound<i32> = Bound::new(10, 10..=250, 10),
             pub running_simulation: bool = true,
         },
 
@@ -105,6 +97,20 @@ parameter_struct! {Settings {
             pub [ro] cpu_usage: f32,
             pub [ro] fps: i32,
         },
+    },
+
+    diagnostics {
+        obd {
+            pub read_codes: FnTrigger = FnTrigger(FnTriggers::OBD2CodeRead),
+            pub read_vin: FnTrigger = FnTrigger(FnTriggers::OBD2VinRead),
+        },
+
+        uds {},
+
+        // TODO: vehicle specific things should be covered by a feature config later
+        cobb {},
+
+        subaru_select_monitor {},
     },
 
     about {
@@ -226,22 +232,51 @@ fn get_dbc_version() -> String {
     ret
 }
 
-impl Default for PageTrigger {
-    fn default() -> Self {
-        Self(SettingsPageTarget::Attributions)
+/// Define a triggerable struct that contains an enum for serde with the UI settings parser
+macro_rules! ImplTriggerStruct {
+    ($struct:ident <$inner:ident>) => {
+        #[derive(Clone, Copy, PartialEq, Serialize, Deserialize, Debug, Default)]
+        pub struct $struct($inner);
+
+        impl std::str::FromStr for $struct {
+            type Err = ();
+
+            fn from_str(_s: &str) -> Result<Self, Self::Err> {
+                Err(())
+            }
+        }
+
+        impl std::fmt::Display for $struct {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{:?}", self)
+            }
+        }
+
+        impl Into<$inner> for $struct {
+            fn into(self) -> $inner {
+                self.0
+            }
+        }
+    };
+}
+
+#[derive(Clone, Copy, PartialEq, Serialize, Deserialize, Debug, Default)]
+pub enum FnTriggers {
+    #[default]
+    NoOp,
+    OBD2CodeRead,
+    OBD2VinRead,
+}
+
+impl FnTriggers {
+    pub fn trigger(&self) {
+        match self {
+            Self::NoOp => {}
+            Self::OBD2CodeRead => {}
+            Self::OBD2VinRead => {}
+        }
     }
 }
 
-impl std::str::FromStr for PageTrigger {
-    type Err = ();
-
-    fn from_str(_s: &str) -> Result<Self, Self::Err> {
-        Err(())
-    }
-}
-
-impl std::fmt::Display for PageTrigger {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
+ImplTriggerStruct!(PageTrigger<SettingsPageTarget>);
+ImplTriggerStruct!(FnTrigger<FnTriggers>);
