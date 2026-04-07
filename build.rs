@@ -543,45 +543,56 @@ fn update_vscode_slint_libpaths() {
     const SETTING_NAME: &str = "slint.libraryPaths";
 
     let vscode_settings = MANIFEST_DIR.join(".vscode/settings.json");
+
+    if let Some(parent) = vscode_settings.parent() {
+        fs::create_dir_all(parent).unwrap();
+    }
+
+    if !vscode_settings.exists() {
+        File::create(&vscode_settings).unwrap();
+    }
+
     println!(
         "cargo:rerun-if-changed={}",
         vscode_settings.to_str().unwrap()
     );
 
-    if let Ok(contents) = fs::read_to_string(&vscode_settings) {
-        if let Ok(mut settings) = json5::from_str::<serde_json::Value>(&contents) {
-            let lib_paths = settings
-                .as_object_mut()
-                .unwrap()
-                .entry(SETTING_NAME)
-                .or_insert_with(|| serde_json::json!({}));
-
-            let map = lib_paths.as_object_mut().unwrap();
-            map.retain(|key, _| SLINT_LIBRARY_PATHS.contains_key(key));
-
-            for (key, path) in SLINT_LIBRARY_PATHS.iter() {
-                let relative = path
-                    .strip_prefix(MANIFEST_DIR.as_path())
-                    .unwrap()
-                    .to_str()
-                    .unwrap();
-                map.insert(key.clone(), relative.to_string().into());
-            }
-
-            let output = serde_json::to_string_pretty(&settings).unwrap();
-            fs::write(vscode_settings, output).unwrap();
-        } else {
-            println!(
-                "cargo:warning=Failed to parse json {}",
-                vscode_settings.to_string_lossy()
-            );
-        }
+    let contents = fs::read_to_string(&vscode_settings).unwrap_or_default();
+    let mut settings = if contents.trim().is_empty() {
+        serde_json::json!({})
     } else {
-        println!(
-            "cargo:warning=Failed to read {}",
-            vscode_settings.to_string_lossy()
-        );
+        match json5::from_str::<serde_json::Value>(&contents) {
+            Ok(v) => v,
+            Err(_) => {
+                println!(
+                    "cargo:warning=Failed to parse json {}",
+                    vscode_settings.to_string_lossy()
+                );
+                return;
+            }
+        }
+    };
+
+    let lib_paths = settings
+        .as_object_mut()
+        .unwrap()
+        .entry(SETTING_NAME)
+        .or_insert_with(|| serde_json::json!({}));
+
+    let map = lib_paths.as_object_mut().unwrap();
+    map.retain(|key, _| SLINT_LIBRARY_PATHS.contains_key(key));
+
+    for (key, path) in SLINT_LIBRARY_PATHS.iter() {
+        let relative = path
+            .strip_prefix(MANIFEST_DIR.as_path())
+            .unwrap()
+            .to_str()
+            .unwrap();
+        map.insert(key.clone(), relative.to_string().into());
     }
+
+    let output = serde_json::to_string_pretty(&settings).unwrap();
+    fs::write(vscode_settings, output).unwrap();
 }
 
 fn generate_dependencies_rs() {

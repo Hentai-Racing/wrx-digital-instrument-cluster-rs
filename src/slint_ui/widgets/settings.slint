@@ -75,7 +75,7 @@ export global SettingsLayout {
     pure callback stringify-derived-param-type(ty: DerivedParamType) -> string;
     pure callback get-bound-int(path: string) -> SBoundInt;
     pure callback get-settings-special-page(path: string) -> SettingsPageTarget;
-    pure callback trigger-fn(path: string);
+    pure callback trigger-fn(path: string); // TODO: implement results
 }
 
 component DecorationBar inherits Rectangle {

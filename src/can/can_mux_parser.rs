@@ -3,6 +3,10 @@ use bitvec::vec::BitVec;
 use embedded_can::{Frame, Id};
 use strum::FromRepr;
 
+use std::sync::{Arc, LazyLock, Mutex};
+
+pub static MUX_CONTEXT: LazyLock<Arc<Mutex<MuxContext>>> = LazyLock::new(|| Default::default());
+
 #[repr(u8)]
 #[derive(Debug, FromRepr)]
 pub enum S1CurrentData {
@@ -222,7 +226,6 @@ pub enum FlowControlFlag {
     Abort = 0x2,
 }
 
-// #[allow(unused)]
 #[derive(Debug)]
 pub enum MuxParseError {
     UnknownMessageId,
@@ -280,11 +283,6 @@ impl MuxContext {
 
     pub fn parse_frame(&mut self, frame: &impl Frame) -> Result<MuxParseResult, MuxParseError> {
         if matches!(raw_id(frame.id()), (0x7DF..0x7E0) | (0x7E0..=0x7EF)) {
-            // println!(
-            //     "id: {:03X}, data: {:02X?}",
-            //     raw_id(frame.id()),
-            //     frame.data()
-            // );
             self.parse_isotp_frame(frame)
         } else {
             Err(MuxParseError::UnknownMessageId)
@@ -302,7 +300,7 @@ impl MuxContext {
         let protocol_control: u8 = (payload[0] >> 4).into();
 
         if let Ok(isotp_frame) = ISOTPFrameType::try_from(protocol_control) {
-            self.waiting_for_responce = false; // need some sort of timeout also
+            self.waiting_for_responce = false; // TODO: need some sort of timeout also
 
             match isotp_frame {
                 ISOTPFrameType::SingleFrame => {
@@ -357,6 +355,8 @@ impl MuxContext {
 
                                 return Ok(MuxParseResult::ParseComplete);
                             } else {
+                                self.waiting_for_responce = true;
+
                                 return Ok(MuxParseResult::ConsecutiveFrameContinue);
                             }
                         }
@@ -587,7 +587,7 @@ impl Frame for ISOTPAckFrame {
 }
 
 /// use to search for known patterns in unknown signals
-/// TODO: just use bitvec
+// TODO: just use bitvec
 #[allow(unused)]
 pub fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
     let search_len = pattern.ilog2() + 1;

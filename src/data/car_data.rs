@@ -1,30 +1,17 @@
-use std::str::FromStr;
-
 use crate::can::can_mux_parser::{MuxParseError, MuxParseResult};
 use crate::can::messages::wrx_2018::{self, DimmerAndHoodDimmerDialValue, EngineMtGear, Messages};
 use crate::data::parameters::DataParameter;
-#[allow(unused_imports)]
-use crate::data::units::Unit::{self, *};
-#[allow(unused_imports)]
-use crate::data::units::UnitSystem::{self, *};
+use crate::data::units::Unit::*;
+use crate::data::units::UnitSystem::{self};
 
 use embedded_can::Frame;
-#[allow(unused_imports)]
-use pastey::paste;
 
-macro_rules! default_value {
-    ($ty:ty| $param_default:expr) => {
-        $param_default.into()
-    };
-    (bool|) => {
-        true.into()
-    };
-    ($ty:ty|) => {
-        <$ty>::default().into()
-    };
-}
+use std::str::FromStr;
+use std::sync::{Arc, LazyLock};
 
-macro_rules! generate_param_unit_system {
+pub static CAR_DATA: LazyLock<Arc<CarData>> = LazyLock::new(|| Default::default());
+
+macro_rules! __generate_param_unit_system {
     ($unit:path| $system:expr) => {
         Some($unit($system))
     };
@@ -36,52 +23,52 @@ macro_rules! generate_param_unit_system {
     };
 }
 
-macro_rules! generate_param_instantiation {
-    (number $msg:path => $param:ident: $type:ty $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {paste!{
-        DataParameter::new($msg::[<$param:upper _MIN>], $msg::[<$param:upper _MAX>], Some(default_value!($type| $($default_value)?)), generate_param_unit_system!($($unit| $($system)?)?))
+macro_rules! __generate_param_instantiation {
+    (number $msg:path => $param:ident: $type:ty $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {pastey::paste!{
+        DataParameter::new($msg::[<$param:upper _MIN>], $msg::[<$param:upper _MAX>], Some($crate::__default_value!($type| $($default_value)?)), __generate_param_unit_system!($($unit| $($system)?)?))
     }};
     ($msg:path => $param:ident: $type:ty $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        default_value!($type| $($default_value)?)
+        $crate::__default_value!($type| $($default_value)?)
     };
 }
 
-macro_rules! param {
+macro_rules! __param {
     ($msg:path => $param:ident: f32 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!(number $msg => $param: f32 $([$unit| $($system)?])? $(= $default_value)?)
+        __generate_param_instantiation!(number $msg => $param: f32 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: f64 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!(number $msg => $param: f64 $([$unit| $($system)?])? $(= $default_value)?)
+        __generate_param_instantiation!(number $msg => $param: f64 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: u8 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!(number $msg => $param: u8 $([$unit| $($system)?])? $(= $default_value)?)
+        __generate_param_instantiation!(number $msg => $param: u8 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: u16 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!(number $msg => $param: u16 $([$unit| $($system)?])? $(= $default_value)?)
+        __generate_param_instantiation!(number $msg => $param: u16 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: u32 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!(number $msg => $param: u32 $([$unit| $($system)?])? $(= $default_value)?)
+        __generate_param_instantiation!(number $msg => $param: u32 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: u64 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!(number $msg => $param: u64 $([$unit| $($system)?])? $(= $default_value)?)
+        __generate_param_instantiation!(number $msg => $param: u64 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: i8 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!(number $msg => $param: i8 $([$unit| $($system)?])? $(= $default_value)?)
+        __generate_param_instantiation!(number $msg => $param: i8 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: i16 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!(number $msg => $param: i16 $([$unit| $($system)?])? $(= $default_value)?)
+        __generate_param_instantiation!(number $msg => $param: i16 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: i32 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!(number $msg => $param: i32 $([$unit| $($system)?])? $(= $default_value)?)
+        __generate_param_instantiation!(number $msg => $param: i32 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: i64 $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!(number $msg => $param: i64 $([$unit| $($system)?])? $(= $default_value)?)
+        __generate_param_instantiation!(number $msg => $param: i64 $([$unit| $($system)?])? $(= $default_value)?)
     };
     ($msg:path => $param:ident: $type:tt $([$unit:path| $($system:expr)?])? $(= $default_value:expr)?) => {
-        generate_param_instantiation!($msg => $param: $type $([$unit:path| $($system:expr)?])? $(= $default_value)?)
+        __generate_param_instantiation!($msg => $param: $type $([$unit:path| $($system:expr)?])? $(= $default_value)?)
     };
 }
 
-macro_rules! HandleSignalProcess {
+macro_rules! __handle_signal_process {
     ($self:ident, $sig:ident, $param:ident) => {
         $self.$param.set_value($sig.$param());
     };
@@ -91,7 +78,7 @@ macro_rules! HandleSignalProcess {
 }
 
 /// Example:
-///```
+///```rust
 /// CarData! {
 ///     {
 ///         // normal struct stuff here
@@ -124,7 +111,7 @@ macro_rules! CarData {
                     $(
                         Messages::$msg(sig) => {
                         $(
-                            HandleSignalProcess!(self, sig, $param $(, $process_override)?);
+                            __handle_signal_process!(self, sig, $param $(, $process_override)?);
                         )*
                     })*
                     _ => {}
@@ -156,13 +143,14 @@ macro_rules! CarData {
         impl Default for CarData {
             fn default() -> Self {
                 Self {
-                    $($($param: param!(wrx_2018::$msg => $param: $type $([$unit| $($unit_system)?])? $(= $init)?),)*)*
+                    $($($param: __param!(wrx_2018::$msg => $param: $type $([$unit| $($unit_system)?])? $(= $init)?),)*)*
                 }
             }
         }
     }
 }
 
+// TODO: make our own dbc codegen lib and generate the dbc parser along with the `CarData` `DataParameter` struct for each car
 CarData! {
     Engine => {
         engine_rpm: u16,

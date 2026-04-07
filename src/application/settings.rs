@@ -1,7 +1,6 @@
 use crate::application::dependencies::DEPENDENCIES;
 use crate::data::parameters::Bound;
 use crate::data::units::UnitSystem;
-use crate::parameter_struct;
 use crate::slint_generatedApp::{ClusterTheme, SettingsPageTarget};
 use crate::slint_ui::backend::lang::StrLang;
 
@@ -46,7 +45,7 @@ impl std::fmt::Display for SaveError {
     }
 }
 
-parameter_struct! {Settings {
+crate::parameter_struct! {Settings {
     [hidden] loaded: bool,
 
     user {
@@ -266,16 +265,6 @@ pub enum FnTriggers {
     NoOp,
     OBD2CodeRead,
     OBD2VinRead,
-}
-
-impl FnTriggers {
-    pub fn trigger(&self) {
-        match self {
-            Self::NoOp => {}
-            Self::OBD2CodeRead => {}
-            Self::OBD2VinRead => {}
-        }
-    }
 }
 
 ImplTriggerStruct!(PageTrigger<SettingsPageTarget>);

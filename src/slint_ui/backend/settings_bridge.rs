@@ -133,12 +133,16 @@ pub fn bridge(handle_weak: Weak<App>) {
         });
 
         ui_layout.on_trigger_fn(move |path| {
-            Into::<FnTriggers>::into(
+            match Into::<FnTriggers>::into(
                 resolve_path(path.as_str())
                     .and_then(|(_, value)| value.downcast_ref::<FnTrigger>().copied())
                     .unwrap_or_default(),
-            )
-            .trigger()
+            ) {
+                FnTriggers::NoOp => {}
+                //
+                FnTriggers::OBD2CodeRead => {}
+                FnTriggers::OBD2VinRead => {}
+            }
         });
 
         ui_layout.on_stringify_derived_param_type(move |ty| ty.to_string().into());

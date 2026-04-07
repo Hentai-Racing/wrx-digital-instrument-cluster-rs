@@ -7,11 +7,11 @@ mod slint_ui;
 use crate::application::settings::SETTINGS;
 use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
 use crate::can::can_mux_parser::{
-    self, ISOTPAckFrame, MuxContext, MuxParseResult, OBDService, S1CurrentData,
+    self, ISOTPAckFrame, MUX_CONTEXT, MuxParseResult, OBDService, S1CurrentData,
 };
 use crate::can::messages::emulators::wrx_2018_emulator;
 use crate::can::messages::wrx_2018::CanError;
-use crate::data::car_data::{CarData, ParseError, ParseResult};
+use crate::data::car_data::{CAR_DATA, ParseError, ParseResult};
 use crate::hardware::hardware_backend::{self, HARDWARE_NAVIGATION_INPUT, HardwareBackend};
 use crate::slint_ui::backend::{
     backend_lib, can_display, car_data_bridge, hardware_bridge, lang, rs_type_resolver,
@@ -41,7 +41,6 @@ const DEFAULT_SL_DEV: &str = "/dev/tty.usbmodem101";
 
 pub static SHUTDOWN_SIGNAL: LazyLock<Notify> = LazyLock::new(|| Notify::new());
 pub static SHUTDOWN_FINISHED: LazyLock<Notify> = LazyLock::new(|| Notify::new());
-pub static CAR_DATA: LazyLock<Arc<CarData>> = LazyLock::new(|| Default::default());
 pub static BIN_ARGS: LazyLock<ArgMatches> = LazyLock::new(|| {
     let conflicting_args = vec![
         "fakedev",
@@ -162,7 +161,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 unsafe { embedded_can::Id::from(embedded_can::StandardId::new_unchecked(0x7E0)) };
 
             // TESTING
-            let mut context = MuxContext::default();
             let mut queue = VecDeque::from(vec![
                 // CanFrame::new(
                 //     obd_id,
@@ -208,9 +206,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         let ack = ISOTPAckFrame::new(obd_id);
                                         queue.push_front(CanFrame::from_frame(&ack));
                                     }
-                                    MuxParseResult::ConsecutiveFrameContinue => {
-                                        context.waiting_for_responce = true;
-                                    }
                                     _ => {}
                                 },
                                 _ => {}
@@ -218,14 +213,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             Err(e) => match e {
                                 ParseError::CanError(e) => match e {
                                     CanError::UnknownMessageId(_id) => {
-                                        match context.parse_frame(&frame) {
+                                        if let Ok(mut mux_context) = MUX_CONTEXT.lock() {
+                                            match mux_context.parse_frame(&frame) {
                                             Ok(result) => match result {
                                                 MuxParseResult::AwaitingBroadcastAck => {
                                                     let ack = ISOTPAckFrame::new(obd_id);
                                                     queue.push_front(CanFrame::from_frame(&ack));
-                                                }
-                                                MuxParseResult::ConsecutiveFrameContinue => {
-                                                    context.waiting_for_responce = true;
                                                 }
                                                 _ => {}
                                             },
@@ -237,6 +230,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                                 ),
                                             },
                                         }
+                                        }
                                     }
                                     _ => println!("Failed to parse frame {frame:?}: {e:?}"),
                                 },
@@ -245,15 +239,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     };
 
-                    if !context.waiting_for_responce {
-                        if let Some(frame) = queue.pop_front() {
-                            match can_backend.write_frame(frame) {
-                                Ok(_) => {
-                                    context.waiting_for_responce = true;
-                                    println!("Wrote frame: {frame:?}")
-                                }
-                                Err(e) => {
-                                    eprintln!("Failed to write to can_socket: {e:?}");
+                    if let Ok(mux_context) = MUX_CONTEXT.lock() {
+                        if !mux_context.waiting_for_responce {
+                            if let Some(frame) = queue.pop_front() {
+                                match can_backend.write_frame(frame) {
+                                    Ok(_) => {
+                                        println!("Wrote frame: {frame:?}")
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Failed to write to can_socket: {e:?}");
+                                    }
                                 }
                             }
                         }

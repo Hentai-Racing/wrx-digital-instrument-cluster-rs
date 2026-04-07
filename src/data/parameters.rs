@@ -286,16 +286,22 @@ where
     }
 }
 
+/// Used within other macros to allow for *optional* default values by way of an `expr` token
+///
+/// Note: `bool` defaults to `true` unless otherwise stated
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __default_value {
     ($type:path| $param_default:expr) => {
         $param_default.into()
     };
-    (String| ) => {
+    (bool|) => {
+        true.into()
+    };
+    (String|) => {
         String::from("Unknown").into()
     };
-    ($type:path| ) => {
+    ($type:path|) => {
         Default::default()
     };
 }
@@ -552,6 +558,7 @@ macro_rules! parameter_struct {
 
     (@path-get-internal $self:ident $path:expr;| param $([$permissions:tt])? $param:ident: $ty:path) => {{
         let value = $self.$param.value();
+        // TODO: switch to serde instead of display/parse
         Some((format!("{value}"), Box::new(value)))
     }};
     (@path-get-internal $self:ident $path:expr;| page $([$condition:expr])? $sub:ident) => {
