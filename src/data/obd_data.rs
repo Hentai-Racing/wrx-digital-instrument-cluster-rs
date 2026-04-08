@@ -1,13 +1,18 @@
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, LazyLock},
+};
+
+pub static STATIC_OBD_DATA: LazyLock<Arc<StaticObddata>> = LazyLock::new(|| Default::default());
 
 crate::parameter_struct!(StaticOBDData {
     [hidden] loaded: bool,
 
     s1_current_data {
-        // pub [ro] supported_pids: BTreeMap<u32, bool>,
+        [ro] supported_pids: BTreeMap<u8, bool>,
     },
 
     s9_vehicle_information {
-        pub [ro] vin: bool,
+        [ro] vin: bool,
     },
 });

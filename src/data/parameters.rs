@@ -5,9 +5,8 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use tokio::sync::watch;
 
 use std::{
-    fmt::{self, Debug, Display},
+    fmt::{self, Debug},
     ops::RangeInclusive,
-    str::FromStr,
     sync::RwLock,
 };
 
@@ -76,48 +75,6 @@ where
         let mut ret = Self::default();
         ret.set(value);
         ret
-    }
-}
-
-impl<T> Display for Bound<T>
-where
-    T: PartialOrd + PartialEq + Copy + Clone + Default + Serialize + Display,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{};{}..={}", self.value(), self.start, self.end)
-    }
-}
-
-impl<T> FromStr for Bound<T>
-where
-    T: PartialOrd + PartialEq + Copy + Clone + Default + Serialize + FromStr,
-{
-    type Err = &'static str;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let Some((value, rest)) = s.split_once(';') else {
-            let value = T::from_str(s).map_err(|_| "bad value")?;
-            return Ok(Self::new(value, T::default()..=T::default(), T::default()));
-        };
-
-        let (range_str, step) = rest.rsplit_once(';').ok_or("expected step")?;
-        let (start, end) = range_str.split_once("..=").ok_or("expected a..=b")?;
-
-        let value = value.trim().parse().map_err(|_| "bad value")?;
-        let start = start
-            .trim()
-            .parse()
-            .map_err(|_| "failed to parse range start")?;
-        let end = end
-            .trim()
-            .parse()
-            .map_err(|_| "failed to parse range end")?;
-        let step = step
-            .trim()
-            .parse()
-            .map_err(|_| "failed to parse range step")?;
-
-        Ok(Self::new(value, start..=end, step))
     }
 }
 
@@ -425,7 +382,7 @@ macro_rules! parameter_struct {
                     _ => {(param_path, "")}
                 };
 
-                $crate::parameter_struct!(@path self target; path; value| $($entries)*)
+                $crate::parameter_struct!(@path-set self target; path; value| $($entries)*)
             }
 
             pub fn get_by_path(&self, param_path: &str) -> Option<(String, Box<dyn std::any::Any>)> {
@@ -459,10 +416,10 @@ macro_rules! parameter_struct {
         { $($inits:tt)* }
         { $($defs:tt)* }
         { $($entries:tt)* }
-        $vis:vis $([$permissions:tt])? $param:ident: $ty:path $(= $val:expr)?, $($rest:tt)*
+        $([$permissions:tt])? $param:ident: $ty:path $(= $val:expr)?, $($rest:tt)*
     ) => {
         $crate::parameter_struct!(@page $page
-            { $($params)* $vis $param: $crate::data::parameters::Parameter<$ty>, }
+            { $($params)* pub $param: $crate::data::parameters::Parameter<$ty>, }
             { $($inits)* $param: $crate::__default_value!($ty| $($val)?), }
             { $($defs)* }
             { $($entries)* (param $([$permissions])? $param: $ty) }
@@ -530,25 +487,25 @@ macro_rules! parameter_struct {
         }
     };
 
-    (@path-internal $self:ident $path:expr; $value:ident| param [hidden] $param:ident: $ty:path) => {
+    (@path-set-internal $self:ident $path:expr; $value:ident| param [hidden] $param:ident: $ty:path) => {
         eprintln!("Failed to set {} to {:?}: Parameter is hidden; inherently read-only", stringify!($param), $value)
     };
-    (@path-internal $self:ident $path:expr; $value:ident| param [ro] $param:ident: $ty:path) => {
+    (@path-set-internal $self:ident $path:expr; $value:ident| param [ro] $param:ident: $ty:path) => {
         eprintln!("Failed to set {} to {:?}: Parameter is read-only", stringify!($param), $value)
     };
-    (@path-internal $self:ident $path:expr; $value:ident| param $param:ident: $ty:path) => {
-        match $value.parse::<$ty>() {
+    (@path-set-internal $self:ident $path:expr; $value:ident| param $param:ident: $ty:path) => {
+        match serde_json::from_str::<$ty>($value) {
             Ok(value) => $self.$param.set_value(value),
             Err(e) => eprintln!("Failed to set {} to {:?}: {e:?}", stringify!($param), $value)
         }
     };
-    (@path-internal $self:ident $path:expr; $value:ident| page $([$condition:expr])? $sub:ident) => {
+    (@path-set-internal $self:ident $path:expr; $value:ident| page $([$condition:expr])? $sub:ident) => {
         $self.$sub.set_by_path($path, $value);
     };
-    (@path $self:ident $target:expr; $path:expr; $val:ident| $(($node:tt $([$permissions:tt])? $thing: ident $(: $ty:path)?))*) => {
+    (@path-set $self:ident $target:expr; $path:expr; $val:ident| $(($node:tt $([$permissions:tt])? $thing: ident $(: $ty:path)?))*) => {
         match $target {
             $(stringify!($thing) => {
-                $crate::parameter_struct!(@path-internal $self $path; $val| $node $([$permissions])? $thing $(: $ty)?);
+                $crate::parameter_struct!(@path-set-internal $self $path; $val| $node $([$permissions])? $thing $(: $ty)?);
             }),*
             _ => {
                 println!("Path [{}] does not exist!", $path);
@@ -559,7 +516,7 @@ macro_rules! parameter_struct {
     (@path-get-internal $self:ident $path:expr;| param $([$permissions:tt])? $param:ident: $ty:path) => {{
         let value = $self.$param.value();
         // TODO: switch to serde instead of display/parse
-        Some((format!("{value}"), Box::new(value)))
+        Some((serde_json::to_string(&value).unwrap(), Box::new(value)))
     }};
     (@path-get-internal $self:ident $path:expr;| page $([$condition:expr])? $sub:ident) => {
         $self.$sub.get_by_path($path)

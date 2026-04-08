@@ -448,8 +448,7 @@ async fn cli_mode() {
                 }
             }
 
-            let command = buf.to_lowercase();
-            let cmd_splt: Vec<&str> = command.as_str().split(" ").collect();
+            let cmd_splt: Vec<&str> = buf.as_str().split(" ").collect();
             match *cmd_splt.get(0).unwrap_or(&"") {
                 "q" | "quit" => {
                     SHUTDOWN_SIGNAL.notify_one();
@@ -478,6 +477,13 @@ async fn cli_mode() {
                     );
                     println!("    usage    |  set_param <path> <value>");
                     println!("  example    |  set_param user.general.unit_system uscs");
+
+                    println!(
+                        "\nget_param    => get the value of any `<Parameter>` in `{}`",
+                        stringify!(CONFIG_MANAGER)
+                    );
+                    println!("    usage    |  get_param <path>");
+                    println!("  example    |  get_param user.general.unit_system");
 
                     println!("\nset_car_data => set the value of any `<Parameter>` in `CAR_DATA`");
                     println!("    usage    |  set_car_data <param> <value>");
@@ -525,6 +531,12 @@ async fn cli_mode() {
                     let param_path = *cmd_splt.get(1).unwrap_or(&"");
                     let value = *cmd_splt.get(2).unwrap_or(&"");
                     SETTINGS.set_by_path(param_path, value);
+                }
+                "get_param" => {
+                    let param_path = *cmd_splt.get(1).unwrap_or(&"");
+                    if let Some((display_value, _)) = SETTINGS.get_by_path(param_path) {
+                        println!("{display_value}")
+                    }
                 }
                 "param_layout" => {
                     println!("\n{}", SETTINGS.get_page_layout());

@@ -1,8 +1,11 @@
 import { SBoundInt } from "@data/data_parameter.slint";
 
 export global RSTypeResolver {
-    pure callback rs-string-bool(string) -> bool;
-    pure callback sl-bool-string(bool) -> string;
-    pure callback sboundint-to-string(SBoundInt) -> string;
+    pure callback serialize-sboundint(SBoundInt) -> string;
+    pure callback serialize-bool(bool) -> string;
+    /// adds quotations required to jsonify unit structs and enums
+    pure callback jsonify-str(string) -> string;
+    /// removes quotations from json serialized structs and enums
+    pure callback dejsonify-str(string) -> string;
     pure callback get-enum-variants(string) -> [string];
 }

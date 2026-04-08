@@ -18,14 +18,6 @@ pub struct Lang;
 #[derive(Clone, PartialEq)]
 pub struct StrLang(String);
 
-impl std::str::FromStr for StrLang {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(s.to_string()))
-    }
-}
-
 impl std::default::Default for StrLang {
     fn default() -> Self {
         Self(String::from("en_US.lang"))
@@ -69,7 +61,7 @@ pub fn process_lang_file(contents: &[u8]) -> HashMap<String, String> {
     match str::from_utf8(contents) {
         Ok(contents) => {
             for line in contents.lines() {
-                // comment
+                // comments and blank lines
                 if line.is_empty() || line.starts_with("#") {
                     continue;
                 } else {

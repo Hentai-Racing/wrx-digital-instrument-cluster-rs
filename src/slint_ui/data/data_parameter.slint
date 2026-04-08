@@ -20,6 +20,7 @@ export struct SStrDataParameter {
     value: string,
 }
 
+@rust-attr(derive(serde::Serialize, serde::Deserialize))
 export struct SBoundInt {
     value: int,
     step: int,

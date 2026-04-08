@@ -125,6 +125,13 @@ pub fn bridge(handle_weak: Weak<App>) {
                 .into()
         });
 
+        ui_layout.on_get_bool(move |path| {
+            resolve_path(path.as_str())
+                .and_then(|(_, value)| value.downcast_ref::<bool>().copied())
+                .unwrap_or_default()
+                .into()
+        });
+
         ui_layout.on_get_settings_special_page(move |path| {
             resolve_path(path.as_str())
                 .and_then(|(_, value)| value.downcast_ref::<PageTrigger>().copied())
@@ -254,41 +261,4 @@ fn unroll_path<'a>(
     }
 
     (node, current_path)
-}
-
-macro_rules! generate_bound_type {
-    ($($ty:ty $(=> $bound_ty:path)?),*) => {
-        $(impl From<Bound<$ty>> for $ty {
-            fn from(b: Bound<$ty>) -> Self {
-                b.value()
-            }
-        }
-
-        $(
-            impl Into<$bound_ty> for Bound<$ty> {
-                fn into(self) -> $bound_ty {
-                    $bound_ty {
-                        end: self.end(),
-                        step: self.step(),
-                        start: self.start(),
-                        value: self.value()
-                    }
-                }
-            }
-
-            impl From<$bound_ty> for Bound<$ty> {
-                fn from(value: $bound_ty) -> Self {
-                    Self::new(value.value, value.start..=value.end, value.step)
-                }
-            }
-        )?)*
-    };
-}
-
-generate_bound_type!(i32 => SBoundInt, f32);
-
-impl ToString for SBoundInt {
-    fn to_string(&self) -> String {
-        format!("{};{}..={};{}", self.value, self.start, self.end, self.step)
-    }
 }

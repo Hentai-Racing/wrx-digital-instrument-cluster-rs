@@ -144,21 +144,6 @@ impl Unit {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct UnitSystemParseError;
-
-impl FromStr for UnitSystem {
-    type Err = UnitSystemParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.trim().to_lowercase().as_str() {
-            "si" => Ok(Self::SI),
-            "uscs" => Ok(Self::USCS),
-            _ => Err(UnitSystemParseError),
-        }
-    }
-}
-
 impl std::fmt::Display for UnitSystem {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)

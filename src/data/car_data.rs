@@ -77,6 +77,7 @@ macro_rules! __handle_signal_process {
     };
 }
 
+// TODO: derive from parameter_struct!
 /// Example:
 ///```rust
 /// CarData! {

@@ -74,6 +74,7 @@ export global SettingsLayout {
     pure callback set-by-path(path: string, val: string);
     pure callback stringify-derived-param-type(ty: DerivedParamType) -> string;
     pure callback get-bound-int(path: string) -> SBoundInt;
+    pure callback get-bool(path: string) -> bool;
     pure callback get-settings-special-page(path: string) -> SettingsPageTarget;
     pure callback trigger-fn(path: string); // TODO: implement results
 }
@@ -200,45 +201,49 @@ component TypedSettingBar inherits SettingBar {
 
     if item.param-type-derived == DerivedParamType.Bool: ToggleBox {
         locked: root.readonly;
-        var: RSTypeResolver.rs-string-bool(SettingsLayout.get-by-path(item.param-path));
 
-        private property <bool> update: root.update-displayed-value;
+        private property <bool> update <=> root.update-displayed-value;
+
+        function update-current-value() {
+            self.var = SettingsLayout.get-bool(item.param-path);
+        }
 
         init-ready => {
+            update-current-value();
             root.focus-id = self.focus-id;
         }
 
         toggled => {
             self.var = !self.var;
-            SettingsLayout.set-by-path(item.param-path, RSTypeResolver.sl-bool-string(self.var));
+            SettingsLayout.set-by-path(item.param-path, RSTypeResolver.serialize-bool(self.var));
             root.activated();
         }
 
-        changed update => {
-            self.var = RSTypeResolver.rs-string-bool(SettingsLayout.get-by-path(item.param-path));
-        }
+        changed update => update-current-value();
     }
 
     if item.param-type-derived == DerivedParamType.Enum: ComboBox {
         locked: root.readonly;
         title: root.label;
         model: RSTypeResolver.get-enum-variants(item.param-type);
-        current-value: SettingsLayout.get-by-path(item.param-path);
 
-        private property <bool> update: root.update-displayed-value;
+        private property <bool> update <=> root.update-displayed-value;
+
+        function update-current-value() {
+            self.current-value = RSTypeResolver.dejsonify-str(SettingsLayout.get-by-path(item.param-path));
+        }
 
         init-ready => {
+            update-current-value();
             root.focus-id = self.focus-id;
         }
 
         selection-made => {
-            SettingsLayout.set-by-path(item.param-path, self.current-value);
+            SettingsLayout.set-by-path(item.param-path, RSTypeResolver.jsonify-str(self.current-value));
             root.activated();
         }
 
-        changed update => {
-            self.current-value = SettingsLayout.get-by-path(item.param-path);
-        }
+        changed update => update-current-value();
     }
 
     if item.param-type-derived == DerivedParamType.BoundInt: Slider {
@@ -250,22 +255,24 @@ component TypedSettingBar inherits SettingBar {
         step: bound.step != 0 ? bound.step : 1;
 
         private property <SBoundInt> bound: SettingsLayout.get-bound-int(item.param-path);
-        private property <bool> update: root.update-displayed-value;
+        private property <bool> update <=> root.update-displayed-value;
+
+        function update-current-value() {
+            self.bound = SettingsLayout.get-bound-int(item.param-path);
+        }
 
         init-ready => {
-            self.bound = SettingsLayout.get-bound-int(item.param-path);
+            update-current-value();
             root.focus-id = self.focus-id;
         }
 
         changed current-value => {
             self.bound.value = self.current-value;
-            SettingsLayout.set-by-path(item.param-path, RSTypeResolver.sboundint-to-string(self.bound));
-            self.update = !update;
+            SettingsLayout.set-by-path(item.param-path, RSTypeResolver.serialize-sboundint(self.bound));
+            update-current-value();
         }
 
-        changed update => {
-            self.bound = SettingsLayout.get-bound-int(item.param-path);
-        }
+        changed update => update-current-value();
     }
 
     if (item.param-type-derived == DerivedParamType.Trigger): Rectangle {
@@ -303,18 +310,20 @@ component TypedSettingBar inherits SettingBar {
     if (item.param-type-derived == DerivedParamType.Number) || (item.param-type-derived == DerivedParamType.String): Button {
         width: 150px;
         locked: root.readonly;
-        text: SettingsLayout.get-by-path(item.param-path);
         horizontal-alignment: TextHorizontalAlignment.right;
 
-        private property <bool> update: root.update-displayed-value;
+        private property <bool> update <=> root.update-displayed-value;
+
+        function update-current-value() {
+            self.text = RSTypeResolver.dejsonify-str(SettingsLayout.get-by-path(item.param-path));
+        }
 
         init-ready => {
+            update-current-value();
             root.focus-id = self.focus-id;
         }
 
-        changed update => {
-            self.text = SettingsLayout.get-by-path(item.param-path);
-        }
+        changed update => update-current-value();
     }
 
     if (item.item-type == SettingsMenuItemType.Page) || (item.item-type == SettingsMenuItemType.PageBack): Button {

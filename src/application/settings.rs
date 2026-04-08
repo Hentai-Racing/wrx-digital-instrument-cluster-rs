@@ -50,58 +50,58 @@ crate::parameter_struct! {Settings {
 
     user {
         general {
-            pub disable_hill_assist_warning: bool = false,
-            pub unit_system: UnitSystem,
-            pub language: StrLang,
+            disable_hill_assist_warning: bool = false,
+            unit_system: UnitSystem,
+            language: StrLang,
         },
 
         theme {
-            pub selected_theme: ClusterTheme = ClusterTheme::Default,
+            selected_theme: ClusterTheme = ClusterTheme::Default,
         },
 
         accessibility {
-            pub animations_enabled: bool = true,
-            pub accessible_switches: bool = false,
-            pub selection_box_thickness: Bound<i32> = Bound::new(2, 1..=10, 1),
+            animations_enabled: bool = true,
+            accessible_switches: bool = false,
+            selection_box_thickness: Bound<i32> = Bound::new(2, 1..=10, 1),
         },
     },
 
     [cfg!(debug_assertions)] developer {
         debug {
-            pub [ro] debug_mode: bool = cfg!(debug_assertions),
-            pub debug_highlights: bool = false,
-            pub debug_overlay_enabled: bool = true,
-            pub extra_debug_info: bool = false,
+            [ro] debug_mode: bool = cfg!(debug_assertions),
+            debug_highlights: bool = false,
+            debug_overlay_enabled: bool = true,
+            extra_debug_info: bool = false,
         },
 
         simulation {
-            pub simulation_speed_ms: Bound<i32> = Bound::new(10, 10..=250, 10),
-            pub running_simulation: bool = true,
+            simulation_speed_ms: Bound<i32> = Bound::new(10, 10..=250, 10),
+            running_simulation: bool = true,
         },
 
         can {
-            pub running_can: bool = true,
+            running_can: bool = true,
         },
 
         hardware {
-            pub [ro] adc_val: i32,
+            [ro] adc_val: i32,
         },
 
         system_info {
-            pub [ro] total_memory_mb: i32,
-            pub [ro] used_memory_mb: i32,
-            pub [ro] process_memory_mb: i32,
-            pub [ro] process_memory_max_mb: i32,
-            pub [ro] num_cpus: i32,
-            pub [ro] cpu_usage: f32,
-            pub [ro] fps: i32,
+            [ro] total_memory_mb: i32,
+            [ro] used_memory_mb: i32,
+            [ro] process_memory_mb: i32,
+            [ro] process_memory_max_mb: i32,
+            [ro] num_cpus: i32,
+            [ro] cpu_usage: f32,
+            [ro] fps: i32,
         },
     },
 
     diagnostics {
         obd {
-            pub read_codes: FnTrigger = FnTrigger(FnTriggers::OBD2CodeRead),
-            pub read_vin: FnTrigger = FnTrigger(FnTriggers::OBD2VinRead),
+            read_codes: FnTrigger = FnTrigger(FnTriggers::OBD2CodeRead),
+            read_vin: FnTrigger = FnTrigger(FnTriggers::OBD2VinRead),
         },
 
         uds {},
@@ -113,10 +113,10 @@ crate::parameter_struct! {Settings {
     },
 
     about {
-        pub [ro] version: String = format!("{}", DEPENDENCIES.wrx_digital_instrument_cluster_rs),
-        pub [ro] can_database_version: String = get_dbc_version(),
-        pub [hidden] slint_version: String = format!("{}", DEPENDENCIES.slint), // hidden because it is accessed within the attributions page
-        pub attributions: PageTrigger = PageTrigger(SettingsPageTarget::Attributions),
+        [ro] version: String = format!("{}", DEPENDENCIES.wrx_digital_instrument_cluster_rs),
+        [ro] can_database_version: String = get_dbc_version(),
+        [hidden] slint_version: String = format!("{}", DEPENDENCIES.slint), // hidden because it is accessed within the attributions page
+        attributions: PageTrigger = PageTrigger(SettingsPageTarget::Attributions),
     },
 }}
 
@@ -236,14 +236,6 @@ macro_rules! ImplTriggerStruct {
     ($struct:ident <$inner:ident>) => {
         #[derive(Clone, Copy, PartialEq, Serialize, Deserialize, Debug, Default)]
         pub struct $struct($inner);
-
-        impl std::str::FromStr for $struct {
-            type Err = ();
-
-            fn from_str(_s: &str) -> Result<Self, Self::Err> {
-                Err(())
-            }
-        }
 
         impl std::fmt::Display for $struct {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
