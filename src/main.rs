@@ -201,13 +201,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         match CAR_DATA.parse_frame(&frame) {
                             Ok(result) => match result {
-                                ParseResult::Mux(result) => match result {
-                                    MuxParseResult::AwaitingBroadcastAck => {
-                                        let ack = ISOTPAckFrame::new(obd_id);
-                                        queue.push_front(CanFrame::from_frame(&ack));
-                                    }
-                                    _ => {}
-                                },
+                                //? CAR_DARA.parse_frame does not do any demuxing currently
+                                // ParseResult::Mux(result) => match result {
+                                //     MuxParseResult::AwaitingBroadcastAck => {
+                                //         let ack = ISOTPAckFrame::new(obd_id);
+                                //         queue.push_front(CanFrame::from_frame(&ack));
+                                //     }
+                                //     _ => {}
+                                // },
                                 _ => {}
                             },
                             Err(e) => match e {
@@ -215,21 +216,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     CanError::UnknownMessageId(_id) => {
                                         if let Ok(mut mux_context) = MUX_CONTEXT.lock() {
                                             match mux_context.parse_frame(&frame) {
-                                            Ok(result) => match result {
-                                                MuxParseResult::AwaitingBroadcastAck => {
-                                                    let ack = ISOTPAckFrame::new(obd_id);
-                                                    queue.push_front(CanFrame::from_frame(&ack));
-                                                }
-                                                _ => {}
-                                            },
-                                            Err(e) => match e {
-                                                can_mux_parser::MuxParseError::UnknownMessageId => {
-                                                }
-                                                _ => println!(
-                                                    "Context failed to parse frame {frame:?}: {e:?}"
-                                                ),
-                                            },
-                                        }
+                                                Ok(result) => match result {
+                                                    MuxParseResult::AwaitingBroadcastAck => {
+                                                        // TODO: we need to track the current proprietor of the conversation for any given id
+                                                        let ack = ISOTPAckFrame::new(obd_id);
+                                                        queue.push_front(CanFrame::from_frame(&ack));
+                                                    }
+                                                    _ => {}
+                                                },
+                                                Err(e) => match e {
+                                                    can_mux_parser::MuxParseError::UnknownMessageId => {
+                                                        // TODO: propogate to other parsing mechanisms
+                                                    }
+                                                    _ => println!(
+                                                        "Context failed to parse frame {frame:?}: {e:?}"
+                                                    ),
+                                                },
+                                            }
                                         }
                                     }
                                     _ => println!("Failed to parse frame {frame:?}: {e:?}"),
@@ -240,7 +243,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     };
 
                     if let Ok(mux_context) = MUX_CONTEXT.lock() {
-                        if !mux_context.waiting_for_responce {
+                        if !mux_context.is_waiting_for_responce() {
                             if let Some(frame) = queue.pop_front() {
                                 match can_backend.write_frame(frame) {
                                     Ok(_) => {
@@ -300,10 +303,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let application_state = ui.global::<ApplicationState>();
-    application_state.set_virtual_cluster(virtual_cluster);
-    application_state.set_interface_type(format!("{selected_interface}: {interface_path}").into());
-
     #[cfg(feature = "apalis_imx8")]
     let device = hardware::apalis_imx8::ApalisIMX8::new();
     #[cfg(feature = "apalis_imx8")]
@@ -318,6 +317,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // ui backend bridges
     {
+        let application_state = ui.global::<ApplicationState>();
+        application_state.set_virtual_cluster(virtual_cluster);
+        application_state
+            .set_interface_type(format!("{selected_interface}: {interface_path}").into());
+
         rs_type_resolver::bridge(ui.as_weak());
         settings_bridge::bridge(ui.as_weak());
         car_data_bridge::bridge(ui.as_weak(), CAR_DATA.clone());

@@ -9,7 +9,7 @@ use pastey::paste;
 use slint::{ComponentHandle, Weak};
 use tokio::select;
 
-fn resolve_node<'a>(path: &'a str, layout_node: &'static Node) -> Option<&'a str> {
+fn resolve_node<'a>(path: &'a str, layout_node: &'a Node) -> Option<&'a str> {
     if let Node::Page { name, items: _ } = layout_node {
         path.strip_prefix(&format!("{}.", *name))
     } else {
@@ -171,15 +171,17 @@ impl ToString for DerivedParamType {
 }
 
 /// Convert Rust types to Slint `DerivedParamType` so we can generate the user interaction in UI procedurally
-fn derive_param_type(ty: &str) -> DerivedParamType {
-    match ty.trim() {
-        stringify!(bool) => DerivedParamType::Bool,
-        stringify!(Bound<i32>) => DerivedParamType::BoundInt,
-        stringify!(i32) | stringify!(f32) => DerivedParamType::Number,
-        stringify!(String) => DerivedParamType::String,
-        "page" => DerivedParamType::Page,
-        stringify!(PageTrigger) | stringify!(FnTrigger) => DerivedParamType::Trigger,
-        _ => DerivedParamType::Enum, //* More complex types need to be dealt with by param_type
+impl From<&str> for DerivedParamType {
+    fn from(value: &str) -> Self {
+        match value.trim() {
+            stringify!(bool) => Self::Bool,
+            stringify!(Bound<i32>) => Self::BoundInt,
+            stringify!(i32) | stringify!(f32) => Self::Number,
+            stringify!(String) => Self::String,
+            "page" => Self::Page,
+            stringify!(PageTrigger) | stringify!(FnTrigger) => Self::Trigger,
+            _ => Self::Enum, //* More complex types need to be dealt with by param_type
+        }
     }
 }
 
@@ -201,14 +203,14 @@ fn unroll_layout(
             name: (*name).into(),
             param_type: (*ty).into(),
             param_path: format!("{current_path}{name}").into(),
-            param_type_derived: derive_param_type(*ty),
+            param_type_derived: DerivedParamType::from(*ty),
             item_type: SettingsMenuItemType::ReadOnlyParameter,
         }),
         Node::Parameter { name, ty } => ret.push(SettingsMenuItem {
             name: (*name).into(),
             param_type: (*ty).into(),
             param_path: format!("{current_path}{name}").into(),
-            param_type_derived: derive_param_type(*ty),
+            param_type_derived: DerivedParamType::from(*ty),
             item_type: SettingsMenuItemType::Parameter,
         }),
         Node::Page { name, items } => {
@@ -216,9 +218,9 @@ fn unroll_layout(
 
             ret.push(SettingsMenuItem {
                 name: (*name).into(),
-                param_type: "".into(),
+                param_type: "page".into(),
                 param_path: (&path).into(),
-                param_type_derived: derive_param_type("page"),
+                param_type_derived: DerivedParamType::Page,
                 item_type: SettingsMenuItemType::Page,
             });
 
@@ -237,7 +239,7 @@ fn unroll_layout(
 }
 
 fn unroll_path<'a>(
-    node: &'static Node,
+    node: &'a Node,
     split_path: &Vec<&str>,
     current_path: String,
     current_depth: usize,

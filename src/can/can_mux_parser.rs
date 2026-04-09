@@ -270,15 +270,18 @@ pub fn raw_id(id: Id) -> u32 {
 
 #[derive(Default)]
 pub struct MuxContext {
-    pub iso_tp_frames: Vec<ISOTPMux>,
-
-    pub waiting_for_responce: bool,
+    iso_tp_frames: Vec<ISOTPMux>,
+    waiting_for_responce: bool,
 }
 
 impl MuxContext {
     #[allow(unused)]
     pub fn new() -> Self {
         Default::default()
+    }
+
+    pub fn is_waiting_for_responce(&self) -> bool {
+        self.waiting_for_responce
     }
 
     pub fn parse_frame(&mut self, frame: &impl Frame) -> Result<MuxParseResult, MuxParseError> {
