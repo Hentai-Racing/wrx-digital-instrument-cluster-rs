@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::env;
 use std::ffi::OsStr;
-use std::fs::{self, File, OpenOptions};
+use std::fs::{self, File};
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 use std::process::Command;
@@ -15,7 +15,11 @@ const SLINT_PATH: LazyLock<PathBuf> = LazyLock::new(|| MANIFEST_DIR.join("src/sl
 const RESOURCES_PATH: LazyLock<PathBuf> = LazyLock::new(|| MANIFEST_DIR.join("resources"));
 const OUT_DIR: LazyLock<PathBuf> =
     LazyLock::new(|| PathBuf::from(std::env::var("OUT_DIR").expect("No output directory")));
-const SLINT_GEN_DIR: LazyLock<PathBuf> = LazyLock::new(|| OUT_DIR.join("slint/gen"));
+
+/// path to generated files
+const GEN_DIR: LazyLock<PathBuf> = LazyLock::new(|| OUT_DIR.join("proj_gen"));
+const SLINT_GEN_DIR: LazyLock<PathBuf> = LazyLock::new(|| GEN_DIR.join("slint"));
+const CAN_CODEGEN_DIR: LazyLock<PathBuf> = LazyLock::new(|| GEN_DIR.join("can/messages"));
 
 static SLINT_LIBRARY_PATHS: LazyLock<HashMap<String, PathBuf>> = LazyLock::new(|| {
     HashMap::from([
@@ -43,13 +47,12 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
     use dbc_codegen::{self, Config};
 
     let dbc_file_dir = MANIFEST_DIR.join("resources/database/");
-    let rs_messages_out_dir = MANIFEST_DIR.join("src/can/messages/");
-    let rs_messages_mod_dir = rs_messages_out_dir.join("mod.rs");
+    let rs_messages_mod_dir = CAN_CODEGEN_DIR.join("mod.rs");
 
-    if rs_messages_out_dir.exists() {
-        fs::remove_dir_all(&rs_messages_out_dir).unwrap();
+    if CAN_CODEGEN_DIR.exists() {
+        fs::remove_dir_all(CAN_CODEGEN_DIR.as_path()).unwrap();
     }
-    fs::create_dir_all(&rs_messages_out_dir).unwrap();
+    fs::create_dir_all(CAN_CODEGEN_DIR.as_path()).unwrap();
 
     let mut mod_file = File::create(rs_messages_mod_dir).unwrap();
 
@@ -71,8 +74,8 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
                 .replace("-", "_")
                 .to_lowercase();
 
-            let out_file_path = rs_messages_out_dir.join(format!("{stem}.rs"));
-            let out_file = File::create(out_file_path.clone()).unwrap();
+            let out_file_path = CAN_CODEGEN_DIR.join(format!("{stem}.rs"));
+            let out_file = File::create(&out_file_path).unwrap();
             let dbc_file = fs::read_to_string(entry_path).unwrap();
 
             let config = Config::builder()
@@ -98,10 +101,9 @@ fn build_dbc() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Generates Rust code for virtual CAN data generation
 fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
-    let messages_dir = MANIFEST_DIR.join("src/can/messages");
-    let outputs_dir = messages_dir.join("emulators");
+    let outputs_dir = GEN_DIR.join("emulators");
 
-    let mod_rs_content = fs::read_to_string(messages_dir.join("mod.rs")).unwrap();
+    let mod_rs_content = fs::read_to_string(CAN_CODEGEN_DIR.join("mod.rs")).unwrap();
     let mod_rs: syn::File = syn::parse_str(&mod_rs_content).unwrap();
 
     if outputs_dir.exists() {
@@ -122,11 +124,7 @@ fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     let mod_in_dir = &outputs_dir.parent().unwrap();
-    let mut mod_in_file = OpenOptions::new()
-        .write(true)
-        .append(true)
-        .open(&mod_in_dir.join("mod.rs"))
-        .unwrap();
+    let mut mod_in_file = File::create(&mod_in_dir.join("mod.rs")).unwrap();
     let mod_out_dir = &outputs_dir.join("mod.rs");
     let mut mod_out_file = File::create(&mod_out_dir).unwrap();
 
@@ -148,7 +146,8 @@ fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
         let rs_out_dir = outputs_dir.join(format!("{module}_emulator.rs"));
         let mut rs_out_file = File::create(&rs_out_dir).unwrap();
 
-        let module_content = fs::read_to_string(messages_dir.join(format!("{module}.rs"))).unwrap();
+        let module_content =
+            fs::read_to_string(CAN_CODEGEN_DIR.join(format!("{module}.rs"))).unwrap();
         let module_file: syn::File = syn::parse_str(&module_content).unwrap();
 
         // Find the Messages enum
@@ -276,7 +275,7 @@ fn generate_can_data_emulator() -> Result<(), Box<dyn std::error::Error>> {
 
 /// generates slint car data globals
 fn generate_slint_car_data() -> Result<(), Box<dyn std::error::Error>> {
-    let mod_rs_content = fs::read_to_string(MANIFEST_DIR.join("src/can/messages/mod.rs")).unwrap();
+    let mod_rs_content = fs::read_to_string(CAN_CODEGEN_DIR.join("mod.rs")).unwrap();
     let mod_rs: syn::File = syn::parse_str(&mod_rs_content).unwrap();
 
     let module_names: Vec<String> = mod_rs
@@ -300,7 +299,7 @@ fn generate_slint_car_data() -> Result<(), Box<dyn std::error::Error>> {
     let mut gen_block = String::new();
 
     for module_name in module_names {
-        let module_path = MANIFEST_DIR.join(format!("src/can/messages/{module_name}.rs"));
+        let module_path = CAN_CODEGEN_DIR.join(format!("{module_name}.rs"));
 
         let module_content = fs::read_to_string(&module_path).unwrap();
         let module_file: syn::File = syn::parse_str(&module_content).unwrap();
@@ -471,7 +470,6 @@ fn generate_slint_themes() -> Result<(), Box<dyn std::error::Error>> {
     gen_output += "\n//! See note in themes.slint\n\n";
 
     let mut theme_components: Vec<String> = vec![];
-
     let mut theme_entries: Vec<std::fs::DirEntry> = fs::read_dir(&themes_dir)
         .unwrap()
         .filter_map(|entry| entry.ok())
@@ -494,11 +492,13 @@ fn generate_slint_themes() -> Result<(), Box<dyn std::error::Error>> {
 
                     if path.is_file()
                         && path.extension().is_some_and(|ext| ext == "slint")
-                        && path.file_stem().is_some_and(|stem| stem == "theme_main")
+                        && path
+                            .file_stem()
+                            .is_some_and(|stem| *stem == *format!("{parent_dir}_main"))
                     {
                         let theme_component = capitalize_first_words(&parent_dir) + "Theme";
                         gen_output += &format!(
-                            "import {{ {theme_component} }} from \"{parent_dir}/theme_main.slint\";\n"
+                            "import {{ {theme_component} }} from \"@themes/{parent_dir}/{parent_dir}_main.slint\";\n"
                         );
                         theme_components.push(theme_component);
                     }
@@ -531,7 +531,10 @@ fn generate_slint_themes() -> Result<(), Box<dyn std::error::Error>> {
 
     gen_output += "}";
 
-    let slint_out_dir = themes_dir.join("theme_loader_gen.slint");
+    let slint_out_dir = SLINT_GEN_DIR.join("themes/theme_loader_gen.slint");
+    if let Some(parent) = slint_out_dir.parent() {
+        fs::create_dir_all(parent).unwrap();
+    }
     let mut slint_out_file = File::create(slint_out_dir).unwrap();
 
     slint_out_file.write(gen_output.as_bytes()).unwrap();

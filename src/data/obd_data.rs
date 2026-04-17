@@ -6,13 +6,14 @@ use std::{
 pub static STATIC_OBD_DATA: LazyLock<Arc<StaticObddata>> = LazyLock::new(|| Default::default());
 
 crate::parameter_struct!(StaticOBDData {
-    [hidden] loaded: bool,
+    [hidden] initialized: bool = false,
 
     s1_current_data {
         [ro] supported_pids: BTreeMap<u8, bool>,
     },
 
     s9_vehicle_information {
-        [ro] vin: bool,
+        [ro] vin: String,
+        [ro] supported_pids: BTreeMap<u8, bool>,
     },
 });

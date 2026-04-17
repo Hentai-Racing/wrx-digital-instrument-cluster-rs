@@ -171,14 +171,23 @@ export component SystemInfoDebugModule inherits VerticalLayout {
         text: "Used mem: " + SystemInfo.used-memory + "mb";
     }
 
-    Text {
-        color: white;
-        text: "Process mem: " + SystemInfo.process-memory + "mb";
-    }
+    HorizontalLayout {
+        spacing: 5px;
 
-    Text {
-        color: white.mix(red, 50%);
-        text: "Mem max: " + SystemInfo.process-memory-max + "mb";
+        Text {
+            color: white;
+            text: "Process mem: " + SystemInfo.process-memory + "mb";
+        }
+
+        Text {
+            color: white;
+            text: "|";
+        }
+
+        Text {
+            color: white.mix(red, 50%);
+            text: SystemInfo.process-memory-max + "mb";
+        }
     }
 
     Text {

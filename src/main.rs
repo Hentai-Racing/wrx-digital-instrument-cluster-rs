@@ -7,9 +7,9 @@ mod slint_ui;
 use crate::application::settings::SETTINGS;
 use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
 use crate::can::can_mux_parser::{
-    self, ISOTPAckFrame, MUX_CONTEXT, MuxParseResult, OBDService, S1CurrentData,
+    self, ISOTPAckFrame, MuxContext, MuxParseResult, OBDService, S1CurrentData,
 };
-use crate::can::messages::emulators::wrx_2018_emulator;
+use crate::can::emulators::wrx_2018_emulator;
 use crate::can::messages::wrx_2018::CanError;
 use crate::data::car_data::{CAR_DATA, ParseError, ParseResult};
 use crate::hardware::hardware_backend::{self, HARDWARE_NAVIGATION_INPUT, HardwareBackend};
@@ -161,6 +161,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 unsafe { embedded_can::Id::from(embedded_can::StandardId::new_unchecked(0x7E0)) };
 
             // TESTING
+            let mut mux_context = MuxContext::default();
             let mut queue = VecDeque::from(vec![
                 // CanFrame::new(
                 //     obd_id,
@@ -214,25 +215,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             Err(e) => match e {
                                 ParseError::CanError(e) => match e {
                                     CanError::UnknownMessageId(_id) => {
-                                        if let Ok(mut mux_context) = MUX_CONTEXT.lock() {
-                                            match mux_context.parse_frame(&frame) {
-                                                Ok(result) => match result {
-                                                    MuxParseResult::AwaitingBroadcastAck => {
-                                                        // TODO: we need to track the current proprietor of the conversation for any given id
-                                                        let ack = ISOTPAckFrame::new(obd_id);
-                                                        queue.push_front(CanFrame::from_frame(&ack));
-                                                    }
-                                                    _ => {}
-                                                },
-                                                Err(e) => match e {
-                                                    can_mux_parser::MuxParseError::UnknownMessageId => {
-                                                        // TODO: propogate to other parsing mechanisms
-                                                    }
-                                                    _ => println!(
-                                                        "Context failed to parse frame {frame:?}: {e:?}"
-                                                    ),
-                                                },
-                                            }
+                                        match mux_context.parse_frame(&frame) {
+                                            Ok(result) => match result {
+                                                MuxParseResult::AwaitingBroadcastAck => {
+                                                    // TODO: we need to track the current proprietor of the conversation for any given id
+                                                    let ack = ISOTPAckFrame::new(obd_id);
+                                                    queue.push_front(CanFrame::from_frame(&ack));
+                                                }
+                                                _ => {}
+                                            },
+                                            Err(e) => match e {
+                                                can_mux_parser::MuxParseError::UnknownMessageId => {
+                                                    // TODO: propogate to other parsing mechanisms
+                                                }
+                                                _ => println!(
+                                                    "Context failed to parse frame {frame:?}: {e:?}"
+                                                ),
+                                            },
                                         }
                                     }
                                     _ => println!("Failed to parse frame {frame:?}: {e:?}"),
@@ -242,16 +241,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     };
 
-                    if let Ok(mux_context) = MUX_CONTEXT.lock() {
-                        if !mux_context.is_waiting_for_responce() {
-                            if let Some(frame) = queue.pop_front() {
-                                match can_backend.write_frame(frame) {
-                                    Ok(_) => {
-                                        println!("Wrote frame: {frame:?}")
-                                    }
-                                    Err(e) => {
-                                        eprintln!("Failed to write to can_socket: {e:?}");
-                                    }
+                    if !mux_context.is_waiting_for_responce() {
+                        if let Some(frame) = queue.pop_front() {
+                            match can_backend.write_frame(frame) {
+                                Ok(_) => {
+                                    // TODO: track this transaction to determine whether this conversation is ours
+                                    println!("Wrote frame: {frame:?}")
+                                }
+                                Err(e) => {
+                                    eprintln!("Failed to write to can_socket: {e:?}");
                                 }
                             }
                         }

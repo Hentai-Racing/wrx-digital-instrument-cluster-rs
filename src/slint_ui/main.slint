@@ -31,8 +31,11 @@ import {
     DebugSettings,
     GeneralSettings,
 } from "@lib/state.slint";
-import { GlobalThemeData, ClusterTheme } from "@themes/theme_loader_gen.slint";
-import { ThemeLoader } from "@themes/theme_loader_gen.slint";
+import {
+    ThemeLoader,
+    GlobalThemeData,
+    ClusterTheme,
+} from "@gen/themes/theme_loader_gen.slint";
 import { CanDisplay, SCanFrameDisplay } from "@widgets/can_display.slint";
 import { WidgetContainerState } from "@widgets/widget_container.slint";
 import {
@@ -43,7 +46,7 @@ import {
 } from "@widgets/settings.slint";
 
 // themes
-import { DefaultTheme } from "@themes/default/theme_main.slint";
+import { DefaultTheme } from "@themes/default/default_main.slint";
 
 // default fonts
 import "@fonts/Montserrat/fonts/ttf/Montserrat-Black.ttf";

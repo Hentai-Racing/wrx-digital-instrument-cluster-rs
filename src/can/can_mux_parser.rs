@@ -1,11 +1,11 @@
+use crate::can::util::raw_id;
+
 use bitvec::order::Msb0;
 use bitvec::vec::BitVec;
 use embedded_can::{Frame, Id};
 use strum::FromRepr;
 
-use std::sync::{Arc, LazyLock, Mutex};
-
-pub static MUX_CONTEXT: LazyLock<Arc<Mutex<MuxContext>>> = LazyLock::new(|| Default::default());
+use std::collections::BTreeMap;
 
 #[repr(u8)]
 #[derive(Debug, FromRepr)]
@@ -250,7 +250,6 @@ pub enum MuxParseResult {
 
 #[derive(Debug)]
 pub struct ISOTPMux {
-    can_id: Id,
     /// number of additional bytes required to complete the demux
     demux_len: usize,
     /// frame index of next message in current mux
@@ -261,25 +260,15 @@ pub struct ISOTPMux {
     data: Vec<u8>,
 }
 
-pub fn raw_id(id: Id) -> u32 {
-    match id {
-        Id::Standard(id) => id.as_raw() as u32,
-        Id::Extended(id) => id.as_raw(),
-    }
-}
-
 #[derive(Default)]
 pub struct MuxContext {
-    iso_tp_frames: Vec<ISOTPMux>,
+    muxed_iso_tp_frames: BTreeMap<Id, Vec<ISOTPMux>>,
     waiting_for_responce: bool,
+    conversation_owner: BTreeMap<Id, bool>,
+    diagnostic_tool_detected: bool,
 }
 
 impl MuxContext {
-    #[allow(unused)]
-    pub fn new() -> Self {
-        Default::default()
-    }
-
     pub fn is_waiting_for_responce(&self) -> bool {
         self.waiting_for_responce
     }
@@ -308,15 +297,14 @@ impl MuxContext {
             match isotp_frame {
                 ISOTPFrameType::SingleFrame => {
                     let mux_payload = ISOTPMux {
-                        can_id: id,
                         demux_len: (payload[0] & 0xF) as usize,
                         data: (&payload[1..]).to_vec(),
                         mux_complete: true,
                         next_sequence: 0,
                     };
 
-                    self.iso_tp_frames.push(mux_payload);
-                    self.demux_isotp();
+                    self.push_iso_tp_mux(id, mux_payload);
+                    self.demux_isotp(id);
 
                     Ok(MuxParseResult::ParseComplete)
                 }
@@ -325,22 +313,21 @@ impl MuxContext {
                     let demux_len = ((payload[0] & 0xF) as usize) << 8 | (payload[1] as usize);
 
                     let mux_payload = ISOTPMux {
-                        can_id: id,
                         demux_len: demux_len - data.len(),
                         data: data.to_vec(),
                         mux_complete: false,
                         next_sequence: 1,
                     };
 
-                    self.iso_tp_frames.push(mux_payload);
+                    self.push_iso_tp_mux(id, mux_payload);
 
                     Ok(MuxParseResult::AwaitingBroadcastAck)
                 }
                 ISOTPFrameType::ConsecutiveFrame => {
-                    for mux_payload in self.iso_tp_frames.iter_mut().rev() {
-                        let frame_index = (payload[0] & 0xF) as usize;
+                    if let Some(vec) = self.muxed_iso_tp_frames.get_mut(&id) {
+                        for mux_payload in vec.iter_mut().rev() {
+                            let frame_index = (payload[0] & 0xF) as usize;
 
-                        if mux_payload.can_id == frame.id() {
                             if mux_payload.next_sequence == frame_index {
                                 mux_payload.next_sequence += 1;
                             } else {
@@ -354,7 +341,7 @@ impl MuxContext {
 
                             if mux_payload.demux_len == 0 {
                                 mux_payload.mux_complete = true;
-                                self.demux_isotp();
+                                self.demux_isotp(id);
 
                                 return Ok(MuxParseResult::ParseComplete);
                             } else {
@@ -374,17 +361,18 @@ impl MuxContext {
         }
     }
 
-    fn demux_isotp(&mut self) {
-        self.iso_tp_frames.retain(|isotp_payload| {
-            if isotp_payload.mux_complete {
-                let can_id = isotp_payload.can_id;
-                let service = isotp_payload.data[0];
-                let demuxed_data = &(isotp_payload.data[1..]);
-                Self::parse_demux(can_id, service, demuxed_data);
-            }
+    fn demux_isotp(&mut self, can_id: Id) {
+        if let Some(vec) = self.muxed_iso_tp_frames.get_mut(&can_id) {
+            vec.retain(|isotp_payload| {
+                if isotp_payload.mux_complete {
+                    let service = isotp_payload.data[0];
+                    let demuxed_data = &(isotp_payload.data[1..]);
+                    Self::parse_demux(can_id, service, demuxed_data);
+                }
 
-            !isotp_payload.mux_complete
-        });
+                !isotp_payload.mux_complete
+            });
+        }
     }
 
     fn parse_demux(can_id: Id, service: u8, data: &[u8]) {
@@ -538,6 +526,13 @@ impl MuxContext {
                 raw_id(can_id)
             );
         }
+    }
+
+    fn push_iso_tp_mux(&mut self, can_id: Id, mux: ISOTPMux) {
+        self.muxed_iso_tp_frames
+            .entry(can_id)
+            .or_default()
+            .push(mux);
     }
 }
 
