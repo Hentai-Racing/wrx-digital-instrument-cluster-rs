@@ -1,230 +1,11 @@
+use crate::can::parsers::{iso_tp::*, obd2::*, uds::*};
 use crate::can::util::raw_id;
 
 use bitvec::order::Msb0;
 use bitvec::vec::BitVec;
 use embedded_can::{Frame, Id};
-use strum::FromRepr;
 
 use std::collections::BTreeMap;
-
-#[repr(u8)]
-#[derive(Debug, FromRepr)]
-pub enum S1CurrentData {
-    EngineLoad = 0x04,
-    EngineSpeed = 0x0C,
-    ControlModuleVoltage = 0x42,
-    EngineFuelRate = 0x5E,
-    Odometer = 0xA6,
-
-    PIDs1 = 0x0,
-    PIDs2 = 0x20,
-    PIDs3 = 0x40,
-    PIDs4 = 0x60,
-    PIDs5 = 0x80,
-    PIDs6 = 0xA0,
-    PIDs7 = 0xC0,
-}
-
-#[repr(u8)]
-#[derive(Debug, FromRepr)]
-pub enum S9VehicleInformation {
-    PIDs = 0x0,
-    VIN = 0x02,
-    ECU = 0x0A,
-}
-
-const SERVICE_OFFSET: u8 = 0x40;
-
-#[repr(u8)]
-#[derive(Debug, Clone, FromRepr, PartialEq, Eq)]
-pub enum OBDService {
-    CurrentData = 0x01,
-    FreezeFrame = 0x02,
-    StoredDTCs = 0x03,
-    ClearDTCs = 0x04,
-    TestResultsNonCan = 0x05,
-    TestResultsCan = 0x06,
-    PendingDTCs = 0x07,
-    Control = 0x08,
-    VehicleInformation = 0x09,
-    PermanentDTCs = 0x0A,
-}
-
-#[repr(u8)]
-#[derive(Debug, Clone, FromRepr, PartialEq, Eq)]
-pub enum UDSService {
-    DiagnosticSessionControl = 0x10,
-    ECUReset = 0x11,
-    SecurityAccess = 0x27,
-    CommunicationControl = 0x28,
-    Authentication = 0x29,
-    TesterPresent = 0x3E,
-    ControlDTCSettings = 0x85,
-    ResponseOnEvent = 0x86,
-    LinkControl = 0x87,
-
-    ReadDataByIdentifier = 0x22,
-    ReadMemoryByAddress = 0x23,
-    ReadScalingDataByIdentifier = 0x24,
-    ReadDataByPeriodicIdentifier = 0x2A,
-    DynamicallyDefineDataIdentifier = 0x2C,
-    WriteDataByIdentifier = 0x2E,
-    WriteMemoryByAddress = 0x3D,
-
-    ClearDiagnosticInformation = 0x14,
-    ReadDTCInformation = 0x19,
-
-    InputOutputControlByIdentifier = 0x2F,
-
-    RoutineControl = 0x31,
-
-    RequestDownload = 0x34,
-    RequestUpload = 0x35,
-    TransferData = 0x36,
-    RequestTransferExit = 0x37,
-    RequestFileTransfer = 0x38,
-
-    SecuredDataTransmission = 0x84,
-
-    NegativeResponce = 0x7F - SERVICE_OFFSET,
-}
-
-#[repr(u8)]
-#[derive(Debug, Clone, FromRepr, PartialEq, Eq)]
-pub enum UDSNegativeResponce {
-    GeneralReject = 0x10,
-    ServiceNotSupported = 0x11,
-    SubFunctionNotSupported = 0x12,
-    IncorrectMessageLengthOrInvalidFormat = 0x13,
-    ResponseTooLong = 0x14,
-    BusyRepeatRequest = 0x21,
-    ConditionsNotCorrect = 0x22,
-    RequestSequenceError = 0x24,
-    NoResponseFromSubnetComponent = 0x25,
-    FailurePreventsExecutionOfRequestedAction = 0x26,
-    RequestOutOfRange = 0x31,
-    SecurityAccessDenied = 0x33,
-    AuthenticationRequired = 0x34,
-    InvalidKey = 0x35,
-    ExceedNumberOfAttempts = 0x36,
-    RequiredTimeDelayNotExpired = 0x37,
-    SecureDataTransmissionRequired = 0x38,
-    SecureDataTransmissionNotAllowed = 0x39,
-    SecureDataVerificationFailed = 0x3A,
-    CertificateVerificationFailedInvalidTimePeriod = 0x50,
-    CertificateVerificationFailedInvalidSignature = 0x51,
-    CertificateVerificationFailedInvalidChainOfTrust = 0x52,
-    CertificateVerificationFailedInvalidType = 0x53,
-    CertificateVerificationFailedInvalidFormat = 0x54,
-    CertificateVerificationFailedInvalidContent = 0x55,
-    CertificateVerificationFailedInvalidScope = 0x56,
-    CertificateVerificationFailedInvalidCertificateRevoked = 0x57,
-    OwnershipVerificationFailed = 0x58,
-    ChallengeCalculationFailed = 0x59,
-    SettingAccessRightsFailed = 0x5A,
-    SessionKeyCreationDerivationFailed = 0x5B,
-    ConfigurationDataUsageFailed = 0x5C,
-    DeAuthenticationFailed = 0x5D,
-    UploadDownloadNotAccepted = 0x70,
-    TransferDataSuspended = 0x71,
-    GeneralProgrammingFailure = 0x72,
-    WrongBlockSequenceCounter = 0x73,
-    RequestCorrectlyReceivedResponsePending = 0x78,
-    SubFunctionNotSupportedInActiveSession = 0x7E,
-    ServiceNotSupportedInActiveSession = 0x7F,
-    RpmTooHigh = 0x81,
-    RpmTooLow = 0x82,
-    EngineIsRunning = 0x83,
-    EngineIsNotRunning = 0x84,
-    EngineRunTimeTooLow = 0x85,
-    TemperatureTooHigh = 0x86,
-    TemperatureTooLow = 0x87,
-    VehicleSpeedTooHigh = 0x88,
-    VehicleSpeedTooLow = 0x89,
-    ThrottlePedalTooHigh = 0x8A,
-    ThrottlePedalTooLow = 0x8B,
-    TransmissionRangeNotInNeutral = 0x8C,
-    TransmissionRangeNotInGear = 0x8D,
-    BrakeSwitchNotClosed = 0x8F,
-    ShifterLeverNotInPark = 0x90,
-    TorqueConverterClutchLocked = 0x91,
-    VoltageTooHigh = 0x92,
-    VoltageTooLow = 0x93,
-    ResourceTemporarilyNotAvailable = 0x94,
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, FromRepr)]
-pub enum DTCCategory {
-    Powertrain = 0b00,
-    Chassis = 0b01,
-    Body = 0b10,
-    Undefined = 0b11,
-}
-
-impl Into<char> for DTCCategory {
-    fn into(self) -> char {
-        match self {
-            Self::Powertrain => 'P',
-            Self::Chassis => 'C',
-            Self::Body => 'B',
-            Self::Undefined => 'U',
-        }
-    }
-}
-
-pub struct DTC {
-    category: DTCCategory,
-    number: u16,
-}
-
-const DTC_SIZE: usize = 2;
-
-impl From<[u8; DTC_SIZE]> for DTC {
-    fn from(value: [u8; DTC_SIZE]) -> Self {
-        let category = value[0] >> 6;
-        let mut number: u16 = (value[0] >> 4 & 0b11) as u16;
-
-        for v in &value[0..] {
-            number <<= 8;
-            number += (v >> 4) as u16;
-            number += (v & 0xF) as u16;
-        }
-
-        Self {
-            category: DTCCategory::from_repr(category).expect("infallible"),
-            number: number,
-        }
-    }
-}
-
-impl std::fmt::Display for DTC {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}{:03X}",
-            Into::<char>::into(self.category).to_uppercase(),
-            self.number
-        )
-    }
-}
-
-#[repr(u8)]
-#[derive(Debug)]
-pub enum ISOTPFrameType {
-    SingleFrame = 0x0,
-    FirstFrame = 0x1,
-    ConsecutiveFrame = 0x2,
-    FlowControlFrame = 0x3,
-}
-
-#[allow(unused)]
-#[repr(u8)]
-pub enum FlowControlFlag {
-    Continue = 0x0,
-    Wait = 0x1,
-    Abort = 0x2,
-}
 
 #[derive(Debug)]
 pub enum MuxParseError {
@@ -246,18 +27,6 @@ pub enum MuxParseResult {
     AwaitingReceiveAck,
     /// Full mux is incomplete, continue until complete
     ConsecutiveFrameContinue,
-}
-
-#[derive(Debug)]
-pub struct ISOTPMux {
-    /// number of additional bytes required to complete the demux
-    demux_len: usize,
-    /// frame index of next message in current mux
-    next_sequence: usize,
-    /// received all frames in transaction, data is fully muxed
-    mux_complete: bool,
-    /// data to be demuxed
-    data: Vec<u8>,
 }
 
 #[derive(Default)]
@@ -536,54 +305,6 @@ impl MuxContext {
     }
 }
 
-pub struct ISOTPAckFrame {
-    id: Id,
-    data: [u8; 8],
-}
-
-// TODO: implement num frames and timing
-impl ISOTPAckFrame {
-    pub fn new(id: Id) -> Self {
-        let mut data = [0u8; 8];
-        data[0] = (ISOTPFrameType::FlowControlFrame as u8) << 4;
-        data[0] |= FlowControlFlag::Continue as u8;
-        // data[1] = num_frames
-        // data[2] = frame_timing_ms;
-
-        Self { id, data }
-    }
-}
-
-impl Frame for ISOTPAckFrame {
-    fn new(id: impl Into<Id>, _data: &[u8]) -> Option<Self> {
-        Some(Self::new(id.into()))
-    }
-
-    fn data(&self) -> &[u8] {
-        &self.data
-    }
-
-    fn dlc(&self) -> usize {
-        self.data.len()
-    }
-
-    fn id(&self) -> Id {
-        self.id
-    }
-
-    fn is_extended(&self) -> bool {
-        matches!(self.id, Id::Extended(_))
-    }
-
-    fn is_remote_frame(&self) -> bool {
-        unimplemented!()
-    }
-
-    fn new_remote(_id: impl Into<Id>, _dlc: usize) -> Option<Self> {
-        unimplemented!()
-    }
-}
-
 /// use to search for known patterns in unknown signals
 // TODO: just use bitvec
 #[allow(unused)]
@@ -603,19 +324,6 @@ pub fn search_payload_unaligned(payload: &[u8], pattern: u64) -> bool {
     }
 
     false
-}
-
-impl TryFrom<u8> for ISOTPFrameType {
-    type Error = ();
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0x0 => Ok(Self::SingleFrame),
-            0x1 => Ok(Self::FirstFrame),
-            0x2 => Ok(Self::ConsecutiveFrame),
-            0x3 => Ok(Self::FlowControlFrame),
-            _ => Err(()),
-        }
-    }
 }
 
 impl std::fmt::Display for MuxParseError {

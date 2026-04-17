@@ -6,12 +6,11 @@ mod slint_ui;
 
 use crate::application::settings::SETTINGS;
 use crate::can::can_backend::{CanBackend, CanFrame, CanInterface};
-use crate::can::can_mux_parser::{
-    self, ISOTPAckFrame, MuxContext, MuxParseResult, OBDService, S1CurrentData,
-};
 use crate::can::emulators::wrx_2018_emulator;
 use crate::can::messages::wrx_2018::CanError;
-use crate::data::car_data::{CAR_DATA, ParseError, ParseResult};
+use crate::can::mux_context::{self, MuxContext, MuxParseResult};
+use crate::can::parsers::iso_tp::*;
+use crate::data::car_data::{CAR_DATA, ParseError};
 use crate::hardware::hardware_backend::{self, HARDWARE_NAVIGATION_INPUT, HardwareBackend};
 use crate::slint_ui::backend::{
     backend_lib, can_display, car_data_bridge, hardware_bridge, lang, rs_type_resolver,
@@ -153,8 +152,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     if let Some(mut can_backend) = can_backend {
-        use can_mux_parser::S9VehicleInformation;
-
         let weak_ui = ui.as_weak();
         tokio::spawn(async move {
             let obd_id =
@@ -225,7 +222,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                                 _ => {}
                                             },
                                             Err(e) => match e {
-                                                can_mux_parser::MuxParseError::UnknownMessageId => {
+                                                mux_context::MuxParseError::UnknownMessageId => {
                                                     // TODO: propogate to other parsing mechanisms
                                                 }
                                                 _ => println!(
