@@ -1,8 +1,9 @@
 use crate::application::settings::{FnTrigger, FnTriggers, PageTrigger, SETTINGS};
 use crate::data::parameters::{Bound, Node};
 use crate::slint_generatedApp::{
-    AccessibilitySettings, App, ApplicationState, DebugSettings, DerivedParamType, GeneralSettings,
-    GlobalThemeData, SBoundInt, SettingsLayout, SettingsMenuItem, SettingsMenuItemType, SystemInfo,
+    AccessibilitySettings, App, ApplicationState, AttributionItem, DebugSettings, DerivedParamType,
+    GeneralSettings, GlobalThemeData, SBoundInt, SettingsLayout, SettingsMenuItem,
+    SettingsMenuItemType, SystemInfo,
 };
 
 use pastey::paste;
@@ -150,6 +151,18 @@ pub fn bridge(handle_weak: Weak<App>) {
                 FnTriggers::OBD2CodeRead => {}
                 FnTriggers::OBD2VinRead => {}
             }
+        });
+
+        ui_layout.on_get_attributions(move || {
+            crate::application::dependencies::DEPENDENCIES.as_slice()[1..]
+                .iter()
+                .map(|dep| AttributionItem {
+                    name: dep.name.into(),
+                    version: format!("{}", dep).into(),
+                })
+                .collect::<Vec<_>>()
+                .as_slice()
+                .into()
         });
 
         ui_layout.on_stringify_derived_param_type(move |ty| ty.to_string().into());
