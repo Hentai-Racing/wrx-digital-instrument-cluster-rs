@@ -586,12 +586,11 @@ fn update_vscode_slint_libpaths() {
     map.retain(|key, _| SLINT_LIBRARY_PATHS.contains_key(key));
 
     for (key, path) in SLINT_LIBRARY_PATHS.iter() {
-        let relative = path
+        let value = path
             .strip_prefix(MANIFEST_DIR.as_path())
-            .unwrap()
-            .to_str()
-            .unwrap();
-        map.insert(key.clone(), relative.to_string().into());
+            .unwrap_or(path)
+            .to_string_lossy();
+        map.insert(key.clone(), value.into_owned().into());
     }
 
     let output = serde_json::to_string_pretty(&settings).unwrap();
