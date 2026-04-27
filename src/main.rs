@@ -13,19 +13,18 @@ use crate::can::parsers::iso_tp::*;
 use crate::data::car_data::{CAR_DATA, ParseError};
 use crate::hardware::hardware_backend::{self, HARDWARE_NAVIGATION_INPUT, HardwareBackend};
 use crate::slint_ui::backend::{
-    backend_lib, can_display, car_data_bridge, hardware_bridge, lang, rs_type_resolver,
+    backend_lib, can_display, car_data_bridge, entry, hardware_bridge, lang, rs_type_resolver,
     settings_bridge,
 };
 
 use clap::ArgMatches;
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, Pid, ProcessRefreshKind, RefreshKind, System};
 use tokio::sync::Notify;
-use tokio::time::{self, Duration, Instant};
+use tokio::time::{self, Duration};
 
 use std::collections::VecDeque;
 use std::env;
 use std::io::Write;
-use std::sync::atomic::AtomicU32;
 use std::sync::{Arc, LazyLock};
 
 slint::include_modules!();
@@ -119,8 +118,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap();
     let _guard = tokio_runtime.enter();
 
-    let ui = App::new()?;
-    ui.show()?;
+    let ui = entry::make_app()?;
 
     let mut _created_interface = false;
 
@@ -323,35 +321,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
         lang::bridge(ui.as_weak());
         backend_lib::bridge(ui.as_weak());
-    }
-
-    let frames: Arc<AtomicU32> = Default::default();
-
-    {
-        let frames = frames.clone();
-        let _ = ui.window().set_rendering_notifier(move |state, _api| {
-            if matches!(state, slint::RenderingState::BeforeRendering) {
-                frames.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            }
-        });
-    }
-    {
-        let frames = frames.clone();
-        tokio::spawn(async move {
-            let mut last = Instant::now();
-            let mut interval = time::interval(Duration::from_millis(100));
-
-            loop {
-                interval.tick().await;
-                let secs = last.elapsed().as_secs_f32();
-
-                SETTINGS.developer.system_info.fps.set_value(
-                    ((frames.swap(0, std::sync::atomic::Ordering::Relaxed) as f32) / secs) as i32,
-                );
-
-                last = Instant::now();
-            }
-        });
     }
 
     // graceful shutdown

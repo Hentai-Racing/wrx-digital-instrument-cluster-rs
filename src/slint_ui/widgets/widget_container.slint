@@ -18,6 +18,7 @@ import {
 } from "@lib/state.slint";
 import { CanDisplayWidget } from "@widgets/can_display.slint";
 import { CarDisplayWidget } from "@widgets/car_display.slint";
+import { BevyTextureWidget } from "@widgets/bevy_texture_widget.slint";
 import { GlobalAnimation, DebugHighlight } from "../lib/core.slint";
 
 export global WidgetContainerState {
@@ -172,9 +173,14 @@ export component WidgetContainer {
                 }
 
                 // todo: disable all widgets when they're not in use
+                bevy-test-widget := Widget {
+                    BevyTextureWidget {
+                        height: 100%;
+                        width: 100%;
+                    }
+                }
+
                 car-display-widget := Widget {
-                    height: 100%;
-                    width: 100%;
                     CarDisplayWidget {
                         height: 100%;
                         width: 100%;
