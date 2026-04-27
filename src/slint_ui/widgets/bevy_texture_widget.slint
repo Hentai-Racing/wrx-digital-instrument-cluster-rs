@@ -1,10 +1,12 @@
 export global BevyTextureGlobal {
+    in property <bool> bevy-widget-focused;
     in property <image> texture;
     in-out property <length> requested-texture-width;
     in-out property <length> requested-texture-height;
 }
 
 export component BevyTextureWidget inherits Rectangle {
+    in property <bool> has-focus <=> BevyTextureGlobal.bevy-widget-focused;
 
     i-texture := Image {
         source: BevyTextureGlobal.texture;

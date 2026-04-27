@@ -49,6 +49,7 @@ component Widget inherits FocusDomain {
     in-out property <bool> focusable: false;
     in property <image> icon: @image-url("@svg/abs-warning-light.svg");
     out property <int> page-number;
+    out property <bool> has-target: WidgetContainerState.current-page == self.page-number;
     out property <bool> has-focus: WidgetContainerState.focused-page == self.page-number;
 
     force-exit-strategy: self.focusable;
@@ -173,13 +174,6 @@ export component WidgetContainer {
                 }
 
                 // todo: disable all widgets when they're not in use
-                bevy-test-widget := Widget {
-                    BevyTextureWidget {
-                        height: 100%;
-                        width: 100%;
-                    }
-                }
-
                 car-display-widget := Widget {
                     CarDisplayWidget {
                         height: 100%;
@@ -236,6 +230,14 @@ export component WidgetContainer {
                             text: "Enter to run";
                             font-size: 25px;
                         }
+                    }
+                }
+
+                bevy-test-widget := Widget {
+                    BevyTextureWidget {
+                        has-focus: parent.has-target;
+                        height: 100%;
+                        width: 100%;
                     }
                 }
 

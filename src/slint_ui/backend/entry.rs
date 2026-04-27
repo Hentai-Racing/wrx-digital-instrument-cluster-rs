@@ -6,13 +6,18 @@ use bevy::prelude::*;
 use slint::{ComponentHandle, Weak};
 use tokio::time::{self, Duration, Instant};
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::Arc;
-use std::sync::atomic::AtomicU32;
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
 const MODEL_PATH: &str = "models/CarConcept.glb"; // place model files in resources/models/
-const CAMERA_POS: Vec3 = Vec3::new(3., 4.0, 4.0);
+const CAMERA_START_HEIGHT: f32 = 0.6;
+const CAMERA_END_HEIGHT: f32 = 3.0;
+const CAMERA_START_RADIUS: f32 = 4.0;
+const CAMERA_END_RADIUS: f32 = 6.5;
+const ORBIT_DURATION_SECS: f32 = 3.0;
+const ORBIT_HOLD_SECS: f32 = 0.75;
 
 pub fn make_app() -> Result<App, Box<dyn std::error::Error>> {
     let mut wgpu_settings = slint::wgpu_27::WGPUSettings::default();
@@ -35,9 +40,14 @@ pub fn make_app() -> Result<App, Box<dyn std::error::Error>> {
 
     let app_weak = app_window.as_weak();
     let bevy_channels_setup = bevy_channels.clone();
+    let restart_animation: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
+    let last_focused = Rc::new(Cell::new(false));
 
     {
         let frames = frames.clone();
+        let restart_animation_setup = restart_animation.clone();
+        let restart_animation_frame = restart_animation.clone();
+        let last_focused = last_focused.clone();
         app_window
             .window()
             .set_rendering_notifier(move |state, graphics_api| match state {
@@ -53,17 +63,20 @@ pub fn make_app() -> Result<App, Box<dyn std::error::Error>> {
                         return;
                     };
 
+                    let restart_animation = restart_animation_setup.clone();
                     let channels = slint_bevy_adapter::run_bevy_app_with_slint(
                         instance.clone(),
                         device.clone(),
                         queue.clone(),
                         |_app| {},
                         move |mut app| {
-                            app.insert_resource(CameraPos(CAMERA_POS))
-                                .add_systems(Startup, setup)
-                                .add_systems(Update, (animate_camera, monitor_scene_loading))
-                                .insert_resource(ClearColor(Color::NONE))
-                                .run();
+                            app.insert_resource(AnimationControl {
+                                restart: restart_animation.clone(),
+                            })
+                            .add_systems(Startup, setup)
+                            .add_systems(Update, (animate_camera, monitor_scene_loading))
+                            .insert_resource(ClearColor(Color::NONE))
+                            .run();
                         },
                     );
 
@@ -77,6 +90,13 @@ pub fn make_app() -> Result<App, Box<dyn std::error::Error>> {
                     frames.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     app.window().request_redraw();
 
+                    let bevy_global = app.global::<BevyTextureGlobal>();
+                    let focused = bevy_global.get_bevy_widget_focused();
+                    if focused && !last_focused.get() {
+                        restart_animation_frame.store(true, Ordering::Relaxed);
+                    }
+                    last_focused.set(focused);
+
                     let channels = bevy_channels_setup.borrow();
                     let Some((new_texture_receiver, control_message_sender)) = channels.as_ref()
                     else {
@@ -86,8 +106,6 @@ pub fn make_app() -> Result<App, Box<dyn std::error::Error>> {
                     let Ok(new_texture) = new_texture_receiver.try_recv() else {
                         return;
                     };
-
-                    let bevy_global = app.global::<BevyTextureGlobal>();
 
                     if let Some(old_texture) = bevy_global.get_texture().to_wgpu_27_texture() {
                         let _ = control_message_sender.try_send(
@@ -141,17 +159,47 @@ pub fn make_app() -> Result<App, Box<dyn std::error::Error>> {
     Ok(app_window)
 }
 
-#[derive(Resource)]
-struct CameraPos(Vec3);
+#[derive(Resource, Clone)]
+struct AnimationControl {
+    restart: Arc<AtomicBool>,
+}
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(DirectionalLight {
         illuminance: 100_000.0,
         ..default()
     });
-    commands.spawn((Camera3d::default(), PointLight::default()));
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_xyz(0.0, CAMERA_START_HEIGHT, CAMERA_START_RADIUS)
+            .looking_at(Vec3::ZERO, Vec3::Y),
+        PointLight::default(),
+    ));
     let handle = asset_server.load(GltfAssetLabel::Scene(0).from_asset(MODEL_PATH));
     commands.spawn(SceneRoot(handle));
+}
+
+fn animate_camera(
+    mut cameras: Query<&mut Transform, With<Camera3d>>,
+    time: Res<Time>,
+    control: Res<AnimationControl>,
+    mut start_secs: Local<f32>,
+) {
+    if control.restart.swap(false, Ordering::Relaxed) {
+        *start_secs = time.elapsed_secs();
+    }
+    let elapsed = (time.elapsed_secs() - *start_secs - ORBIT_HOLD_SECS).max(0.0);
+    let raw = (elapsed / ORBIT_DURATION_SECS).clamp(0.0, 1.0);
+    let t = raw * raw * (3.0 - 2.0 * raw);
+    let theta = t * std::f32::consts::PI;
+    let (sin, cos) = ops::sin_cos(theta);
+    let radius = CAMERA_START_RADIUS + (CAMERA_END_RADIUS - CAMERA_START_RADIUS) * t;
+    let height = CAMERA_START_HEIGHT + (CAMERA_END_HEIGHT - CAMERA_START_HEIGHT) * t;
+
+    for mut transform in cameras.iter_mut() {
+        transform.translation = Vec3::new(sin * radius, height, cos * radius);
+        transform.look_at(Vec3::ZERO, Vec3::Y);
+    }
 }
 
 fn monitor_scene_loading(
@@ -173,17 +221,5 @@ fn monitor_scene_loading(
             }
             _ => {}
         }
-    }
-}
-
-fn animate_camera(
-    mut cameras: Query<&mut Transform, With<Camera3d>>,
-    time: Res<Time>,
-    camera: Res<CameraPos>,
-) {
-    let now = time.elapsed_secs();
-    for mut transform in cameras.iter_mut() {
-        transform.translation = vec3(ops::cos(now), 0.0, ops::sin(now)) * camera.0;
-        transform.look_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y);
     }
 }
