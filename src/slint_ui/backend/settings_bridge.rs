@@ -216,7 +216,7 @@ fn unroll_layout(
     }
 
     match node {
-        Node::HiddenParameter() => {}
+        Node::HiddenParameter => {}
         Node::ReadOnlyParameter { name, ty } => ret.push(SettingsMenuItem {
             name: (*name).into(),
             param_type: (*ty).into(),
@@ -262,18 +262,19 @@ fn unroll_path<'a>(
     current_path: String,
     current_depth: usize,
 ) -> (&'a Node, String) {
-    if split_path.len() == current_depth {
-    } else if let Node::Page { name: _, items } = node {
-        for item in items {
-            if let Node::Page { name, items: _ } = item {
-                if let Some(current_item) = split_path.get(current_depth + 1) {
-                    if current_item == name {
-                        return unroll_path(
-                            item,
-                            split_path,
-                            format!("{}.", split_path[..=current_depth].join(".")),
-                            current_depth + 1,
-                        );
+    if split_path.len() != current_depth {
+        if let Node::Page { name: _, items } = node {
+            for item in items {
+                if let Node::Page { name, items: _ } = item {
+                    if let Some(current_item) = split_path.get(current_depth + 1) {
+                        if current_item == name {
+                            return unroll_path(
+                                item,
+                                split_path,
+                                format!("{}.", split_path[..=current_depth].join(".")),
+                                current_depth + 1,
+                            );
+                        }
                     }
                 }
             }
