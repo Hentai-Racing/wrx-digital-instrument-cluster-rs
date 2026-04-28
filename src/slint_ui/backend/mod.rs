@@ -7,3 +7,4 @@ pub mod hardware_bridge;
 pub mod lang;
 pub mod rs_type_resolver;
 pub mod settings_bridge;
+pub mod widget_container;

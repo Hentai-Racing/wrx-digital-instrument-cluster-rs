@@ -14,7 +14,7 @@ use crate::data::car_data::{CAR_DATA, ParseError};
 use crate::hardware::hardware_backend::{self, HARDWARE_NAVIGATION_INPUT, HardwareBackend};
 use crate::slint_ui::backend::{
     backend_lib, can_display, car_data_bridge, entry, hardware_bridge, lang, rs_type_resolver,
-    settings_bridge,
+    settings_bridge, widget_container,
 };
 
 use clap::ArgMatches;
@@ -321,6 +321,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         hardware_bridge::bridge(ui.as_weak(), hardware_backend.clone());
         lang::bridge(ui.as_weak());
         backend_lib::bridge(ui.as_weak());
+        widget_container::bridge(ui.as_weak());
     }
 
     // graceful shutdown

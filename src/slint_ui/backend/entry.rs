@@ -1,9 +1,9 @@
 use crate::application::settings::SETTINGS;
-use crate::slint_generatedApp::{App, BevyTextureGlobal};
+use crate::slint_generatedApp::{App, BevyCarDisplayGlobal};
 use crate::slint_ui::backend::bevy_adapter::slint_bevy_adapter;
 
 use bevy::prelude::*;
-use slint::{ComponentHandle, Weak};
+use slint::ComponentHandle;
 use tokio::time::{self, Duration, Instant};
 
 use std::cell::{Cell, RefCell};
@@ -90,7 +90,7 @@ pub fn make_app() -> Result<App, Box<dyn std::error::Error>> {
                     frames.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     app.window().request_redraw();
 
-                    let bevy_global = app.global::<BevyTextureGlobal>();
+                    let bevy_global = app.global::<BevyCarDisplayGlobal>();
                     let focused = bevy_global.get_bevy_widget_focused();
                     if focused && !last_focused.get() {
                         restart_animation_frame.store(true, Ordering::Relaxed);

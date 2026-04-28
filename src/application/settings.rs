@@ -55,14 +55,24 @@ crate::parameter_struct! {Settings {
             language: StrLang,
         },
 
-        theme {
-            selected_theme: ClusterTheme = ClusterTheme::Default,
-        },
-
         accessibility {
             animations_enabled: bool = true,
             accessible_switches: bool = false,
             selection_box_thickness: Bound<i32> = Bound::new(2, 1..=10, 1),
+        },
+
+        theme {
+            selected_theme: ClusterTheme = ClusterTheme::Default,
+        },
+
+        widgets {
+            [cfg!(feature = "bevy")] car_display_bevy {
+                model_3d: bool = true,
+            },
+
+            [cfg!(not(feature = "bevy"))] car_display {
+                [hidden] model_3d: bool = false,
+            },
         },
     },
 
